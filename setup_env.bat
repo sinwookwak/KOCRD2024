@@ -6,6 +6,8 @@ set LOGFILE=setup_env_log.txt
 echo Starting setup_env.bat > %LOGFILE%
 echo ===================================== >> %LOGFILE%
 
+REM 파일명: setup_env.bat
+
 REM 경로 설정 및 유효성 검사 함수
 :validate_path
 if not exist "%1\tool\Tesseract-OCR\tesseract.exe" (
