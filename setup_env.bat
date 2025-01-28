@@ -6,14 +6,11 @@ set LOGFILE=setup_env_log.txt
 echo Starting setup_env.bat > %LOGFILE%
 echo ===================================== >> %LOGFILE%
 
-REM 파일명: setup_env.bat
-
 REM 경로 설정 및 유효성 검사 함수
 :validate_path
 if not exist "%1\tool\Tesseract-OCR\tesseract.exe" (
     echo Invalid path: %1 >> %LOGFILE%
     echo Invalid path: %1
-    pause
     exit /b 1
 )
 exit /b 0
@@ -21,7 +18,8 @@ exit /b 0
 REM 경로 감지 함수
 :detect_path
 setlocal enabledelayedexpansion
-set found_drive=0
+set found_drives=0
+set drive_paths=
 
 REM Checking if files are in the current directory (C:\Users\rhkrt\Documents\GitHub)
 if exist "%~dp0tool\Tesseract-OCR\tesseract.exe" (
@@ -34,36 +32,49 @@ if exist "%~dp0tool\Tesseract-OCR\tesseract.exe" (
 REM USB 드라이브 경로 감지
 for %%a in (A B C D E F G H I J K L M N O P Q R S T U V W X Y Z) do (
     if exist %%a:\AI-M1\tool\Tesseract-OCR\tesseract.exe (
-        set USB_DRIVE=%%a:\
-        set found_drive=1
-        echo Found USB drive at %%a: >> %LOGFILE%
-        echo Found USB drive at %%a:
-        goto :found_drive
+        set /a found_drives+=1
+        set drive_paths=!drive_paths! "%%a:\AI-M1"
+        echo Found USB drive at %%a:\AI-M1 >> %LOGFILE%
     )
 )
-if !found_drive! equ 0 (
+
+if %found_drives% equ 0 (
     echo USB drive not found. Checking C and D drives. >> %LOGFILE%
     echo USB drive not found. Checking C and D drives.
     set DRIVE_PATHS=C:\AI-M1 D:\AI-M1
     for %%d in (%DRIVE_PATHS%) do (
         call :validate_path "%%d"
         if !errorlevel! equ 0 (
-            set DRIVE_PATH=%%d
+            set /a found_drives+=1
+            set drive_paths=!drive_paths! "%%d"
             echo Found drive at %%d >> %LOGFILE%
-            echo Found drive at %%d
-            goto :drive_found
         )
     )
+)
+
+if %found_drives% equ 0 (
     echo "Tesseract를 찾을 수 없습니다. 올바른 경로를 입력하세요." >> %LOGFILE%
     echo "Tesseract를 찾을 수 없습니다. 올바른 경로를 입력하세요."
     pause
     exit /b 1
+) else if %found_drives% equ 1 (
+    for %%p in (%drive_paths%) do set DRIVE_PATH=%%p
 ) else (
-    set DRIVE_PATH=%USB_DRIVE%AI-M1
+    echo 여러 경로가 발견되었습니다. 사용할 경로를 선택하세요: >> %LOGFILE%
+    echo 여러 경로가 발견되었습니다. 사용할 경로를 선택하세요:
+    set count=0
+    for %%p in (%drive_paths%) do (
+        set /a count+=1
+        echo [!count!] %%p
+        echo [!count!] %%p >> %LOGFILE%
+    )
+    set /p choice="선택 (숫자 입력): "
+    set count=0
+    for %%p in (%drive_paths%) do (
+        set /a count+=1
+        if !count! equ %choice% set DRIVE_PATH=%%p
+    )
 )
-goto :eof
-
-:found_drive
 goto :eof
 
 :drive_found
