@@ -1,5 +1,4 @@
-# MonitoringUI.py 
-
+# MonitoringUI.py
 from PyQt5.QtWidgets import QWidget, QListWidget, QVBoxLayout, QTextEdit, QLineEdit, QProgressBar, QPushButton, QHBoxLayout
 import logging
 
@@ -18,6 +17,7 @@ class MonitoringUI(QWidget):
         self.file_list_widget = QListWidget()
 
         self.setup_ui() # UI 구성 메서드 호출
+
     def setup_ui(self):
         """UI 구성."""
         layout = QVBoxLayout(self) # self에 레이아웃 설정
@@ -31,6 +31,7 @@ class MonitoringUI(QWidget):
 
         self.setLayout(layout)
         self.send_button = send_button # send_button 저장
+
     def set_send_callback(self, callback):
         """전송 버튼 콜백 설정 (MonitoringManager와 연결)."""
         self.send_button.clicked.connect(lambda: callback(self.chat_input.text().strip())) # MonitoringManager의 handle_chat과 연결

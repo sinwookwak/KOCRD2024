@@ -38,11 +38,12 @@ class SettingsDialogUI(QDialog):
         save_button = QPushButton("저장", self)
         save_button.clicked.connect(self.save_settings)
         layout.addWidget(save_button)
+
     def apply_settings(self):
         # ... (다른 설정 적용)
         tesseract_path = self.ui.tesseractPathLineEdit.text()
         self.settings_manager.set_tesseract_path(tesseract_path)
-        self.parent.system_manager.recreate_ocr_manager() # SystemManager에 알림
+        self.parent.system_manager.recreate_ocr_manager()  # SystemManager에 알림
 
     def add_general_settings_tab(self):
         """일반 설정 탭 추가."""
@@ -58,6 +59,7 @@ class SettingsDialogUI(QDialog):
         layout.addWidget(self.temp_dir_edit)
 
         self.tabs.addTab(tab, "일반 설정")
+
     def add_advanced_settings_tab(self):
         """고급 설정 탭 추가."""
         tab = QWidget()
@@ -81,6 +83,7 @@ class SettingsDialogUI(QDialog):
         layout.addWidget(save_button)
 
         self.tabs.addTab(tab, "고급 설정")
+
     def select_model_path(self):
         """모델 경로 선택."""
         model_path, _ = QFileDialog.getSaveFileName(

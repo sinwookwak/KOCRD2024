@@ -1,5 +1,4 @@
 # MenubarUI.py
-
 from PyQt5.QtWidgets import QAction, QMessageBox, QFileDialog
 import logging
 
@@ -7,6 +6,7 @@ class MenubarUI:
     """메뉴바 UI 생성 클래스."""
     def __init__(self, menu_bar):
         self.menu_bar = menu_bar
+
     def init_file_menu(self, menu_bar, parent, system_manager):
         """파일 메뉴를 초기화."""
         file_menu = menu_bar.addMenu("파일")
@@ -33,6 +33,7 @@ class MenubarUI:
         file_menu.addAction(exit_action)
 
         logging.info("File menu initialized.")
+
     def init_settings_menu(self, menu_bar, parent, settings_manager):
         """설정 메뉴를 초기화."""
         settings_menu = menu_bar.addMenu("설정")
@@ -46,6 +47,7 @@ class MenubarUI:
         deep_learning_action = QAction("딥러닝 학습 시작", parent)
         deep_learning_action.triggered.connect(lambda: self.open_deep_learning_dialog(parent))
         settings_menu.addAction(deep_learning_action)
+
     def open_deep_learning_dialog(self, parent):
         """딥러닝 학습 경로를 선택하도록 대화창을 엽니다."""
         options = QFileDialog.Options()
@@ -63,11 +65,11 @@ class MenubarUI:
         else:
             QMessageBox.warning(parent, "취소됨", "학습 데이터 파일이 선택되지 않았습니다.")
 
-def open_settings_dialog(self, settings_manager, parent):
-    """환경설정 대화창 열기."""
-    from SettingsDialogUI import SettingsDialogUI
-    dialog = SettingsDialogUI(settings_manager, parent)  # 수정된 초기화 방식 반영
-    dialog.exec_()
+    def open_settings_dialog(self, settings_manager, parent):
+        """환경설정 대화창 열기."""
+        from SettingsDialogUI import SettingsDialogUI
+        dialog = SettingsDialogUI(settings_manager, parent)  # 수정된 초기화 방식 반영
+        dialog.exec_()
 
     def get_menubar_ui(self):
         """MenubarManager의 UI 반환."""

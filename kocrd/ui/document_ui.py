@@ -1,5 +1,4 @@
 # DocumentUI.py
-
 import os
 import logging
 from PyQt5.QtWidgets import QTableWidget, QHeaderView, QMessageBox
@@ -19,12 +18,12 @@ class DocumentUI:
             '파일명', '유형', '텍스트', '날짜', '담당자',
             '공급자', '물품명', '카탈로그 번호', '결합 내용', '파일 경로'
         ])
-        
+
         # 헤더 조정
         header = self.table_widget.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.Stretch)  # 컬럼 자동 크기 조정
         header.setStretchLastSection(True)
-        
+
         return self.table_widget
 
     def setup_widget(self):
@@ -48,14 +47,15 @@ class DocumentUI:
             logging.info("파일 테이블이 초기화되었습니다.")
             QMessageBox.information(self, "초기화 완료", "파일 테이블이 초기화되었습니다.")
 
-    def filter_documents(self, criteria):#처리됨
+    def filter_documents(self, criteria):
         """UIManager를 통해 문서 필터링."""
         try:
             self.ui_control_manager.document_ui.filter_table(criteria)
             logging.info("Documents filtered successfully.")
         except Exception as e:
             logging.error(f"Error filtering documents: {e}")
-            QMessageBox.warning(self.ui_control_manager.document_ui.table_widget, "필터 오류", "문서를 필터링하는 중 오류가 발생했습니다.")
+            QMessageBox.warning(self.ui_control_manager.document_ui.table_widget, "필터 오류", "문서를 필터링 하는 중 오류가 발생했습니다.")
+
     def update_document_info(self, database_manager):
         """선택된 문서의 정보를 업데이트합니다."""
         selected_items = self.file_table.selectedItems()
@@ -80,18 +80,10 @@ class DocumentUI:
                 logging.info(f"Updated document type for {current_file_name} to {new_type}")
             except Exception as e:
                 logging.error(f"Error updating document type for {current_file_name}: {e}")
-                QMessageBox.critical(self, "업데이트 오류", f"문서 유형을 업데이트하는 중 오류가 발생했습니다: {e}")
+                QMessageBox.critical(self, "업데이트 오류", f"문서 유형을 업데이트 하는 중 오류가 발생했습니다: {e}")
 
     def search_documents(self, keyword, column_index=None, match_exact=False):
-        # 키워드 검색 및 테이블 행 필터링
-        """
-        문서 검색 기능을 구현합니다.
-        
-        Args:
-            keyword (str): 검색 키워드.
-            column_index (int, optional): 특정 열에서 검색하려는 경우 해당 열의 인덱스. None이면 모든 열 검색. Default는 None.
-            match_exact (bool, optional): True일 경우 완전 일치 검색, False일 경우 부분 검색. Default는 False.
-        """
+        """문서 검색 기능을 구현합니다."""
         if not keyword.strip():
             # 키워드가 비어있으면 모든 행 표시
             for row in range(self.file_table.rowCount()):
@@ -126,12 +118,7 @@ class DocumentUI:
         logging.info(f"Document search completed for keyword: {keyword}")
 
     def delete_document(self, file_name, database_manager):
-        """
-        문서를 삭제합니다.
-
-        Args:
-            file_name (str): 삭제할 문서의 파일 이름. None이면 UI에서 선택된 문서를 삭제.
-        """
+        """문서를 삭제합니다."""
         try:
             if not file_name:
                 # UI에서 선택된 문서를 삭제
@@ -160,7 +147,6 @@ class DocumentUI:
                 if not self.ui_control_manager.document_ui.remove_document_from_table(file_name):
                     logging.warning(f"File {file_name} not found in table.")
 
-
             # 데이터베이스에서 문서 삭제
             self.database_manager.delete_document(file_name)
             logging.info(f"Document deleted: {file_name}")
@@ -168,4 +154,3 @@ class DocumentUI:
         except Exception as e:
             logging.error(f"Error deleting document: {e}")
             QMessageBox.critical(self, "삭제 오류", f"문서를 삭제하는 중 오류가 발생했습니다: {e}")
-
