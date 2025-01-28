@@ -88,13 +88,11 @@ if errorlevel 1 (
 echo Tesseract 경로: %TESSERACT_EXE_PATH% >> %LOGFILE%
 echo Tesseract 경로: %TESSERACT_EXE_PATH%
 
-REM Poppler 경로 설정 (절대 경로 또는 입력 받기)
-set POPPLER_EXE_PATH="C:\path\to\poppler-24.08.0\Library\bin\pdftoppm.exe" REM 실제 경로로 변경
-REM 또는 set /p POPPLER_EXE_PATH="Poppler 실행 파일 경로를 입력하세요: "
+REM Poppler 경로 설정 (상대 경로 사용)
+set POPPLER_EXE_PATH="%~dp0tool\poppler-24.08.0\Library\bin\pdftoppm.exe"
 
-REM sentence-transformers 경로 설정 (절대 경로 또는 입력 받기)
-set SENTENCE_TRANSFORMERS_PATH="C:\path\to\Sentence_Transformer" REM 실제 경로로 변경
-REM 또는 set /p SENTENCE_TRANSFORMERS_PATH="sentence-transformers 경로를 입력하세요: "
+REM sentence-transformers 경로 설정 (상대 경로 사용)
+set SENTENCE_TRANSFORMERS_PATH="%~dp0tool\Sentence_Transformer"
 
 echo Poppler 경로: %POPPLER_EXE_PATH% >> %LOGFILE%
 echo Poppler 경로: %POPPLER_EXE_PATH%
@@ -108,6 +106,9 @@ if errorlevel 1 set PATH=%TESSERACT_EXE_PATH%;%PATH%
 
 echo "%PATH%" | findstr /i "%POPPLER_EXE_PATH%" >nul
 if errorlevel 1 set PATH=%POPPLER_EXE_PATH%;%PATH%
+
+echo "%PYTHONPATH%" | findstr /i "%SENTENCE_TRANSFORMERS_PATH%" >nul
+if errorlevel 1 set PYTHONPATH=%PYTHONPATH%;%SENTENCE_TRANSFORMERS_PATH%
 
 echo "%PYTHONPATH%" | findstr /i "%~dp0kocrd" >nul
 if errorlevel 1 set PYTHONPATH=%PYTHONPATH%;%~dp0kocrd
