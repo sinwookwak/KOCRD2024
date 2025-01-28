@@ -7,7 +7,7 @@ from managers.settings_manager import SettingsManager
 from managers.system_manager import SystemManager
 
 def run_worker():
-    """Worker 프로세스를 실행하는 함수."""
+    """Executes the worker process."""
     import worker
     worker.main()
 
@@ -27,13 +27,13 @@ def main():
     app = QApplication(sys.argv)
     settings_manager, config = initialize_settings("config/development.json")
 
-    # Worker 프로세스 시작
+    # Start the worker process
     worker_process = multiprocessing.Process(target=run_worker)
     worker_process.start()
     logging.info("Worker process started.")
 
     try:
-        # Magic String 제거를 위한 상수 정의
+        # Define constants for magic strings
         MODEL_PATH_KEY = "model_path"
         TESSERACT_CMD_KEY = "tesseract_cmd"
         TESSDATA_DIR_KEY = "tessdata_dir"
@@ -41,7 +41,7 @@ def main():
         AI_MODEL_KEY = "ai_model"
         KWARGS_KEY = "kwargs"
 
-        # 설정 값 가져오기
+        # Retrieve settings values
         managers = get_required_setting(settings_manager.get_setting(MANAGERS_KEY), MANAGERS_KEY, f"Critical error: '{MANAGERS_KEY}' not found in settings")
         ai_model = get_required_setting(managers.get(AI_MODEL_KEY), AI_MODEL_KEY, f"Critical error: '{AI_MODEL_KEY}' not found in managers")
         kwargs = get_required_setting(ai_model.get(KWARGS_KEY), KWARGS_KEY, f"Critical error: '{KWARGS_KEY}' not found in ai_model")
@@ -57,11 +57,11 @@ def main():
             ai_model_manager = system_manager.get_manager("ai_model")
             ai_model_manager.apply_trained_model(model_path + "/model_weights.h5")
         except FileNotFoundError as e:
-            logging.error(f"모델 파일 로드 실패: {e}")
-            QMessageBox.critical(None, "오류", f"모델 파일 로드 실패: {e}")
+            logging.error(f"Model file load failed: {e}")
+            QMessageBox.critical(None, "Error", f"Model file load failed: {e}")
             sys.exit(1)
         except Exception as e:
-            logging.exception(f"모델 적용 중 오류 발생: {e}")
+            logging.exception(f"Error during model application: {e}")
             sys.exit(1)
     except Exception as e:
         logging.exception(f"Unexpected error: {e}")
