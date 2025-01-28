@@ -3,100 +3,195 @@ chcp 65001
 
 REM 파일명: setup_env.bat
 
-REM USB 드라이브 경로 감지
+REM 경로 설정 및 유효성 검사 함수
+:validate_path
+if not exist "%1\tool\Tesseract-OCR\tesseract.exe" (
+    exit /b 1
+)
+exit /b 0
+
+REM 경로 감지 함수
+:detect_path
+setlocal enabledelayedexpansion
+set found_drive=0
 for %%a in (A B C D E F G H I J K L M N O P Q R S T U V W X Y Z) do (
     if exist %%a:\AI-M1\tool\Tesseract-OCR\tesseract.exe (
         set USB_DRIVE=%%a:\
+        set found_drive=1
         goto :found_drive
     )
 )
-
-:found_drive
-if not defined USB_DRIVE (
-    echo USB 드라이브를 찾을 수 없습니다.
+if !found_drive! equ 0 (
+    echo USB 드라이브를 찾을 수 없습니다. C 드라이브와 D 드라이브를 검사합니다.
+    set DRIVE_PATHS=C:\AI-M1 D:\AI-M1
+    for %%d in (%DRIVE_PATHS%) do (
+        call :validate_path "%%d"
+        if !errorlevel! equ 0 (
+            set DRIVE_PATH=%%d
+            goto :drive_found
+        )
+    )
+    echo "Tesseract를 찾을 수 없습니다. 올바른 경로를 입력하세요."
     pause
     exit /b 1
+) else (
+    set DRIVE_PATH=%USB_DRIVE%AI-M1
 )
+goto :eof
+
+:found_drive
+goto :eof
+
+:drive_found
+goto :eof
+
+REM 경로 감지 및 설정
+call :detect_path
 
 REM Tesseract 및 Poppler 경로 설정
-set TESSERACT_PATH=%USB_DRIVE%AI-M1\tool\Tesseract-OCR\tesseract.exe
-set POPPLER_PATH=%USB_DRIVE%AI-M1\tool\poppler-24.08.0\Library\bin
+set TESSERACT_PATH=%DRIVE_PATH%\tool\Tesseract-OCR\tesseract.exe
+set POPPLER_PATH=%DRIVE_PATH%\tool\poppler-24.08.0\Library\bin
 set PATH=%TESSERACT_PATH%;%POPPLER_PATH%;%PATH%
 
 echo Tesseract 경로 설정 완료: %TESSERACT_PATH%
 echo Poppler 경로 설정 완료: %POPPLER_PATH%
 
-REM 가상 환경 생성 및 활성화
-if not exist .venv (
-    echo 가상 환경 생성 중...
-    python -m venv .venv
-    if errorlevel 1 (
-        echo 가상 환경 생성에 실패했습니다. Python 설치를 확인하세요.
-        pause
-        exit /b 1
+REM Python 버전 확인 및 업데이트
+echo Python 버전 확인 및 업데이트...
+
+REM 현재 Python 버전 확인
+for /f "tokens=2 delims= " %%a in ('python --version 2^>^&1 ^| findstr /r "[0-9]\.[0-9]"') do (
+    set CURRENT_PYTHON_VERSION=%%a
+)
+
+if defined CURRENT_PYTHON_VERSION (
+    echo 현재 Python 버전: %CURRENT_PYTHON_VERSION%
+    REM Python 최신 버전 확인 및 업데이트
+    for /f "tokens=3 delims==" %%a in ('pip index versions pip ^| findstr /r "Latest:"') do (
+        set LATEST_PIP_VERSION=%%a
+        set LATEST_PIP_VERSION=%LATEST_PIP_VERSION:Latest: =%
+        set LATEST_PIP_VERSION=%LATEST_PIP_VERSION:~1,-1%
     )
-    echo 가상 환경 생성 완료.
-)
-
-.venv\Scripts\activate
-if errorlevel 1 (
-    echo 가상 환경 활성화에 실패했습니다. .venv 폴더를 확인하세요.
-    pause
-    exit /b 1
-)
-echo 가상 환경 활성화 완료.
-
-REM pip 업그레이드
-echo pip 업그레이드 중...
-python -m pip install --upgrade pip
-if errorlevel 1 (
-    echo pip 업그레이드에 실패했습니다.
-    pause
-    exit /b 1
-)
-echo pip 업그레이드 완료.
-
-REM requirements.txt 파일에서 라이브러리 설치
-if exist requirements.txt (
-    echo requirements.txt 파일에서 라이브러리 설치 중...
-    pip install -r requirements.txt
-    if errorlevel 1 (
-        echo 라이브러리 설치에 실패했습니다. 다음 명령어를 실행하여 자세한 오류 메시지를 확인하세요.
-        echo pip install -r requirements.txt
-        pause
-        exit /b 1
+    if defined LATEST_PIP_VERSION (
+        echo pip 최신 버전: %LATEST_PIP_VERSION%
+        set /p update_python_choice="Python 및 pip를 업데이트하시겠습니까? (y/n): "
+        if /i "%update_python_choice%"=="y" (
+            echo Python 및 pip 업데이트 시작...
+            python -m ensurepip --upgrade
+            if errorlevel 1 (
+                echo Python 업데이트에 실패했습니다. 관리자 권한으로 실행하거나 Python 설치를 확인하세요.
+                pause
+                exit /b 1
+            )
+            python -m pip install --upgrade pip
+            if errorlevel 1 (
+                echo pip 업데이트에 실패했습니다.
+                pause
+                exit /b 1
+            )
+            echo Python 및 pip 업데이트 완료.
+        ) else (
+            echo Python 및 pip 업데이트를 건너뜁니다.
+        )
+    ) else (
+        echo pip 최신 버전 정보를 가져오는 데 실패했습니다.
     )
-    echo 라이브러리 설치 완료.
 ) else (
-    echo requirements.txt 파일을 찾을 수 없습니다. 필요한 라이브러리를 직접 설치해주세요.
+    echo Python이 설치되어 있지 않습니다. Python을 설치해주세요.
     pause
     exit /b 1
 )
 
-REM sentence-transformers 설치 (가상환경 내에 설치)
-echo sentence-transformers 설치 중...
-pip install sentence-transformers
+REM kocrd 패키지 경로 추가
+set PYTHONPATH=%PYTHONPATH%;%~dp0kocrd
+
+REM 기본 라이브러리 설치
+echo 기본 Python 라이브러리 설치 중...
+pip install PyQt5 opencv-python pytesseract pdf2image fpdf tensorflow flask python-dotenv chardet pika tf-keras
 if errorlevel 1 (
-    echo sentence-transformers 설치에 실패했습니다. 오류 메시지를 확인하세요.
+    echo 일부 라이브러리 설치에 실패했습니다. 오류 메시지를 확인하세요.
     pause
     exit /b 1
 )
-echo sentence-transformers 설치 완료.
+echo 기본 라이브러리 설치 완료.
 
-REM pymupdf 설치
-echo pymupdf 설치 중...
+REM sentence-transformers 설치 관리
+echo sentence-transformers 설치 관리...
+set SENTENCE_TRANSFORMER_PATH=%~dp0tool\Sentence_Transformer
+
+REM 폴더가 없으면 생성
+if not exist "%SENTENCE_TRANSFORMER_PATH%\" mkdir "%SENTENCE_TRANSFORMER_PATH%"
+
+REM 설치된 sentence-transformers 버전 확인
+echo 설치된 sentence-transformers 버전 확인 중...
+if exist "%SENTENCE_TRANSFORMER_PATH%\sentence_transformers\__init__.py" (
+    for /f "tokens=3 delims==" %%a in ('python -c "import sentence_transformers; print(sentence_transformers.__version__)" 2^>nul') do (
+        set INSTALLED_VERSION=%%a
+    )
+    if defined INSTALLED_VERSION (
+        echo 설치된 버전: %INSTALLED_VERSION%
+        REM 최신 버전 확인
+        for /f "tokens=3 delims==" %%a in ('pip index versions sentence-transformers ^| findstr /r "Latest:"') do (
+            set LATEST_VERSION=%%a
+            set LATEST_VERSION=%LATEST_VERSION:Latest: =%
+            set LATEST_VERSION=%LATEST_VERSION:~1,-1%
+        )
+        if defined LATEST_VERSION (
+            echo 최신 버전: %LATEST_VERSION%
+            REM 업데이트 여부 확인
+            if "%INSTALLED_VERSION%" NEQ "%LATEST_VERSION%" (
+                set /p update_choice="sentence-transformers의 새 버전(%LATEST_VERSION%)이 있습니다. 업데이트하시겠습니까? (y/n): "
+                if /i "%update_choice%"=="y" (
+                    echo sentence-transformers 업데이트 중...
+                    pip install --target "%SENTENCE_TRANSFORMER_PATH%" --upgrade sentence-transformers --no-user
+                    if errorlevel 1 (
+                        echo sentence-transformers 업데이트에 실패했습니다. 오류 메시지를 확인하세요.
+                        pause
+                        exit /b 1
+                    )
+                    echo sentence-transformers 업데이트 완료.
+                ) else (
+                    echo sentence-transformers 업데이트를 건너뜁니다.
+                )
+            ) else (
+                echo sentence-transformers가 최신 버전입니다.
+            )
+        ) else (
+            echo 최신 버전 정보를 가져오는 데 실패했습니다.
+        )
+    ) else (
+        echo sentence-transformers가 설치되어 있지 않습니다.
+    )
+) else (
+    REM sentence-transformers 설치
+    set /p install_type="sentence-transformers 설치 유형을 선택하세요 (1: 일반 설치, 2: 개발용 설치): "
+    if "%install_type%"=="1" (
+        pip install --target "%SENTENCE_TRANSFORMER_PATH%" sentence-transformers --no-user
+    ) else if "%install_type%"=="2" (
+        pip install --target "%SENTENCE_TRANSFORMER_PATH%" "sentence-transformers[dev]" --no-user
+    ) else (
+        echo 잘못된 선택입니다. 일반 설치를 진행합니다.
+        pip install --target "%SENTENCE_TRANSFORMER_PATH%" sentence-transformers --no-user
+    )
+    if errorlevel 1 (
+        echo sentence-transformers 설치에 실패했습니다. 오류 메시지를 확인하세요.
+        pause
+        exit /b 1
+    )
+    echo sentence-transformers 설치 완료.
+)
+
+REM PyMuPDF 설치
+echo PyMuPDF 설치 중...
 pip install pymupdf
 if errorlevel 1 (
-    echo pymupdf 설치에 실패했습니다. 오류 메시지를 확인하세요.
+    echo PyMuPDF 설치에 실패했습니다. 오류 메시지를 확인하세요.
     pause
     exit /b 1
 )
-echo pymupdf 설치 완료.
-
+echo PyMuPDF 설치 완료.
 
 REM 설정 확인
 echo 현재 PATH: %PATH%
-echo 현재 PYTHONPATH: %PYTHONPATH%
 echo 환경 변수 변경 사항은 새로운 CMD 창에서 확인 가능합니다.
-
 pause
