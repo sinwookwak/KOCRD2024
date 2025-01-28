@@ -1,2 +1,2 @@
-Starting setup_env.bat 
+Starting set_paths.bat 
 ===================================== 
