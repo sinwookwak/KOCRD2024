@@ -1,6 +1,0 @@
-Starting set_paths.bat 
-===================================== 
-Tesseract 경로: "C:\Users\rhkrt\Documents\GitHub\tool\Tesseract-OCR\tesseract.exe" 
-Poppler 경로: "C:\Users\rhkrt\Documents\GitHub\tool\poppler-24.08.0\Library\bin\pdftoppm.exe" 
-sentence-transformers 경로: "C:\Users\rhkrt\Documents\GitHub\tool\Sentence_Transformer" 
-환경 변수 설정 완료. 
