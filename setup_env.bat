@@ -3,24 +3,49 @@ chcp 65001
 
 REM 파일명: setup_env.bat
 
+REM 경로 설정 및 유효성 검사 함수
+:validate_path
+if not exist "%1\tool\Tesseract-OCR\tesseract.exe" (
+    exit /b 1
+)
+exit /b 0
+
 REM USB 드라이브 경로 감지
+setlocal enabledelayedexpansion
+set found_drive=0
+
 for %%a in (A B C D E F G H I J K L M N O P Q R S T U V W X Y Z) do (
     if exist %%a:\AI-M1\tool\Tesseract-OCR\tesseract.exe (
         set USB_DRIVE=%%a:\
+        set found_drive=1
         goto :found_drive
     )
 )
 
 :found_drive
-if not defined USB_DRIVE (
-    echo USB 드라이브를 찾을 수 없습니다.
+if !found_drive! equ 0 (
+    echo USB 드라이브를 찾을 수 없습니다. C 드라이브와 D 드라이브를 검사합니다.
+    set DRIVE_PATHS=C:\AI-M1 D:\AI-M1
+
+    for %%d in (%DRIVE_PATHS%) do (
+        call :validate_path "%%d"
+        if !errorlevel! equ 0 (
+            set DRIVE_PATH=%%d
+            goto :drive_found
+        )
+    )
+    
+    echo "Tesseract를 찾을 수 없습니다. 올바른 경로를 입력하세요."
     pause
     exit /b 1
+) else (
+    set DRIVE_PATH=%USB_DRIVE%AI-M1
 )
 
+:drive_found
 REM Tesseract 및 Poppler 경로 설정
-set TESSERACT_PATH=%USB_DRIVE%AI-M1\tool\Tesseract-OCR\tesseract.exe
-set POPPLER_PATH=%USB_DRIVE%AI-M1\tool\poppler-24.08.0\Library\bin
+set TESSERACT_PATH=%DRIVE_PATH%\tool\Tesseract-OCR\tesseract.exe
+set POPPLER_PATH=%DRIVE_PATH%\tool\poppler-24.08.0\Library\bin
 set PATH=%TESSERACT_PATH%;%POPPLER_PATH%;%PATH%
 
 echo Tesseract 경로 설정 완료: %TESSERACT_PATH%
@@ -38,7 +63,7 @@ if not exist .venv (
     echo 가상 환경 생성 완료.
 )
 
-.venv\Scripts\activate
+call .venv\Scripts\activate
 if errorlevel 1 (
     echo 가상 환경 활성화에 실패했습니다. .venv 폴더를 확인하세요.
     pause
