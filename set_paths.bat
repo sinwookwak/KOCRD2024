@@ -76,15 +76,6 @@ if not exist "%TESSERACT_EXE_PATH%" (
     exit /b 1
 )
 
-REM 실행 파일 여부 확인 (추가)
-echo "%TESSERACT_EXE_PATH%" | findstr /i ".exe" >nul
-if errorlevel 1 (
-    echo Invalid path: %TESSERACT_EXE_PATH% (실행 파일이 아닙니다.) >> %LOGFILE%
-    echo Invalid path: %TESSERACT_EXE_PATH% (실행 파일이 아닙니다.)
-    pause
-    exit /b 1
-)
-
 echo Tesseract 경로: %TESSERACT_EXE_PATH% >> %LOGFILE%
 echo Tesseract 경로: %TESSERACT_EXE_PATH%
 

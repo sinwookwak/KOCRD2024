@@ -3,35 +3,7 @@ chcp 65001
 
 REM Log file setup
 set LOGFILE=setup_env_log.txt
-echo Starting setup_env.bat > %LOGFILE%
 echo ===================================== >> %LOGFILE%
-
-REM 경로 설정
-call set_paths.bat
-if errorlevel 1 (
-    echo 경로 설정에 실패했습니다. >> %LOGFILE%
-    echo 경로 설정에 실패했습니다.
-    pause
-    exit /b 1
-)
-
-REM 가상 환경 활성화
-echo 가상 환경 활성화... >> %LOGFILE%
-echo 가상 환경 활성화...
-
-REM 가상 환경 생성 (venv) - 필요에 따라 수정
-python -m venv .venv
-if errorlevel 1 (
-    echo 가상 환경 생성에 실패했습니다. >> %LOGFILE%
-    echo 가상 환경 생성에 실패했습니다.
-    pause
-    exit /b 1
-)
-
-.venv\Scripts\activate
-
-echo 가상 환경 활성화 완료. >> %LOGFILE%
-echo 가상 환경 활성화 완료.
 
 REM Python 버전 확인 및 업데이트 (수정)
 echo Python 버전 확인 및 업데이트... >> %LOGFILE%
@@ -52,7 +24,9 @@ if not defined CURRENT_PYTHON_VERSION (
 echo 현재 Python 버전: %CURRENT_PYTHON_VERSION% >> %LOGFILE%
 echo 현재 Python 버전: %CURRENT_PYTHON_VERSION%
 
-REM pip 최신 버전 확인 및 업데이트
+REM pip 최신 버전 확인 및 업데이트 (자동 업데이트)
+echo pip 최신 버전 확인 및 업데이트... >> %LOGFILE%
+echo pip 최신 버전 확인 및 업데이트...
 python -m pip install --upgrade pip
 if errorlevel 1 (
     echo pip 업데이트에 실패했습니다. >> %LOGFILE%
@@ -61,15 +35,27 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Python 최신 버전 확인 및 업데이트 (선택 사항)
-REM 필요에 따라 Python 업데이트 로직 추가
-REM (예: py.exe --list-available, py.exe --install <version>)
+REM 가상 환경 생성 및 활성화
+echo 가상 환경 생성 및 활성화... >> %LOGFILE%
+echo 가상 환경 생성 및 활성화...
+python -m venv .venv
+if errorlevel 1 (
+    echo 가상 환경 생성에 실패했습니다. >> %LOGFILE%
+    echo 가상 환경 생성에 실패했습니다.
+    pause
+    exit /b 1
+)
 
-REM 필요한 모듈 설치 (requirements.txt 활용)
+.venv\Scripts\activate
+
+echo 가상 환경 활성화 완료. >> %LOGFILE%
+echo 가상 환경 활성화 완료.
+
+REM 필요한 모듈 설치 (requirements.txt 활용, 자동 설치)
 echo 필요한 모듈 설치 중... >> %LOGFILE%
 echo 필요한 모듈 설치 중...
 
-REM requirements.txt 파일 경로 설정 (추가)
+REM requirements.txt 파일 경로 설정
 set REQUIREMENTS_FILE_PATH="%~dp0config\requirements.txt"
 
 REM requirements.txt 파일이 존재하는지 확인
@@ -91,17 +77,13 @@ if errorlevel 1 (
 echo 필요한 모듈 설치 완료. >> %LOGFILE%
 echo 필요한 모듈 설치 완료.
 
-REM sentence-transformers 설치 관리 (수정)
+REM sentence-transformers 설치 관리 (자동 업데이트)
 echo sentence-transformers 설치 관리... >> %LOGFILE%
 echo sentence-transformers 설치 관리...
 
 REM sentence-transformers가 설치되어 있는지 확인
 python -c "import sentence_transformers" 2>nul
-if errorlevel 1 (
-    echo sentence-transformers가 설치되어 있지 않습니다. 설치를 진행합니다. >> %LOGFILE%
-    echo sentence-transformers가 설치되어 있지 않습니다. 설치를 진행합니다.
-    goto :install_sentence_transformers
-}
+if errorlevel 1 goto :install_sentence_transformers
 
 REM 설치된 sentence-transformers 버전 확인
 echo 설치된 sentence-transformers 버전 확인 중... >> %LOGFILE%
@@ -129,11 +111,7 @@ echo 최신 버전: %LATEST_VERSION% >> %LOGFILE%
 echo 최신 버전: %LATEST_VERSION%
 
 REM 최신 버전이 아니면 업데이트
-if "%INSTALLED_VERSION%" NEQ "%LATEST_VERSION%" (
-    echo sentence-transformers의 새 버전(%LATEST_VERSION%)이 있습니다. 업데이트합니다. >> %LOGFILE%
-    echo sentence-transformers의 새 버전(%LATEST_VERSION%)이 있습니다. 업데이트합니다.
-    goto :install_sentence_transformers
-}
+if "%INSTALLED_VERSION%" NEQ "%LATEST_VERSION%" goto :install_sentence_transformers
 
 echo sentence-transformers가 최신 버전입니다. >> %LOGFILE%
 echo sentence-transformers가 최신 버전입니다.
@@ -151,16 +129,14 @@ if errorlevel 1 (
 echo sentence-transformers 설치 또는 업데이트 완료. >> %LOGFILE%
 echo sentence-transformers 설치 또는 업데이트 완료.
 
-REM PyMuPDF 설치 (수정)
+REM PyMuPDF 설치 (오류 발생 시 계속 진행)
 echo PyMuPDF 설치 중... >> %LOGFILE%
 echo PyMuPDF 설치 중...
 pip install pymupdf
 if errorlevel 1 (
-    echo PyMuPDF 설치에 실패했습니다. 오류 메시지를 확인하세요. 계속 진행하시겠습니까? (y/n): >> %LOGFILE%
-    echo PyMuPDF 설치에 실패했습니다. 오류 메시지를 확인하세요. 계속 진행하시겠습니까? (y/n):
-    set /p choice="선택 (y/n): "
-    if /i "%choice%"=="n" exit /b 1
-)
+    echo PyMuPDF 설치에 실패했습니다. 오류 메시지를 확인하세요. 계속 진행합니다. >> %LOGFILE%
+    echo PyMuPDF 설치에 실패했습니다. 오류 메시지를 확인하세요. 계속 진행합니다.
+}
 echo PyMuPDF 설치 완료. >> %LOGFILE%
 echo PyMuPDF 설치 완료.
 
