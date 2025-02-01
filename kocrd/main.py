@@ -17,7 +17,7 @@ def run_worker():
     import worker
     worker.main()
 
-def initialize_settings(settings_path):
+def initialize_settings(settings_path="config/development.json"):
     config_path = os.path.join(os.path.dirname(__file__), settings_path)
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
@@ -88,4 +88,8 @@ def main():
         return
 
 if __name__ == "__main__":
-    main()
+    try:
+        settings_manager, config = initialize_settings()
+        main()
+    except Exception as e:
+        logging.critical(f"Failed to initialize application: {e}")
