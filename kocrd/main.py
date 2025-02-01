@@ -9,7 +9,7 @@ import json
 # 프로젝트 루트 디렉토리를 sys.path에 추가
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from kocrd.Settings.settings_manager import SettingsManager
+from Settings.settings_manager import SettingsManager
 from managers.system_manager import SystemManager
 
 def run_worker():
@@ -69,7 +69,7 @@ def main():
     AI_MODEL_KEY = constants["AI_MODEL_KEY"]
     KWARGS_KEY = constants["KWARGS_KEY"]
     WORKER_PROCESS_KEY = constants["WORKER_PROCESS_KEY"]
-    
+
     logging.info("Constants loaded successfully.")
 
     # Worker 프로세스 시작
