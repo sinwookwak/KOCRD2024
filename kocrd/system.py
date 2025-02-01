@@ -137,7 +137,6 @@ class SystemManager:
         self.managers["temp_file"] = self.create_temp_file_manager()
         self.managers["rabbitmq"] = self.create_rabbitmq_manager()
         self.managers["database"] = self.create_database_manager()
-        self.managers["analysis"] = self.create_analysis_manager()
         self.managers["menubar"] = self.create_menubar_manager()
         self.managers["document"] = self.create_document_manager()
         self.managers["ocr"] = self.create_ocr_manager()
