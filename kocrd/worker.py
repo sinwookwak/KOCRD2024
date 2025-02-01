@@ -14,21 +14,23 @@ from managers.ai_managers.ai_event_manager import AIEventManager
 from managers.temp_file_manager import TempFileManager
 from managers.ai_managers.ai_prediction_manager import AIPredictionManager
 from managers.analysis_manager import AnalysisManager
-from managers.ai_managers.ai_model_manager import AIModelManager
+from managers.system_manager import SystemManager
 
 logging.basicConfig(level=logging.DEBUG)
 
-def process_message(channel, method, properties, body, manager, process_func):
+def process_message(process_func):
     """메시지를 처리하는 공통 함수"""
-    try:
-        process_func(channel, method, properties, body, manager)
-        channel.basic_ack(delivery_tag=method.delivery_tag)
-    except json.JSONDecodeError as e:
-        logging.error(f"JSON 파싱 오류: {e}")
-        channel.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
-    except Exception as e:
-        logging.error(f"메시지 처리 중 오류 발생: {e}")
-        channel.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+    def wrapper(channel, method, properties, body, manager):
+        try:
+            process_func(channel, method, properties, body, manager)
+            channel.basic_ack(delivery_tag=method.delivery_tag)
+        except json.JSONDecodeError as e:
+            logging.error(f"JSON 파싱 오류: {e}")
+            channel.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
+        except Exception as e:
+            logging.error(f"메시지 처리 중 오류 발생: {e}")
+            channel.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+    return wrapper
 
 def process_document(channel, method, properties, body, document_manager):
     """문서 처리 함수"""
@@ -83,15 +85,8 @@ def create_manager(manager_config, settings_manager):
 def main():
     """메인 실행 함수"""
     settings_manager = SettingsManager()
+    system_manager = SystemManager(settings_manager)
     
-    config_path = os.path.join(os.path.dirname(__file__), 'config/development.json')
-    with open(config_path, 'r') as f:
-        config = json.load(f)
-    
-    managers = {}
-    for manager_name, manager_config in config["managers"].items():
-        managers[manager_name] = create_manager(manager_config, settings_manager)
-
     connection, channel = settings_manager.connect_to_rabbitmq()
     if connection is None:
         logging.error("RabbitMQ 연결 실패. 종료합니다.")
@@ -100,13 +95,14 @@ def main():
     try:
         channel.basic_qos(prefetch_count=1)
 
+        config = system_manager.settings
         queues = config["queues"].values()
         for queue in queues:
             channel.queue_declare(queue=queue, durable=True)
 
-        channel.basic_consume(queue=config["queues"]["document_processing"], on_message_callback=lambda ch, method, props, body: process_message(ch, method, props, body, managers["document"], process_document), auto_ack=False)
-        channel.basic_consume(queue=config["queues"]["database_packaging"], on_message_callback=lambda ch, method, props, body: process_message(ch, method, props, body, managers["database"], process_database_packaging), auto_ack=False)
-        channel.basic_consume(queue=config["queues"]["ai_training_queue"], on_message_callback=lambda ch, method, props, body: process_message(ch, method, props, body, managers["ai_model"], process_ai_training), auto_ack=False)
+        channel.basic_consume(queue=config["queues"]["document_processing"], on_message_callback=process_message(process_document), auto_ack=False)
+        channel.basic_consume(queue=config["queues"]["database_packaging"], on_message_callback=process_message(process_database_packaging), auto_ack=False)
+        channel.basic_consume(queue=config["queues"]["ai_training_queue"], on_message_callback=process_message(process_ai_training), auto_ack=False)
 
         logging.info("메시지 대기 중... 종료하려면 CTRL+C를 누르세요.")
         channel.start_consuming()
