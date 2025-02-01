@@ -23,9 +23,11 @@ def initialize_settings(settings_path):
         with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
         if "constants" not in config:
-            raise KeyError("Critical error: 'constants' not found in settings")
-    except (UnicodeDecodeError, FileNotFoundError, json.JSONDecodeError) as e:
-        raise RuntimeError(f"Error loading settings: {e}")
+            raise KeyError("Missing 'constants' in configuration file.")
+    except Exception as e:
+        logging.critical(f"Failed to load configuration file: {e}")
+        raise
+
     settings_manager = SettingsManager(config_path)
     settings_manager.load_from_env()
     return settings_manager, config
@@ -35,6 +37,11 @@ def get_required_setting(settings, key, error_message):
     if value is None:
         raise KeyError(error_message)
     return value
+
+def start_worker_process():
+    worker_process = multiprocessing.Process(target=run_worker)
+    worker_process.start()
+    return worker_process
 
 def main():
     logging.basicConfig(level=logging.INFO)
@@ -48,28 +55,22 @@ def main():
     global development
     development = config
 
-    constants = config["constants"]
-    MODEL_PATH_KEY = constants["MODEL_PATH_KEY"]
-    TESSERACT_CMD_KEY = constants["TESSERACT_CMD_KEY"]
-    TESSDATA_DIR_KEY = constants["TESSDATA_DIR_KEY"]
-    MANAGERS_KEY = constants["MANAGERS_KEY"]
-    AI_MODEL_KEY = constants["AI_MODEL_KEY"]
-    KWARGS_KEY = constants["KWARGS_KEY"]
-    WORKER_PROCESS_KEY = constants["WORKER_PROCESS_KEY"]
-
-    worker_process = multiprocessing.Process(target=run_worker)
-    worker_process.start()
+    constants = config.get("constants", {})
+    if not constants:
+        logging.critical("Missing 'constants' in configuration file.")
+        return
 
     try:
-        # 설정 값 가져오기
-        managers = get_required_setting(config, MANAGERS_KEY, f"Critical error: '{MANAGERS_KEY}' not found in settings")
-        ai_model = get_required_setting(managers, AI_MODEL_KEY, f"Critical error: '{AI_MODEL_KEY}' not found in managers")
-        kwargs = get_required_setting(ai_model, KWARGS_KEY, f"Critical error: '{KWARGS_KEY}' not found in ai_model")
-        model_path = get_required_setting(kwargs, MODEL_PATH_KEY, f"Critical error: '{MODEL_PATH_KEY}' not found in kwargs")
+        worker_process = start_worker_process()
+
+        managers = get_required_setting(config, constants.get("MANAGERS_KEY", ""), f"Critical error: '{constants.get('MANAGERS_KEY', '')}' not found in settings")
+        ai_model = get_required_setting(managers, constants.get("AI_MODEL_KEY", ""), f"Critical error: '{constants.get('AI_MODEL_KEY', '')}' not found in managers")
+        kwargs = get_required_setting(ai_model, constants.get("KWARGS_KEY", ""), f"Critical error: '{constants.get('KWARGS_KEY', '')}' not found in ai_model")
+        model_path = get_required_setting(kwargs, constants.get("MODEL_PATH_KEY", ""), f"Critical error: '{constants.get('MODEL_PATH_KEY', '')}' not found in kwargs")
         ocr = get_required_setting(managers, "ocr", "Critical error: 'ocr' not found in managers")
-        ocr_kwargs = get_required_setting(ocr, KWARGS_KEY, f"Critical error: '{KWARGS_KEY}' not found in ocr")
-        tesseract_cmd = get_required_setting(ocr_kwargs, TESSERACT_CMD_KEY, f"Critical error: '{TESSERACT_CMD_KEY}' not found in ocr_kwargs")
-        tessdata_dir = get_required_setting(ocr_kwargs, TESSDATA_DIR_KEY, f"Critical error: '{TESSDATA_DIR_KEY}' not found in ocr_kwargs")
+        ocr_kwargs = get_required_setting(ocr, constants.get("KWARGS_KEY", ""), f"Critical error: '{constants.get('KWARGS_KEY', '')}' not found in ocr")
+        tesseract_cmd = get_required_setting(ocr_kwargs, constants.get("TESSERACT_CMD_KEY", ""), f"Critical error: '{constants.get('TESSERACT_CMD_KEY', '')}' not found in ocr_kwargs")
+        tessdata_dir = get_required_setting(ocr_kwargs, constants.get("TESSDATA_DIR_KEY", ""), f"Critical error: '{constants.get('TESSDATA_DIR_KEY', '')}' not found in ocr_kwargs")
 
         system_manager = SystemManager(settings_manager, None, tesseract_cmd, tessdata_dir)
 
