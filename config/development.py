@@ -5,7 +5,7 @@ from sympy import true
   "managers": {
     "database": {
       "class": "DatabaseManager",
-      "module": "kocrd.managers.database_manager", # 모듈 경로 추가
+      "module": "kocrd.managers.database_manager", # 모듈 경로 추가됨
       "kwargs": {
         "db_path": "DATABASE_PATH",
         "backup_path": "DATABASE_BACKUP_PATH"
@@ -13,13 +13,13 @@ from sympy import true
     },
     "temp_file": {
       "class": "TempFileManager",
-      "module": "kocrd.managers.temp_file_manager", # 모듈 경로 추가
+      "module": "kocrd.managers.temp_file_manager", # Added module path
       "dependencies": [],
       "inject_settings": True
     },
     "ocr": {
       "class": "OCRManager",
-      "module": "kocrd.managers.ocr.ocr_manager", # 모듈 경로 추가
+      "module": "kocrd.managers.ocr.ocr_manager", # Added module path
       "dependencies": [],
       "kwargs": {
         "tesseract_cmd": "TESSERACT_CMD",
@@ -30,13 +30,13 @@ from sympy import true
     },
     "menubar": {
       "class": "MenubarManager",
-      "module": "kocrd.managers.menubar_manager", # 모듈 경로 추가
+      "module": "kocrd.managers.menubar_manager", # Added module path
       "dependencies": [],
       "inject_system_manager": True
     },
     "ai_model": {
       "class": "AIModelManager",
-      "module": "kocrd.managers.ai_managers.ai_model_manager", # 모듈 경로 추가
+      "module": "kocrd.managers.ai_managers.ai_model_manager", # Added module path
       "kwargs": {
         "model_path": "MODELS_PATH",
         "model_type": "gpt2",
@@ -45,51 +45,51 @@ from sympy import true
     },
     "ai_data": {
       "class": "AIDataManager",
-      "module": "kocrd.managers.ai_managers.ai_data_manager", # 모듈 경로 추가
+      "module": "kocrd.managers.ai_managers.ai_data_manager", # Added module path
       "dependencies": ["database"]
     },
     "ai_prediction": {
       "class": "AIPredictionManager",
-      "module": "kocrd.managers.ai_managers.ai_prediction_manager", # 모듈 경로 추가
+      "module": "kocrd.managers.ai_managers.ai_prediction_manager", # Added module path
       "dependencies": ["ai_model", "ai_data", "database"],
       "inject_settings": True
     },
     "monitoring": {
       "class": "MonitoringManager",
-      "module": "kocrd.managers.monitoring_manager", # 모듈 경로 추가
+      "module": "kocrd.managers.monitoring_manager", # Added module path
       "dependencies": ["document", "ocr", "ai_prediction"]
     },
     "message_queue": {
       "class": "RabbitMQManager",
-      "module": "kocrd.managers.rabbitmq_manager", # 모듈 경로 추가
+      "module": "kocrd.managers.rabbitmq_manager", # Added module path
       "dependencies": []
     },
     "document": {
       "class": "DocumentManager",
-      "module": "kocrd.managers.document.document_manager", # 모듈 경로 추가
+      "module": "kocrd.managers.document.document_manager", # Added module path
       "dependencies": ["ocr", "database", "message_queue"],
       "inject_main_window": True,
       "inject_system_manager": True
     },
     "ai_trainer": {
       "class": "AITrainer",
-      "module": "kocrd.managers.ai_managers.ai_training_manager", # 모듈 경로 추가
+      "module": "kocrd.managers.ai_managers.ai_training_manager", # Added module path
       "dependencies": ["ai_model", "ai_data", "message_queue", "database", "settings_manager"],
       "kwargs": {},
       "inject_settings": True
     },
     "settings_manager": {
       "class": "SettingsManager",
-      "module": "kocrd.managers.settings_manager", # 모듈 경로 추가
+      "module": "kocrd.managers.settings_manager", # Added module path
       "kwargs": {
         "config_file": "config/development.json"
       }
     },
-    "document_processor":{ # document_processor 추가
+    "document_processor":{ # Added document_processor
         "class": "DocumentProcessor",
         "module": "kocrd.managers.document.document_processor"
     },
-     "analysis_manager":{ # analysis_manager 추가
+     "analysis_manager":{ # Added analysis_manager
         "class": "AnalysisManager",
         "module": "kocrd.managers.analysis_manager"
     }
@@ -97,26 +97,26 @@ from sympy import true
   "uis": {
     "menubar": {
       "class": "MenubarUI",
-      "module": "kocrd.ui.menubar_ui", # 모듈 경로 추가
+      "module": "kocrd.ui.menubar_ui", # Added module path
       "dependencies": [],
       "inject_system_manager": True
     },
     "document": {
       "class": "DocumentUI",
-      "module": "kocrd.ui.document_ui", # 모듈 경로 추가
+      "module": "kocrd.ui.document_ui", # Added module path
       "dependencies": [],
       "inject_system_manager": True
     },
     "monitoring": {
       "class": "MonitoringUI",
-      "module": "kocrd.ui.monitoring_ui", # 모듈 경로 추가
+      "module": "kocrd.ui.monitoring_ui", # Added module path
       "dependencies": [],
       "inject_system_manager": True
     }
   },
       "settings":{
         "document_types_path" : "path/to/document_types.json",
-        "ai_model_path": "path/to/your/ai_model" # AI 모델 경로 추가
+        "ai_model_path": "path/to/your/ai_model" # Added AI model path
       },
   "queues": {
     "prediction_requests": "prediction_requests",

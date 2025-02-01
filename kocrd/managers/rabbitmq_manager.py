@@ -2,8 +2,8 @@
 import logging
 import json
 import pika
-import pika.channel  # 추가된 임포트
-import pika.spec     # 추가된 임포트
+import pika.channel  # Added import
+import pika.spec     # Added import
 from typing import Callable, Optional, Dict, Any
 
 class RabbitMQManager:
@@ -13,10 +13,10 @@ class RabbitMQManager:
         self.channel: Optional[pika.channel.Channel] = None
         self._connect_to_rabbitmq()
         self._declare_queues()
-        logging.info("RabbitMQManager 초기화 완료.")
+        logging.info("RabbitMQManager initialization complete.")
 
     def _connect_to_rabbitmq(self) -> None:
-        """RabbitMQ 서버에 연결하고 채널을 생성합니다."""
+        """Connects to the RabbitMQ server and creates a channel."""
         try:
             credentials = pika.PlainCredentials(
                 self.settings_manager.get("rabbitmq_user"),
@@ -29,59 +29,59 @@ class RabbitMQManager:
             )
             self.connection = pika.BlockingConnection(parameters)
             self.channel = self.connection.channel()
-            logging.info("RabbitMQ 연결 성공")
+            logging.info("RabbitMQ connection successful")
         except pika.exceptions.AMQPConnectionError as e:
-            logging.error(f"RabbitMQ 연결 실패: {e}")
+            logging.error(f"RabbitMQ connection failed: {e}")
             self.connection = None
             self.channel = None
             raise
         except Exception as e:
-            logging.error(f"기타 오류 발생: {e}")
+            logging.error(f"Other error occurred: {e}")
             self.connection = None
             self.channel = None
             raise
 
     def _declare_queues(self) -> None:
-        """필요한 큐들을 선언합니다."""
+        """Declares the necessary queues."""
         if not self.channel or not self.channel.is_open:
-            logging.error("채널이 연결되지 않아 큐를 선언할 수 없습니다.")
+            logging.error("Channel is not connected, unable to declare queues.")
             return
 
         try:
             queues = self.settings_manager.get("queues")
             for queue_name in queues.values():
                 self.channel.queue_declare(queue=queue_name, durable=True)
-            logging.info("모든 큐 선언 완료.")
+            logging.info("All queues declared successfully.")
         except pika.exceptions.AMQPChannelError as e:
-            logging.error(f"큐 선언 실패: {e}")
+            logging.error(f"Queue declaration failed: {e}")
             raise
 
     def process_message(self, ch: pika.channel.Channel, method: pika.spec.Basic.Deliver,
                         properties: pika.BasicProperties, body: bytes,
                         message_type: str, callback: Callable[[Dict[str, Any]], None]) -> None:
-        """메시지를 처리하고 ACK/REJECT 합니다."""
+        """Processes the message and performs ACK/REJECT."""
         if not ch or not ch.is_open:
-            logging.error("RabbitMQ 채널이 None이거나 닫혀 있습니다. 메시지를 처리할 수 없습니다.")
+            logging.error("RabbitMQ channel is None or closed. Unable to process the message.")
             return
 
         try:
             message: Dict[str, Any] = json.loads(body.decode())
             callback(message)
             ch.basic_ack(delivery_tag=method.delivery_tag)
-            logging.info(f"메시지 처리 성공 ({message_type}): {message}")
+            logging.info(f"Message processed successfully ({message_type}): {message}")
         except json.JSONDecodeError as e:
-            logging.error(f"메시지 파싱 오류 ({message_type}): {e}. 메시지: {body.decode()}")
+            logging.error(f"Message parsing error ({message_type}): {e}. Message: {body.decode()}")
             ch.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
         except Exception as e:
-            logging.error(f"메시지 처리 중 오류 ({message_type}): {e}. 메시지: {body.decode()}")
+            logging.error(f"Error processing message ({message_type}): {e}. Message: {body.decode()}")
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
 
     def _handle_message(self, queue_name: str, callback: Callable[[Dict[str, Any]], None], *args):
-        """메시지 처리 로직을 추상화한 내부 함수"""
+        """Internal function to manage message processing."""
         if not self.channel or not self.channel.is_open:
             self._connect_to_rabbitmq()
             if not self.channel:
-                logging.error("RabbitMQ 연결 실패로 메시지를 처리할 수 없습니다.")
+                logging.error("RabbitMQ connection failed, unable to process the message.")
                 return
 
         def on_message_callback(ch, method, properties, body):
@@ -90,10 +90,10 @@ class RabbitMQManager:
         self.channel.basic_consume(queue=queue_name, on_message_callback=on_message_callback, auto_ack=False)
 
     def handle_document_message(self, *args):
-        """문서 처리 메시지를 처리합니다."""
+        """Processes document-related messages."""
         queues = self.settings_manager.get("queues")
         def process(message: Dict[str, Any]) -> None:
-            """문서 처리 로직"""
+            """Document processing logic."""
             file_paths = message.get("file_paths")
             if file_paths:
                 try:
@@ -101,31 +101,31 @@ class RabbitMQManager:
                     response_message = {"document_infos": document_infos}
                     self.send_message("document_processed", response_message, queues["result"])
                 except Exception as e:
-                    logging.error(f"문서 처리 중 오류: {e}")
+                    logging.error(f"Error processing document: {e}")
             else:
-                logging.warning("메시지에 파일 경로가 제공되지 않았습니다.")
+                logging.warning("Message did not provide file paths.")
 
         self._handle_message(queues["document_processing"], process, *args)
 
     def handle_database_packaging_message(self, *args):
-        """데이터베이스 패키징 메시지를 처리합니다."""
+        """Processes database packaging messages."""
         queues = self.settings_manager.get("queues")
         def process(message: Dict[str, Any]) -> None:
-            """데이터베이스 패키징 로직"""
+            """Database packaging logic."""
             try:
                 args[-1].package_database()
                 self.send_message("database_packaged", {}, queues["result"])
             except Exception as e:
-                logging.error(f"데이터베이스 패키징 중 오류: {e}")
+                logging.error(f"Error during database packaging: {e}")
 
         self._handle_message(queues["database_packaging"], process, *args)
 
     def send_message(self, message_type: str, message_data: Dict[str, Any], routing_key: str) -> None:
-        """메시지를 전송합니다."""
+        """Sends a message."""
         if not self.channel or self.channel.is_closed:
             self._connect_to_rabbitmq()
             if not self.channel:
-                logging.error("RabbitMQ 연결 실패로 메시지를 전송할 수 없습니다.")
+                logging.error("RabbitMQ connection failed, unable to send the message.")
                 return
 
         message: Dict[str, Any] = {
@@ -135,25 +135,25 @@ class RabbitMQManager:
         try:
             self.channel.confirm_delivery()
             self.channel.basic_publish(exchange='', routing_key=routing_key, body=json.dumps(message).encode())
-            logging.info(f"{routing_key}로 메시지 전송: {message}")
+            logging.info(f"Message sent to {routing_key}: {message}")
         except (pika.exceptions.AMQPConnectionError, pika.exceptions.AMQPChannelError) as e:
-            logging.error(f"RabbitMQ 연결/채널 오류: {e}")
+            logging.error(f"RabbitMQ connection/channel error: {e}")
             self._connect_to_rabbitmq()
         except Exception as e:
-            logging.error(f"메시지 전송 중 오류: {e}")
+            logging.error(f"Error sending message: {e}")
 
     def start_consuming(self, queue_name: str, callback: Callable[[Dict[str, Any]], None]) -> None:
-        """RabbitMQ 메시지 소비 시작"""
+        """Starts consuming RabbitMQ messages."""
         if not self.channel or not self.channel.is_open:
             self._connect_to_rabbitmq()
             if not self.channel:
-                logging.error("RabbitMQ 연결 실패로 메시지 소비를 시작할 수 없습니다.")
+                logging.error("RabbitMQ connection failed, unable to start consuming.")
                 return
 
         self._handle_message(queue_name, callback)
 
     def close_connection(self) -> None:
-        """RabbitMQ 연결을 종료합니다."""
+        """Closes the RabbitMQ connection."""
         if self.connection and self.connection.is_open:
             self.connection.close()
-            logging.info("RabbitMQ 연결 종료.")
+            logging.info("RabbitMQ connection closed.")

@@ -13,6 +13,7 @@ class OCRUI:
         button_layout.addWidget(scan_button)
 
         return button_layout
+
     def setup_widget(self):
         """모니터링 창 생성."""
         monitoring_window = QWidget()
