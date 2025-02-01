@@ -1,8 +1,7 @@
-# aI_data_manager.py
+# ai_data_manager.py
 import logging
 from datetime import datetime
 from PyQt5.QtWidgets import QInputDialog # UI 관련 import 는 이 파일에서 제거
-from managers.ai_managers.AI_model_manager import AIModelManager
 
 class AIDataManager:
     def __init__(self, database_manager, model_manager):

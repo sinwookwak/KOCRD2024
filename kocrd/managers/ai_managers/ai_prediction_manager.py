@@ -9,7 +9,6 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from utils.embedding_utils import generate_document_type_embeddings
 import pika.exceptions
-from managers.ai_managers.AI_model_manager import AIModelManager
 
 class AIPredictionManager:
     def __init__(self, model_manager, settings_manager, database_manager, system_manager, rabbitmq_manager, ai_data_manager):

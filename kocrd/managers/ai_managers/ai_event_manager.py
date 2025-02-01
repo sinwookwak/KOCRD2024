@@ -4,7 +4,7 @@ import json
 import pika
 from datetime import datetime
 from typing import Dict, Any, Callable
-from managers.ai_managers.AI_model_manager import AIModelManager
+from ai_model_manager import AIModelManager
 
 class AIEventManager:
     """이벤트 처리, 데이터 저장, 메시지 전송 담당."""

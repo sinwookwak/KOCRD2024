@@ -4,10 +4,9 @@ import logging
 import json
 import pika
 import time
-import sys
 from typing import Callable, Dict, Any
 import pika.exceptions
-from managers.ai_managers.AI_model_manager import AIModelManager
+from ai_model_manager import AIModelManager
 
 class OCRResultHandler:
     """OCR 결과 메시지 처리 담당."""
