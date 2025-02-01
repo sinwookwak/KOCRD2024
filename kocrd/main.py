@@ -68,7 +68,8 @@ def main():
     MANAGERS_KEY = constants["MANAGERS_KEY"]
     AI_MODEL_KEY = constants["AI_MODEL_KEY"]
     KWARGS_KEY = constants["KWARGS_KEY"]
-
+    WORKER_PROCESS_KEY = constants["WORKER_PROCESS_KEY"]
+    
     logging.info("Constants loaded successfully.")
 
     # Worker 프로세스 시작
