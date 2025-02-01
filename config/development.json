@@ -145,6 +145,7 @@
     "ocr_results": "ocr_results",
     "ocr_requests": "ocr_requests",
     "ai_result_handling": "ai_result_handling",
-    "feedback_queue": "feedback_queue"
+    "feedback_queue": "feedback_queue",
+    "user_feedback_requests": "user_feedback_requests"
   }
 }

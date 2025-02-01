@@ -1,4 +1,4 @@
-# AI_data_manager.py
+# aI_data_manager.py
 import logging
 from datetime import datetime
 from PyQt5.QtWidgets import QInputDialog # UI 관련 import 는 이 파일에서 제거

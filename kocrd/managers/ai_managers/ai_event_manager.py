@@ -21,7 +21,8 @@ class AIEventManager:
             "OCR_COMPLETED": self.handle_ocr_event,
             "PREDICT_DOCUMENT_TYPE_RESULT": self.handle_prediction_result,
             "TRAINING_COMPLETED": self.handle_training_event,
-            "SAVE_FEEDBACK": self.handle_save_feedback
+            "SAVE_FEEDBACK": self.handle_save_feedback,
+            "REQUEST_USER_FEEDBACK": self.handle_request_user_feedback
         }
 
     def handle_ocr_event(self, file_path, extracted_text):
@@ -57,6 +58,15 @@ class AIEventManager:
     def handle_save_feedback(self, file_path, doc_type):
         """사용자 피드백 저장."""
         self.ai_data_manager.save_feedback({"file_path": file_path, "doc_type": doc_type, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+
+    def handle_request_user_feedback(self, file_path):
+        """사용자 피드백 요청 이벤트 처리."""
+        logging.info("Handling user feedback request event.")
+        doc_type = self.ai_data_manager.request_user_feedback(file_path)
+        if doc_type:
+            self.save_event_data("USER_FEEDBACK_RECEIVED", {"file_path": file_path, "doc_type": doc_type})
+        else:
+            logging.warning(f"User feedback for file {file_path} was not received.")
 
     def save_event_data(self, event_type, additional_data=None):
         """이벤트 데이터를 데이터베이스에 저장."""
@@ -105,6 +115,15 @@ class AIEventManager:
                 model_path = message.get("model_path")
                 training_metrics = message.get("training_metrics")
                 handler(model_path, training_metrics)
+
+            elif message_type == "REQUEST_USER_FEEDBACK":
+                file_path = message.get("file_path")
+                if not file_path:
+                    logging.warning(f"{message_type} 메시지에 필요한 필드(file_path)가 없습니다: {message}")
+                    self.request_feedback(message, f"{message_type} 메시지 필드 오류")
+                    return
+                handler(file_path)
+
             else:
                 logging.warning(f"처리되지 않은 메시지 타입: {message_type}, 메시지: {message}")
                 self.request_feedback(message, "처리되지 않은 메시지 타입")
