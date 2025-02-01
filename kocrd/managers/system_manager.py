@@ -3,9 +3,6 @@ import logging
 import json
 import sys
 import os
-import time
-import threading
-import uuid
 import pika
 import pytesseract
 from typing import Dict, Any, Optional
@@ -21,6 +18,7 @@ from Settings.settings_manager import SettingsManager
 from managers.analysis_manager import AnalysisManager
 
 from kocrd.config import development
+from utils.embedding_utils import generate_document_type_embeddings
 
 class SystemManager:
     def __init__(self, settings_manager: SettingsManager, main_window=None, tesseract_cmd=None, tessdata_dir=None):
@@ -61,10 +59,7 @@ class SystemManager:
 
     def _init_components(self, settings: Dict[str, Any]) -> None:
         """설정 파일을 기반으로 매니저 및 UI 초기화"""
-        with open('development.json', 'r') as f:
-            config = json.load(f)
-
-        for component_type, component_dict in config.items():
+        for component_type, component_dict in settings.items():
             for component_name, component_settings in component_dict.items():
                 try:
                     class_ = self.get_class(component_settings["module"], component_settings["class"])
@@ -124,6 +119,11 @@ class SystemManager:
     def get_ai_model_manager(self):
         """AIModelManager 인스턴스 반환."""
         return self.managers.get("ai_model")
+
+    def get_class(self, module_name: str, class_name: str):
+        """모듈에서 클래스를 동적으로 가져옵니다."""
+        module = __import__(module_name, fromlist=[class_name])
+        return getattr(module, class_name)
 
 # main_window 모듈을 나중에 임포트
 from kocrd.window.main_window import MainWindow

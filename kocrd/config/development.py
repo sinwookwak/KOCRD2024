@@ -13,7 +13,7 @@ from sympy import true
   "managers": {
     "database": {
       "class": "DatabaseManager",
-      "module": "kocrd.managers.database_manager", # 모듈 경로 추가됨
+      "module": "kocrd.managers.database_manager",
       "kwargs": {
         "db_path": "DATABASE_PATH",
         "backup_path": "DATABASE_BACKUP_PATH"
@@ -21,111 +21,111 @@ from sympy import true
     },
     "temp_file": {
       "class": "TempFileManager",
-      "module": "kocrd.managers.temp_file_manager", # Added module path
+      "module": "kocrd.managers.temp_file_manager",
       "dependencies": [],
-      "inject_settings": True
+      "inject_settings": true
     },
     "ocr": {
       "class": "OCRManager",
-      "module": "kocrd.managers.ocr.ocr_manager", # Added module path
+      "module": "kocrd.managers.ocr.ocr_manager",
       "dependencies": [],
       "kwargs": {
         "tesseract_cmd": "TESSERACT_CMD",
         "tessdata_dir": "TESSDATA_DIR"
       },
-      "inject_settings": True,
-      "inject_main_window": True
+      "inject_settings": true,
+      "inject_main_window": true
     },
     "menubar": {
       "class": "MenubarManager",
-      "module": "kocrd.managers.menubar_manager", # Added module path
+      "module": "kocrd.managers.menubar_manager",
       "dependencies": [],
-      "inject_system_manager": True
+      "inject_system_manager": true
     },
     "ai_model": {
       "class": "AIModelManager",
-      "module": "kocrd.managers.ai_managers.ai_model_manager", # Added module path
+      "module": "kocrd.managers.ai_managers.ai_model_manager",
       "kwargs": {
         "model_path": "MODELS_PATH",
         "model_type": "gpt2",
-        "inject_settings": True
+        "inject_settings": true
       }
     },
     "ai_data": {
       "class": "AIDataManager",
-      "module": "kocrd.managers.ai_managers.ai_data_manager", # Added module path
+      "module": "kocrd.managers.ai_managers.ai_data_manager",
       "dependencies": ["database"]
     },
     "ai_prediction": {
       "class": "AIPredictionManager",
-      "module": "kocrd.managers.ai_managers.ai_prediction_manager", # Added module path
+      "module": "kocrd.managers.ai_managers.ai_prediction_manager",
       "dependencies": ["ai_model", "ai_data", "database"],
-      "inject_settings": True
+      "inject_settings": true
     },
     "monitoring": {
       "class": "MonitoringManager",
-      "module": "kocrd.managers.monitoring_manager", # Added module path
+      "module": "kocrd.managers.monitoring_manager",
       "dependencies": ["document", "ocr", "ai_prediction"]
     },
     "message_queue": {
       "class": "RabbitMQManager",
-      "module": "kocrd.managers.rabbitmq_manager", # Added module path
+      "module": "kocrd.managers.rabbitmq_manager",
       "dependencies": []
     },
     "document": {
       "class": "DocumentManager",
-      "module": "kocrd.managers.document.document_manager", # Added module path
+      "module": "kocrd.managers.document.document_manager",
       "dependencies": ["ocr", "database", "message_queue"],
-      "inject_main_window": True,
-      "inject_system_manager": True
+      "inject_main_window": true,
+      "inject_system_manager": true
     },
     "ai_trainer": {
       "class": "AITrainer",
-      "module": "kocrd.managers.ai_managers.ai_training_manager", # Added module path
+      "module": "kocrd.managers.ai_managers.ai_training_manager",
       "dependencies": ["ai_model", "ai_data", "message_queue", "database", "settings_manager"],
       "kwargs": {},
-      "inject_settings": True
+      "inject_settings": true
     },
     "settings_manager": {
       "class": "SettingsManager",
-      "module": "kocrd.managers.settings_manager", # Added module path
+      "module": "kocrd.managers.settings_manager",
       "kwargs": {
         "config_file": "config/development.json"
       }
     },
-    "document_processor":{ # Added document_processor
-        "class": "DocumentProcessor",
-        "module": "kocrd.managers.document.document_processor"
+    "document_processor": {
+      "class": "DocumentProcessor",
+      "module": "kocrd.managers.document.document_processor"
     },
-     "analysis_manager":{ # Added analysis_manager
-        "class": "AnalysisManager",
-        "module": "kocrd.managers.analysis_manager"
+    "analysis_manager": {
+      "class": "AnalysisManager",
+      "module": "kocrd.managers.analysis_manager"
     }
   },
   "uis": {
     "menubar": {
       "class": "MenubarUI",
-      "module": "kocrd.ui.menubar_ui", # Added module path
+      "module": "kocrd.ui.menubar_ui",
       "dependencies": [],
-      "inject_system_manager": True
+      "inject_system_manager": true
     },
     "document": {
       "class": "DocumentUI",
-      "module": "kocrd.ui.document_ui", # Added module path
+      "module": "kocrd.ui.document_ui",
       "dependencies": [],
-      "inject_system_manager": True
+      "inject_system_manager": true
     },
     "monitoring": {
       "class": "MonitoringUI",
-      "module": "kocrd.ui.monitoring_ui", # Added module path
+      "module": "kocrd.ui.monitoring_ui",
       "dependencies": [],
-      "inject_system_manager": True
+      "inject_system_manager": true
     }
   },
-      "settings":{
-        "document_types_path" : "path/to/document_types.json",
-        "ai_model_path": "path/to/your/ai_model" # Added AI model path
-      },
+  "settings": {
+    "document_types_path": "path/to/document_types.json",
+    "ai_model_path": "path/to/your/ai_model"
+  },
   "queues": {
     "prediction_requests": "prediction_requests",
     "prediction_results": "prediction_results",
@@ -140,7 +140,7 @@ from sympy import true
     "events_queue": "events_queue",
     "ocr_results": "ocr_results",
     "ocr_requests": "ocr_requests",
-    "ai_result_handling" : "ai_result_handling",
+    "ai_result_handling": "ai_result_handling",
     "feedback_queue": "feedback_queue"
   }
 }
