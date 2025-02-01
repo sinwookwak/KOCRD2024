@@ -121,7 +121,11 @@
     "VALID_FILE_EXTENSIONS": [".txt", ".pdf", ".png", ".jpg"],
     "MAX_FILE_SIZE": 10485760,
     "document_types_path": "path/to/document_types.json",
-    "ai_model_path": "path/to/your/ai_model"
+    "ai_model_path": "path/to/your/ai_model",
+    "constants": {
+      "SOME_CONSTANT": "value",
+      "ANOTHER_CONSTANT": "value"
+    }
   },
   "queues": {
     "prediction_requests": "prediction_requests",
