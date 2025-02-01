@@ -5,7 +5,8 @@
     "TESSDATA_DIR_KEY": "tessdata_dir",
     "MANAGERS_KEY": "managers",
     "AI_MODEL_KEY": "ai_model",
-    "KWARGS_KEY": "kwargs"
+    "KWARGS_KEY": "kwargs",
+    "WORKER_PROCESS_KEY": "worker_process"
   },
   "managers": {
     "database": {
@@ -120,8 +121,14 @@
     }
   },
   "settings": {
+    "DEFAULT_REPORT_FILENAME": "report.txt",
+    "DEFAULT_EXCEL_FILENAME": "report.xlsx",
+    "VALID_FILE_EXTENSIONS": [".txt", ".pdf", ".png", ".jpg"],
+    "MAX_FILE_SIZE": 10485760,
     "document_types_path": "path/to/document_types.json",
-    "ai_model_path": "path/to/your/ai_model"
+    "ai_model_path": "path/to/your/ai_model",
+    "TEMP_FILE_RETENTION_TIME": 3600,
+    "temp_dir": "C:/Users/rhkrt/AppData/Local/Temp"
   },
   "queues": {
     "prediction_requests": "prediction_requests",
