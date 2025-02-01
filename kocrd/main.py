@@ -19,8 +19,12 @@ def run_worker():
 
 def initialize_settings(settings_path):
     config_path = os.path.join(os.path.dirname(__file__), settings_path)
-    with open(config_path, 'r', encoding='utf-8') as f:
-        config = json.load(f)
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+    except UnicodeDecodeError as e:
+        logging.critical(f"설정 파일을 읽는 중 오류 발생: {e}")
+        sys.exit(1)
     settings_manager = SettingsManager(config_path)
     return settings_manager, config
 
@@ -37,60 +41,34 @@ def main():
     global development
     development = config  # JSON 객체로 로드된 설정을 전역 변수로 설정
 
+    # 상수 가져오기
+    if "constants" not in config:
+        logging.critical("Critical error: 'constants' not found in settings")
+        sys.exit(1)
+        
+    constants = config["constants"]
+    MODEL_PATH_KEY = constants["MODEL_PATH_KEY"]
+    TESSERACT_CMD_KEY = constants["TESSERACT_CMD_KEY"]
+    TESSDATA_DIR_KEY = constants["TESSDATA_DIR_KEY"]
+    MANAGERS_KEY = constants["MANAGERS_KEY"]
+    AI_MODEL_KEY = constants["AI_MODEL_KEY"]
+    KWARGS_KEY = constants["KWARGS_KEY"]
+
     # Worker 프로세스 시작
     worker_process = multiprocessing.Process(target=run_worker)
     worker_process.start()
     logging.info("Worker process started.")
 
     try:
-        # Magic String 제거를 위한 상수 정의
-        MODEL_PATH_KEY = "model_path"
-        TESSERACT_CMD_KEY = "tessera_cmd"
-        TESSDATA_DIR_KEY = "tessdata_dir"
-        MANAGERS_KEY = "managers"
-        AI_MODEL_KEY = "ai_model"
-        KWARGS_KEY = "kwargs"
-
         # 설정 값 가져오기
-        managers = settings_manager.get_setting(MANAGERS_KEY)
-        if managers is None:
-            logging.critical(f"Critical error: '{MANAGERS_KEY}' not found in settings")
-            sys.exit(1)
-        
-        ai_model = managers.get(AI_MODEL_KEY)
-        if ai_model is None:
-            logging.critical(f"Critical error: '{AI_MODEL_KEY}' not found in managers")
-            sys.exit(1)
-        
-        kwargs = ai_model.get(KWARGS_KEY)
-        if kwargs is None:
-            logging.critical(f"Critical error: '{KWARGS_KEY}' not found in ai_model")
-            sys.exit(1)
-        
-        model_path = kwargs.get(MODEL_PATH_KEY)
-        if model_path is None:
-            logging.critical(f"Critical error: '{MODEL_PATH_KEY}' not found in kwargs")
-            sys.exit(1)
-        
-        ocr = managers.get("ocr")
-        if ocr is None:
-            logging.critical(f"Critical error: 'ocr' not found in managers")
-            sys.exit(1)
-        
-        ocr_kwargs = ocr.get(KWARGS_KEY)
-        if ocr_kwargs is None:
-            logging.critical(f"Critical error: '{KWARGS_KEY}' not found in ocr")
-            sys.exit(1)
-        
-        tesseract_cmd = ocr_kwargs.get(TESSERACT_CMD_KEY)
-        if tesseract_cmd is None:
-            logging.critical(f"Critical error: '{TESSERACT_CMD_KEY}' not found in ocr_kwargs")
-            sys.exit(1)
-        
-        tessdata_dir = ocr_kwargs.get(TESSDATA_DIR_KEY)
-        if tessdata_dir is None:
-            logging.critical(f"Critical error: '{TESSDATA_DIR_KEY}' not found in ocr_kwargs")
-            sys.exit(1)
+        managers = get_required_setting(config, MANAGERS_KEY, f"Critical error: '{MANAGERS_KEY}' not found in settings")
+        ai_model = get_required_setting(managers, AI_MODEL_KEY, f"Critical error: '{AI_MODEL_KEY}' not found in managers")
+        kwargs = get_required_setting(ai_model, KWARGS_KEY, f"Critical error: '{KWARGS_KEY}' not found in ai_model")
+        model_path = get_required_setting(kwargs, MODEL_PATH_KEY, f"Critical error: '{MODEL_PATH_KEY}' not found in kwargs")
+        ocr = get_required_setting(managers, "ocr", "Critical error: 'ocr' not found in managers")
+        ocr_kwargs = get_required_setting(ocr, KWARGS_KEY, f"Critical error: '{KWARGS_KEY}' not found in ocr")
+        tesseract_cmd = get_required_setting(ocr_kwargs, TESSERACT_CMD_KEY, f"Critical error: '{TESSERACT_CMD_KEY}' not found in ocr_kwargs")
+        tessdata_dir = get_required_setting(ocr_kwargs, TESSDATA_DIR_KEY, f"Critical error: '{TESSDATA_DIR_KEY}' not found in ocr_kwargs")
 
         system_manager = SystemManager(settings_manager, None, tesseract_cmd, tessdata_dir)
 

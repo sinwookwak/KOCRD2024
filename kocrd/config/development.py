@@ -2,6 +2,14 @@
 # 개발 환경 설정 파일
 from sympy import true
 {
+  "constants": {
+    "MODEL_PATH_KEY": "model_path",
+    "TESSERACT_CMD_KEY": "tesseract_cmd",
+    "TESSDATA_DIR_KEY": "tessdata_dir",
+    "MANAGERS_KEY": "managers",
+    "AI_MODEL_KEY": "ai_model",
+    "KWARGS_KEY": "kwargs"
+  },
   "managers": {
     "database": {
       "class": "DatabaseManager",
