@@ -24,8 +24,17 @@ def initialize_settings(settings_path="config/development.json"):
             config = json.load(f)
         if "constants" not in config:
             raise KeyError("Missing 'constants' in configuration file.")
+    except FileNotFoundError:
+        logging.critical(f"Configuration file not found: {config_path}")
+        raise
+    except json.JSONDecodeError as e:
+        logging.critical(f"Error decoding JSON from configuration file: {e}")
+        raise
+    except KeyError as e:
+        logging.critical(f"Configuration error: {e}")
+        raise
     except Exception as e:
-        logging.critical(f"Failed to load configuration file: {e}")
+        logging.critical(f"Unexpected error loading configuration file: {e}")
         raise
 
     settings_manager = SettingsManager(config_path)
@@ -61,8 +70,6 @@ def main():
         return
 
     try:
-        worker_process = start_worker_process()
-
         managers = get_required_setting(config, constants.get("MANAGERS_KEY", ""), f"Critical error: '{constants.get('MANAGERS_KEY', '')}' not found in settings")
         ai_model = get_required_setting(managers, constants.get("AI_MODEL_KEY", ""), f"Critical error: '{constants.get('AI_MODEL_KEY', '')}' not found in managers")
         kwargs = get_required_setting(ai_model, constants.get("KWARGS_KEY", ""), f"Critical error: '{constants.get('KWARGS_KEY', '')}' not found in ai_model")
@@ -83,6 +90,8 @@ def main():
         except Exception as e:
             logging.exception(f"모델 적용 중 오류 발생: {e}")
             return
+
+        worker_process = start_worker_process()
     except Exception as e:
         logging.exception(f"Unexpected error: {e}")
         return
@@ -91,5 +100,7 @@ if __name__ == "__main__":
     try:
         settings_manager, config = initialize_settings()
         main()
+    except KeyError as e:
+        logging.critical(f"Configuration error: {e}")
     except Exception as e:
         logging.critical(f"Failed to initialize application: {e}")
