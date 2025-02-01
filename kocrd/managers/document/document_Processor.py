@@ -10,10 +10,14 @@ import mimetypes
 from sqlalchemy.exc import SQLAlchemyError
 from kocrd.config import development
 
-DEFAULT_REPORT_FILENAME = development["settings"].get("DEFAULT_REPORT_FILENAME", "report.txt")
-DEFAULT_EXCEL_FILENAME = development["settings"].get("DEFAULT_EXCEL_FILENAME", "report.xlsx")
-VALID_FILE_EXTENSIONS = development["settings"].get("VALID_FILE_EXTENSIONS", [".txt", ".pdf", ".png", ".jpg"])
-MAX_FILE_SIZE = development["settings"].get("MAX_FILE_SIZE", 10485760)
+# 설정 값을 가져오는 함수 추가
+def get_setting(key, default=None):
+    return getattr(development, key, default)
+
+DEFAULT_REPORT_FILENAME = get_setting("DEFAULT_REPORT_FILENAME", "report.txt")
+DEFAULT_EXCEL_FILENAME = get_setting("DEFAULT_EXCEL_FILENAME", "report.xlsx")
+VALID_FILE_EXTENSIONS = get_setting("VALID_FILE_EXTENSIONS", [".txt", ".pdf", ".png", ".jpg"])
+MAX_FILE_SIZE = get_setting("MAX_FILE_SIZE", 10485760)
 
 class DocumentProcessor:
     """

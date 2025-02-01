@@ -52,14 +52,45 @@ def main():
         KWARGS_KEY = "kwargs"
 
         # 설정 값 가져오기
-        managers = get_required_setting(settings_manager.get_setting(MANAGERS_KEY), MANAGERS_KEY, f"Critical error: '{MANAGERS_KEY}' not found in settings")
-        ai_model = get_required_setting(managers.get(AI_MODEL_KEY), AI_MODEL_KEY, f"Critical error: '{AI_MODEL_KEY}' not found in managers")
-        kwargs = get_required_setting(ai_model.get(KWARGS_KEY), KWARGS_KEY, f"Critical error: '{KWARGS_KEY}' not found in ai_model")
-        model_path = get_required_setting(kwargs.get(MODEL_PATH_KEY), MODEL_PATH_KEY, f"Critical error: '{MODEL_PATH_KEY}' not found in kwargs")
-        ocr = get_required_setting(managers.get("ocr"), "ocr", f"Critical error: 'ocr' not found in managers")
-        ocr_kwargs = get_required_setting(ocr.get(KWARGS_KEY), KWARGS_KEY, f"Critical error: '{KWARGS_KEY}' not found in ocr")
-        tesseract_cmd = get_required_setting(ocr_kwargs.get(TESSERACT_CMD_KEY), TESSERACT_CMD_KEY, f"Critical error: '{TESSERACT_CMD_KEY}' not found in ocr_kwargs")
-        tessdata_dir = get_required_setting(ocr_kwargs.get(TESSDATA_DIR_KEY), TESSDATA_DIR_KEY, f"Critical error: '{TESSDATA_DIR_KEY}' not found in ocr_kwargs")
+        managers = settings_manager.get_setting(MANAGERS_KEY)
+        if managers is None:
+            logging.critical(f"Critical error: '{MANAGERS_KEY}' not found in settings")
+            sys.exit(1)
+        
+        ai_model = managers.get(AI_MODEL_KEY)
+        if ai_model is None:
+            logging.critical(f"Critical error: '{AI_MODEL_KEY}' not found in managers")
+            sys.exit(1)
+        
+        kwargs = ai_model.get(KWARGS_KEY)
+        if kwargs is None:
+            logging.critical(f"Critical error: '{KWARGS_KEY}' not found in ai_model")
+            sys.exit(1)
+        
+        model_path = kwargs.get(MODEL_PATH_KEY)
+        if model_path is None:
+            logging.critical(f"Critical error: '{MODEL_PATH_KEY}' not found in kwargs")
+            sys.exit(1)
+        
+        ocr = managers.get("ocr")
+        if ocr is None:
+            logging.critical(f"Critical error: 'ocr' not found in managers")
+            sys.exit(1)
+        
+        ocr_kwargs = ocr.get(KWARGS_KEY)
+        if ocr_kwargs is None:
+            logging.critical(f"Critical error: '{KWARGS_KEY}' not found in ocr")
+            sys.exit(1)
+        
+        tesseract_cmd = ocr_kwargs.get(TESSERACT_CMD_KEY)
+        if tesseract_cmd is None:
+            logging.critical(f"Critical error: '{TESSERACT_CMD_KEY}' not found in ocr_kwargs")
+            sys.exit(1)
+        
+        tessdata_dir = ocr_kwargs.get(TESSDATA_DIR_KEY)
+        if tessdata_dir is None:
+            logging.critical(f"Critical error: '{TESSDATA_DIR_KEY}' not found in ocr_kwargs")
+            sys.exit(1)
 
         system_manager = SystemManager(settings_manager, None, tesseract_cmd, tessdata_dir)
 
