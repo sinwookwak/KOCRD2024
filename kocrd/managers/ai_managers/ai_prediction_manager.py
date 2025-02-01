@@ -23,13 +23,19 @@ class AIPredictionManager:
         self.document_types_path = self.settings_manager.get("document_types_path")
         self.queues = self.settings_manager.get("queues")
         self.ai_data_manager = ai_data_manager  # AIDataManager 인스턴스 주입
+        self.ai_model_manager = model_manager  # AIModelManager 인스턴스 주입
         self.load_ko_e5_model()
         self.load_document_type_embeddings()
 
     def send_message_to_queue(self, queue_name, message):
         """메시지를 지정된 큐에 전송."""
+        rabbitmq_manager = self.ai_model_manager.get_rabbitmq_manager()
+        if not rabbitmq_manager:
+            logging.error("RabbitMQManager가 설정되지 않았습니다.")
+            self.system_manager.handle_error("RabbitMQManager가 설정되지 않았습니다.", "RabbitMQ 오류")
+            return
         try:
-            self.rabbitmq_manager.send_message(queue_name, json.dumps(message))
+            rabbitmq_manager.send_message(queue_name, json.dumps(message))
         except pika.exceptions.AMQPError as e:
             logging.error(f"RabbitMQ 전송 오류: {e}")
             self.system_manager.handle_error(f"RabbitMQ 전송 오류: {e}", "RabbitMQ 오류")

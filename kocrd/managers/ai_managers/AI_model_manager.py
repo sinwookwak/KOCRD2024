@@ -11,7 +11,6 @@ from Settings.settings_manager import SettingsManager
 from kocrd.managers.database_manager import DatabaseManager
 from kocrd.managers.rabbitmq_manager import RabbitMQManager
 
-
 class AIModelManager:
     _instance = None
 
@@ -28,8 +27,8 @@ class AIModelManager:
             self.model: Optional[tf.keras.Model] = None
             self.tokenizer: Optional[GPT2Tokenizer] = None
             self.gpt_model: Optional[GPT2LMHeadModel] = None
-            self.ai_data_manager = ai_data_manager  # AIDataManager 인스턴스 주입
-            self.ai_event_manager = ai_event_manager  # AIEventManager 인스턴스 주입
+            self.ai_data_manager = ai_data_manager
+            self.ai_event_manager = ai_event_manager
             self.database_manager: Optional[DatabaseManager] = None
             self.rabbitmq_manager: Optional[RabbitMQManager] = None
             self._load_models()

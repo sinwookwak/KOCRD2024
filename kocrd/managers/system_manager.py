@@ -83,6 +83,12 @@ class SystemManager:
             self.get_manager("database").request_database_packaging()
         elif process_type == "ai_training":
             self.get_manager("ai_training").request_ai_training(data)
+        elif process_type == "generate_text":
+            ai_manager = self.get_ai_manager()
+            if ai_manager:
+                return ai_manager.generate_text(data.get("command", ""))
+            else:
+                logging.error("AIManager가 초기화되지 않았습니다.")
         else:
             logging.warning(f"🔴 알 수 없는 프로세스 유형: {process_type}")
             QMessageBox.warning(self.main_window, "오류", "알 수 없는 작업 유형입니다.")

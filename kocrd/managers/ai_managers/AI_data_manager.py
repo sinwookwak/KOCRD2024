@@ -8,7 +8,7 @@ class AIDataManager:
     def __init__(self, database_manager, model_manager):
         """AIDataManager 초기화 메서드."""
         self.database_manager = database_manager
-        self.model_manager = model_manager  # AIModelManager 인스턴스 주입
+        self.model_manager = model_manager
         self.model_manager.set_ai_data_manager(self)  # AIModelManager에 AIDataManager 설정
         self.rabbitmq_manager = AIModelManager.get_instance().rabbitmq_manager  # AIModelManager에서 가져오기
 
