@@ -17,7 +17,8 @@ from managers.rabbitmq_manager import RabbitMQManager
 from Settings.settings_manager import SettingsManager
 
 from kocrd.config import development
-from utils.embedding_utils import generate_document_type_embeddings
+from utils.embedding_utils import generate_document_type_embeddings, run_embedding_generation
+from utils.embedding_utils import EmbeddingUtils
 
 class SystemManager:
     def __init__(self, settings_manager: SettingsManager, main_window=None, tesseract_cmd=None, tessdata_dir=None):
@@ -97,9 +98,6 @@ class SystemManager:
     def get_rabbitmq_manager(self):
         return self.managers.get("rabbitmq")
 
-    def create_analysis_manager(self):
-        return AnalysisManager()
-
     def create_menubar_manager(self):
         return MenubarManager(self.main_window)
 
@@ -168,14 +166,7 @@ class SystemManager:
         QMessageBox.critical(self.main_window, "Error", message)
 
     def run_embedding_generation(self):
-        try:
-            settings_manager = self.managers["settings_manager"]
-            generate_document_type_embeddings(settings_manager)
-            logging.info("임베딩 생성 작업 완료.")
-        except KeyError:
-            logging.error("SettingsManager가 초기화되지 않았습니다. config 파일을 확인해주세요.")
-        except Exception as e:
-            logging.exception(f"임베딩 생성 작업 중 오류 발생: {e}")
+        EmbeddingUtils.run_embedding_generation(self.settings_manager)
 
     def close_rabbitmq_connection(self):
         self.get_rabbitmq_manager().close_connection()
