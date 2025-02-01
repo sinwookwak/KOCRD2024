@@ -15,7 +15,7 @@ class AIEventManager:
         self.rabbitmq_manager = self.system_manager.rabbitmq_manager
         self.model_manager = AIModelManager.get_instance()  # 싱글톤 인스턴스 사용
         self.model_manager.set_ai_event_manager(self)  # AIModelManager에 AIEventManager 설정
-        self.ai_data_manager = ai_data_manager
+        self.ai_data_manager = ai_data_manager  # AIDataManager 인스턴스 주입
         self.ai_prediction_manager = ai_prediction_manager
         self.message_handlers = {
             "OCR_COMPLETED": self.handle_ocr_event,

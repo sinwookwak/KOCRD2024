@@ -8,11 +8,11 @@ from PyQt5.QtWidgets import QMessageBox
 from .AI_data_manager import AIDataManager
 
 class AITrainingManager:
-    def __init__(self, model_manager, settings_manager, system_manager):
+    def __init__(self, model_manager, settings_manager, system_manager, ai_data_manager):
         self.model_manager = model_manager
         self.settings_manager = settings_manager
         self.system_manager = system_manager
-        self.ai_data_manager = self.model_manager.ai_data_manager  # Get AIDataManager instance
+        self.ai_data_manager = ai_data_manager  # AIDataManager 인스턴스 주입
         self.document_embedding_path = self.settings_manager.get_setting("document_embedding_path")
 
     def prepare_training_data(self, data, features, label):
@@ -35,7 +35,7 @@ class AITrainingManager:
     def train_model(self, data, features, label):
         """모델을 훈련합니다."""
         try:
-            if self.model_manager.tensorflow_model is None:
+            if self.model_manager.model is None:
                 raise ValueError("학습할 TensorFlow 모델이 없습니다.")
             logging.info("AI 모델 학습 시작...")
 

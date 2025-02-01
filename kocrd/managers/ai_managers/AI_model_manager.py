@@ -19,7 +19,7 @@ class AIModelManager:
             cls._instance = super(AIModelManager, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, settings_manager: SettingsManager, model_path: Optional[str] = None, gpt_model_path: str = "gpt2"):
+    def __init__(self, settings_manager: SettingsManager, ai_data_manager, ai_event_manager, model_path: Optional[str] = None, gpt_model_path: str = "gpt2"):
         if not hasattr(self, 'initialized'):  # Prevent reinitialization
             self.settings_manager = settings_manager
             self.model_path = model_path or self.settings_manager.get_setting("ai_model_path")
@@ -27,8 +27,8 @@ class AIModelManager:
             self.model: Optional[tf.keras.Model] = None
             self.tokenizer: Optional[GPT2Tokenizer] = None
             self.gpt_model: Optional[GPT2LMHeadModel] = None
-            self.ai_data_manager = None  # AIDataManager 인스턴스
-            self.ai_event_manager = None  # AIEventManager 인스턴스
+            self.ai_data_manager = ai_data_manager  # AIDataManager 인스턴스 주입
+            self.ai_event_manager = ai_event_manager  # AIEventManager 인스턴스 주입
             self.database_manager: Optional[DatabaseManager] = None
             self._load_models()
             self.initialized = True

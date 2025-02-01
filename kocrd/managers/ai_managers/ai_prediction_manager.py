@@ -12,7 +12,7 @@ import pika.exceptions
 from managers.ai_managers.AI_model_manager import AIModelManager
 
 class AIPredictionManager:
-    def __init__(self, model_manager, settings_manager, database_manager, system_manager, rabbitmq_manager):
+    def __init__(self, model_manager, settings_manager, database_manager, system_manager, rabbitmq_manager, ai_data_manager):
         self.database_manager = database_manager
         self.model_manager = model_manager
         self.settings_manager = settings_manager
@@ -24,7 +24,7 @@ class AIPredictionManager:
         self.document_embedding_path = self.settings_manager.get("document_embedding_path")
         self.document_types_path = self.settings_manager.get("document_types_path")
         self.queues = self.settings_manager.get("queues")
-        self.ai_data_manager = self.model_manager.ai_data_manager  # AIDataManager 인스턴스 가져오기
+        self.ai_data_manager = ai_data_manager  # AIDataManager 인스턴스 주입
         self.load_ko_e5_model()
         self.load_document_type_embeddings()
 
@@ -41,7 +41,6 @@ class AIPredictionManager:
             logging.error(f"RabbitMQ 전송 오류: {e}")
             self.system_manager.handle_error(f"RabbitMQ 전송 오류: {e}", "RabbitMQ 오류")
             raise
-
 
     def load_ko_e5_model(self):
         """KoE5 모델 로드."""
@@ -114,7 +113,6 @@ class AIPredictionManager:
                 predicted_type = doc_type
 
         return predicted_type
-
 
     def load_document_type_embeddings(self):
         """문서 유형 임베딩 로드."""

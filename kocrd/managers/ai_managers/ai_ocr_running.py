@@ -11,11 +11,11 @@ from managers.ai_managers.AI_model_manager import AIModelManager
 
 class OCRResultHandler:
     """OCR 결과 메시지 처리 담당."""
-    def __init__(self, system_manager):
+    def __init__(self, system_manager, ai_data_manager):
         self.system_manager = system_manager
         self.settings_manager = self.system_manager.get_manager("settings_manager")
         self.ai_model_manager = AIModelManager.get_instance()  # AIModelManager 인스턴스 가져오기
-        self.ai_data_manager = self.ai_model_manager.ai_data_manager  # AIDataManager 인스턴스 가져오기
+        self.ai_data_manager = ai_data_manager  # AIDataManager 인스턴스 주입
         self.rabbitmq_manager = self.system_manager.rabbitmq_manager
 
     def create_ai_request(self, message_type: str, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -82,12 +82,12 @@ class MessageConsumer:
             self.rabbitmq_manager.close_connection()
 
 class AIOCRRunning:
-    def __init__(self, system_manager):
+    def __init__(self, system_manager, ai_data_manager):
         self.system_manager = system_manager
         self.settings_manager = self.system_manager.get_manager("settings_manager")
         self.ai_model_manager = AIModelManager.get_instance()  # AIModelManager 인스턴스 가져오기
         self.rabbitmq_manager = self.system_manager.rabbitmq_manager
-        self.ocr_result_handler = OCRResultHandler(self.system_manager)
+        self.ocr_result_handler = OCRResultHandler(self.system_manager, ai_data_manager)  # AIDataManager 인스턴스 주입
         self.message_consumer = MessageConsumer(self.rabbitmq_manager)
 
     def main(self):
