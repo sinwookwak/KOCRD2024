@@ -73,30 +73,6 @@ class TempFileManager:
         # 임시파일 관리 로직 추가
         pass
 
-    def handle_message(self, ch, method, properties, body):
-        """RabbitMQ 메시지를 처리합니다."""
-        try:
-            message: Dict[str, Any] = json.loads(body.decode())
-            message_type = message.get("type")
-            handlers = {
-                "create_temp_files": self._handle_create_temp_files,
-                "cleanup_temp_files": self._handle_cleanup_temp_files,
-            }
-            handler = handlers.get(message_type)
-            if handler:
-                handler(ch, method, properties, message)
-                ch.basic_ack(delivery_tag=method.delivery_tag)
-                logging.info(f"Message handled: {message_type}")
-            else:
-                logging.warning(f"알 수 없는 메시지 타입: {message_type}")
-                ch.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
-        except json.JSONDecodeError as e:
-            logging.error(f"메시지 파싱 오류: {e}. 메시지: {body.decode()}")
-            ch.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
-        except Exception as e:
-            logging.error(f"메시지 처리 중 오류: {e}")
-            ch.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
-
     def get_temp_file_path(self, file_name: str) -> str:
         return os.path.join(self.temp_dir, file_name)
 
@@ -111,3 +87,6 @@ class TempFileManager:
         except Exception as e:
             logging.error(f"Error listing files in temporary directory: {e}")
             return []
+
+    def database_packaging(self):
+        self.settings_manager.get_manager("system").database_packaging()

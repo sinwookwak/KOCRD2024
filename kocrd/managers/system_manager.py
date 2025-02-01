@@ -15,7 +15,6 @@ from kocrd.window.menubar.menubar_manager import MenubarManager
 from managers.document.document_manager import DocumentManager
 from managers.rabbitmq_manager import RabbitMQManager
 from Settings.settings_manager import SettingsManager
-from managers.analysis_manager import AnalysisManager
 
 from kocrd.config import development
 from utils.embedding_utils import generate_document_type_embeddings
@@ -72,6 +71,7 @@ class SystemManager:
             self.managers[manager_name] = manager_instance
 
         self.managers["temp_file"] = self.create_temp_file_manager()
+        self.managers["rabbitmq"] = self.create_rabbitmq_manager()
         self.managers["database"] = self.create_database_manager()
         self.managers["analysis"] = self.create_analysis_manager()
         self.managers["menubar"] = self.create_menubar_manager()
@@ -82,8 +82,20 @@ class SystemManager:
     def create_temp_file_manager(self):
         return TempFileManager(self.settings_manager)
 
+    def create_rabbitmq_manager(self):
+        return RabbitMQManager(self.settings_manager)
+
     def create_database_manager(self):
         return DatabaseManager(self.settings_manager.get_setting("db_path"), self.settings_manager.get_setting("backup_path"))
+
+    def get_temp_file_manager(self):
+        return self.managers.get("temp_file")
+
+    def get_database_manager(self):
+        return self.managers.get("database")
+
+    def get_rabbitmq_manager(self):
+        return self.managers.get("rabbitmq")
 
     def create_analysis_manager(self):
         return AnalysisManager()
@@ -124,22 +136,29 @@ class SystemManager:
 
     def trigger_process(self, process_type: str, data: Optional[Dict[str, Any]] = None):
         """AI 모델 실행 프로세스 트리거"""
-        manager = self.get_manager("document")
-        if process_type == "document_processing":
-            manager.request_document_processing(data)
-        elif process_type == "database_packaging":
-            self.get_manager("database").request_database_packaging()
-        elif process_type == "ai_training":
-            self.get_manager("ai_training").request_ai_training(data)
-        elif process_type == "generate_text":
-            ai_manager = self.get_ai_manager()
-            if (ai_manager):
-                return ai_manager.generate_text(data.get("command", ""))
-            else:
-                logging.error("AIManager가 초기화되지 않았습니다.")
+        if process_type == "database_packaging":
+            self.get_temp_file_manager().database_packaging()
         else:
-            logging.warning(f"🔴 알 수 없는 프로세스 유형: {process_type}")
-            QMessageBox.warning(self.main_window, "오류", "알 수 없는 작업 유형입니다.")
+            manager = self.get_manager("document")
+            if process_type == "document_processing":
+                manager.request_document_processing(data)
+            elif process_type == "database_packaging":
+                self.get_database_manager().request_database_packaging()
+            elif process_type == "ai_training":
+                self.get_manager("ai_training").request_ai_training(data)
+            elif process_type == "generate_text":
+                ai_manager = self.get_ai_manager()
+                if (ai_manager):
+                    return ai_manager.generate_text(data.get("command", ""))
+                else:
+                    logging.error("AIManager가 초기화되지 않았습니다.")
+            else:
+                logging.warning(f"🔴 알 수 없는 프로세스 유형: {process_type}")
+                QMessageBox.warning(self.main_window, "오류", "알 수 없는 작업 유형입니다.")
+
+    def handle_message(self, ch, method, properties, body):
+        """RabbitMQ 메시지를 처리합니다."""
+        self.get_rabbitmq_manager().process_message(ch, method, properties, body)
 
     def handle_error(self, message, error_code=None):
         if error_code:
@@ -159,7 +178,7 @@ class SystemManager:
             logging.exception(f"임베딩 생성 작업 중 오류 발생: {e}")
 
     def close_rabbitmq_connection(self):
-        self.rabbitmq_manager.close_connection()
+        self.get_rabbitmq_manager().close_connection()
 
     def get_ai_manager(self):
         return self.managers.get("ai_prediction")
