@@ -8,7 +8,7 @@ import pytesseract
 from typing import Dict, Any, Optional
 from PyQt5.QtWidgets import QMessageBox, QApplication
 
-from managers.ocr.ocr_manager import OCRManager
+from ocr.ocr_manager import OCRManager
 from managers.temp_file_manager import TempFileManager
 from managers.database_manager import DatabaseManager
 from kocrd.window.menubar.menubar_manager import MenubarManager
@@ -26,7 +26,6 @@ class SystemManager:
         self.main_window = main_window  # MainWindow 인스턴스 설정
         self.tesseract_cmd = tesseract_cmd
         self.tessdata_dir = tessdata_dir
-        self.rabbitmq_manager = RabbitMQManager()
         self.managers = {}
         self.uis = {}
         self.settings = self.load_development_settings()
@@ -72,7 +71,31 @@ class SystemManager:
             manager_instance = manager_class(*dependencies, **kwargs)
             self.managers[manager_name] = manager_instance
 
+        self.managers["temp_file"] = self.create_temp_file_manager()
+        self.managers["database"] = self.create_database_manager()
+        self.managers["analysis"] = self.create_analysis_manager()
+        self.managers["menubar"] = self.create_menubar_manager()
+        self.managers["document"] = self.create_document_manager()
+        self.managers["ocr"] = self.create_ocr_manager()
         self._configure_tesseract()
+
+    def create_temp_file_manager(self):
+        return TempFileManager(self.settings_manager)
+
+    def create_database_manager(self):
+        return DatabaseManager(self.settings_manager.get_setting("db_path"), self.settings_manager.get_setting("backup_path"))
+
+    def create_analysis_manager(self):
+        return AnalysisManager()
+
+    def create_menubar_manager(self):
+        return MenubarManager(self.main_window)
+
+    def create_document_manager(self):
+        return DocumentManager(self.settings_manager)
+
+    def create_ocr_manager(self):
+        return OCRManager(self.settings_manager)
 
     def _configure_tesseract(self):
         pytesseract.pytesseract.tesseract_cmd = self.tesseract_cmd
@@ -110,7 +133,7 @@ class SystemManager:
             self.get_manager("ai_training").request_ai_training(data)
         elif process_type == "generate_text":
             ai_manager = self.get_ai_manager()
-            if ai_manager:
+            if (ai_manager):
                 return ai_manager.generate_text(data.get("command", ""))
             else:
                 logging.error("AIManager가 초기화되지 않았습니다.")

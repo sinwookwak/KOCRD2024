@@ -11,6 +11,8 @@ class MenubarManager:
     def __init__(self, system_manager):
         self.system_manager = system_manager
         self.menu_bar = QMenuBar(system_manager.parent)
+        self.main_window = system_manager.parent
+        logging.info("MenubarManager initialized with main_window.")
 
         # MenubarUI를 통한 메뉴 생성 (menu_bar 전달)
         self.ui = MenubarUI(self.menu_bar)

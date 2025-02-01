@@ -4,6 +4,10 @@ import logging
 from pdf2image import convert_from_path
 import pytesseract
 
+class SystemManager:
+    def __init__(self):
+        self.analysis_manager = AnalysisManager()
+
 class AnalysisManager:
     def __init__(self):
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
