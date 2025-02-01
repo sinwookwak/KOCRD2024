@@ -3,17 +3,25 @@ import sys
 import logging
 import multiprocessing
 from PyQt5.QtWidgets import QApplication, QMessageBox
-from managers.settings_manager import SettingsManager
+import os
+import json
+
+# 프로젝트 루트 디렉토리를 sys.path에 추가
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from kocrd.Settings.settings_manager import SettingsManager
 from managers.system_manager import SystemManager
 
 def run_worker():
-    """Executes the worker process."""
+    """Worker 프로세스를 실행하는 함수."""
     import worker
     worker.main()
 
 def initialize_settings(settings_path):
-    settings_manager = SettingsManager(settings_path)
-    config = settings_manager.load_config()
+    config_path = os.path.join(os.path.dirname(__file__), settings_path)
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = json.load(f)
+    settings_manager = SettingsManager(config_path)
     return settings_manager, config
 
 def get_required_setting(settings, key, error_message):
@@ -25,23 +33,25 @@ def get_required_setting(settings, key, error_message):
 
 def main():
     app = QApplication(sys.argv)
-    settings_manager, config = initialize_settings("config/development.json")
+    settings_manager, config = initialize_settings("config/development.json")  # Update the config file path
+    global development
+    development = config  # JSON 객체로 로드된 설정을 전역 변수로 설정
 
-    # Start the worker process
+    # Worker 프로세스 시작
     worker_process = multiprocessing.Process(target=run_worker)
     worker_process.start()
     logging.info("Worker process started.")
 
     try:
-        # Define constants for magic strings
+        # Magic String 제거를 위한 상수 정의
         MODEL_PATH_KEY = "model_path"
-        TESSERACT_CMD_KEY = "tesseract_cmd"
+        TESSERACT_CMD_KEY = "tessera_cmd"
         TESSDATA_DIR_KEY = "tessdata_dir"
         MANAGERS_KEY = "managers"
         AI_MODEL_KEY = "ai_model"
         KWARGS_KEY = "kwargs"
 
-        # Retrieve settings values
+        # 설정 값 가져오기
         managers = get_required_setting(settings_manager.get_setting(MANAGERS_KEY), MANAGERS_KEY, f"Critical error: '{MANAGERS_KEY}' not found in settings")
         ai_model = get_required_setting(managers.get(AI_MODEL_KEY), AI_MODEL_KEY, f"Critical error: '{AI_MODEL_KEY}' not found in managers")
         kwargs = get_required_setting(ai_model.get(KWARGS_KEY), KWARGS_KEY, f"Critical error: '{KWARGS_KEY}' not found in ai_model")
@@ -57,11 +67,11 @@ def main():
             ai_model_manager = system_manager.get_manager("ai_model")
             ai_model_manager.apply_trained_model(model_path + "/model_weights.h5")
         except FileNotFoundError as e:
-            logging.error(f"Model file load failed: {e}")
-            QMessageBox.critical(None, "Error", f"Model file load failed: {e}")
+            logging.error(f"모델 파일 로드 실패: {e}")
+            QMessageBox.critical(None, "오류", f"모델 파일 로드 실패: {e}")
             sys.exit(1)
         except Exception as e:
-            logging.exception(f"Error during model application: {e}")
+            logging.exception(f"모델 적용 중 오류 발생: {e}")
             sys.exit(1)
     except Exception as e:
         logging.exception(f"Unexpected error: {e}")

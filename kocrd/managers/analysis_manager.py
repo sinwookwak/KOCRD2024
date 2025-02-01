@@ -1,4 +1,8 @@
 # file_name: AnalysisManager
+import concurrent.futures
+import logging
+from pdf2image import convert_from_path
+import pytesseract
 
 class AnalysisManager:
     def __init__(self):

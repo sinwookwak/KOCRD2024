@@ -37,28 +37,15 @@ class DatabaseManager:
     def initialize_database(self):
         """SQLAlchemy를 사용하여 데이터베이스 테이블 생성."""
         try:
-            queries = [
-                text('''
-                    CREATE TABLE IF NOT EXISTS documents (
-                        file_name TEXT PRIMARY KEY,
-                        type TEXT,
-                        date TEXT,
-                        supplier TEXT
-                    )
-                '''),
-                text('''
-                    CREATE TABLE IF NOT EXISTS feedback (
-                        file_path TEXT PRIMARY KEY,
-                        doc_type TEXT,
-                        timestamp TEXT
-                    )
-                ''')
-            ]
+            config_path = os.path.join(os.path.dirname(__file__), '../config/development.json')
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+            queries = [text(query) for query in config["database"]["init_queries"]]
             with self.engine.connect() as conn:
                 for query in queries:
                     conn.execute(query)
                 logging.info("Database initialized and required tables created.")
-        except SQLAlchemyError as e:
+        except (SQLAlchemyError, IOError, KeyError) as e:
             logging.error(f"Error initializing database: {e}")
             raise RuntimeError("Database initialization failed.") from e
     def execute_query(self, query, params=None, fetch=False):
@@ -176,11 +163,10 @@ class DatabaseManager:
         image_file_path = os.path.join(self.db_path, "image", file_name)
         try:
             if not isinstance(image, Image.Image):
-                logging.error("Provided image is not a PIL.Image object.")
-                return
+                raise ValueError("Provided image is not a PIL.Image object.")
             image.save(image_file_path)
             logging.info(f"Image saved: {image_file_path}")
-        except IOError as e:
+        except (IOError, ValueError) as e:
             logging.error(f"Error saving image {image_file_path}: {e}")
             raise
     def get_document(self, file_name):
@@ -206,5 +192,6 @@ class DatabaseManager:
             logging.info(f"Message sent to queue '{queue_name}': {message}")
         except pika.exceptions.AMQPConnectionError as e:
             logging.error(f"RabbitMQ 연결 오류: {e}")
+            raise
 
 Base = declarative_base()

@@ -4,15 +4,17 @@ import json
 import pika
 from datetime import datetime
 from typing import Dict, Any, Callable
+from managers.ai_managers.AI_model_manager import AIModelManager
 
 class AIEventManager:
     """이벤트 처리, 데이터 저장, 메시지 전송 담당."""
 
-    def __init__(self, system_manager, model_manager, ai_data_manager, ai_prediction_manager):
+    def __init__(self, system_manager, ai_data_manager, ai_prediction_manager):
         self.system_manager = system_manager
         self.settings_manager = self.system_manager.get_manager("settings_manager")
         self.rabbitmq_manager = self.system_manager.rabbitmq_manager
-        self.model_manager = model_manager
+        self.model_manager = AIModelManager.get_instance()  # 싱글톤 인스턴스 사용
+        self.model_manager.set_ai_event_manager(self)  # AIModelManager에 AIEventManager 설정
         self.ai_data_manager = ai_data_manager
         self.ai_prediction_manager = ai_prediction_manager
         self.message_handlers = {
@@ -47,9 +49,13 @@ class AIEventManager:
             except Exception as e:
                 logging.exception(f"모델 적용 중 오류: {e}")
 
+        # 문서 분석 재개
+        self.system_manager.start_document_analysis()
+
         logging.info("AI training event successfully handled.")
 
     def handle_save_feedback(self, file_path, doc_type):
+        """사용자 피드백 저장."""
         self.ai_data_manager.save_feedback({"file_path": file_path, "doc_type": doc_type, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
 
     def save_event_data(self, event_type, additional_data=None):
@@ -64,6 +70,7 @@ class AIEventManager:
         logging.info(f"Event data saved: {event_data}")
 
     def handle_message(self, ch, method, properties, body):
+        """메시지 큐에서 이벤트 메시지를 처리."""
         try:
             message = json.loads(body)
             message_type = message.get("type")
@@ -111,7 +118,7 @@ class AIEventManager:
             self.request_feedback(message, "메시지 처리 오류")
 
     def request_feedback(self, original_message: Any, error_reason: str):
-        """사용자에게 피드백을 요청하는 메시지를 생성하고 전송합니다."""
+        """사용자에게 피드백을 요청하는 메시지를 생성하고 전송."""
         feedback_message = {
             "type": "REQUEST_FEEDBACK",  # 새로운 메시지 타입
             "original_message": original_message,
@@ -125,6 +132,7 @@ class AIEventManager:
         logging.info(f"피드백 요청 메시지 전송: {feedback_message}")
 
     def main(self):
+        """메시지 큐에서 이벤트 메시지를 소비하여 처리."""
         try:
             events_queue = self.settings_manager.get_queue_name("events") # 큐 이름 설정에서 가져오기
             def callback(ch, method, properties, body):

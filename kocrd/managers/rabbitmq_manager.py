@@ -48,8 +48,10 @@ class RabbitMQManager:
             return
 
         try:
-            queues = self.settings_manager.get("queues")
-            for queue_name in queues.values():
+            with open('development.json', 'r') as f:
+                config = json.load(f)
+
+            for queue_name in config["queues"]:
                 self.channel.queue_declare(queue=queue_name, durable=True)
             logging.info("All queues declared successfully.")
         except pika.exceptions.AMQPChannelError as e:

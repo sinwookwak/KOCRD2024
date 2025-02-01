@@ -5,13 +5,15 @@ import json
 import os
 from sklearn.model_selection import train_test_split
 from PyQt5.QtWidgets import QMessageBox
+from .AI_data_manager import AIDataManager
+
 class AITrainingManager:
-    def __init__(self, model_manager, ai_data_manager, settings_manager, system_manager): # settings_manager 추가
+    def __init__(self, model_manager, settings_manager, system_manager):
         self.model_manager = model_manager
-        self.ai_data_manager = ai_data_manager
-        self.settings_manager = settings_manager # settings_manager 저장
+        self.settings_manager = settings_manager
         self.system_manager = system_manager
-        self.document_embedding_path = self.settings_manager.get_setting("document_embedding_path") # 설정 가져오기
+        self.ai_data_manager = self.model_manager.ai_data_manager  # Get AIDataManager instance
+        self.document_embedding_path = self.settings_manager.get_setting("document_embedding_path")
 
     def prepare_training_data(self, data, features, label):
         """훈련 데이터를 준비합니다."""
@@ -36,8 +38,20 @@ class AITrainingManager:
             if self.model_manager.tensorflow_model is None:
                 raise ValueError("학습할 TensorFlow 모델이 없습니다.")
             logging.info("AI 모델 학습 시작...")
+
+            # 문서 분석 중지
+            self.system_manager.stop_document_analysis()
+
+            # 이전 문서와 데이터베이스 검토
+            previous_data = self.ai_data_manager.load_previous_data()
+            self.model_manager.train_with_previous_data(previous_data)
+
             result = self.model_manager.train(data, features, label)
             logging.info("AI 모델 학습 완료.")
+
+            # 문서 분석 재개
+            self.system_manager.start_document_analysis()
+
             return result
         except ValueError as e: # ValueError 처리 추가
             error_message = str(e)
@@ -59,6 +73,7 @@ class AITrainingManager:
             error_message = f"파라미터 적용 중 오류: {e}"
             self.system_manager.handle_error(error_message, "파라미터 오류")
             logging.exception(error_message)
+
     def train_with_parameters(self, file_path, features, label):
         """사용자가 제공한 파라미터 파일로 모델을 학습."""
         try:

@@ -6,15 +6,19 @@ from PyQt5.QtWidgets import QFileDialog, QMessageBox, QWidget, QVBoxLayout
 import pandas as pd
 from fpdf import FPDF
 from managers.document.Document_Table_View import DocumentTableView
+from kocrd.config.development import settings
 
-DEFAULT_REPORT_FILENAME = os.environ.get("DEFAULT_REPORT_FILENAME", "report.txt")
-DEFAULT_EXCEL_FILENAME = os.environ.get("DEFAULT_EXCEL_FILENAME", "documents.xlsx")
+DEFAULT_REPORT_FILENAME = settings.get("DEFAULT_REPORT_FILENAME", "report.txt")
+DEFAULT_EXCEL_FILENAME = settings.get("DEFAULT_EXCEL_FILENAME", "report.xlsx")
+VALID_FILE_EXTENSIONS = settings.get("VALID_FILE_EXTENSIONS", [".txt", ".pdf", ".png", ".jpg"])
+MAX_FILE_SIZE = settings.get("MAX_FILE_SIZE", 10485760)
 
 class DocumentController(QWidget):
     def __init__(self, document_processor, parent, system_manager): # system_manager 추가
         self.document_processor = document_processor
         self.parent = parent
         self.system_manager = system_manager
+        self.message_queue_manager = system_manager.message_queue_manager # message_queue_manager 추가
         self.document_table_view = DocumentTableView(self)
         self.init_ui()
         logging.info("DocumentController initialized.")
@@ -136,3 +140,47 @@ class DocumentController(QWidget):
         document_info = self.document_processor.process_single_document(file_path)
         if document_info:
             self.document_table_view.add_document(document_info)
+    def search_documents(self, keyword, column_index=None, match_exact=False):
+        if not keyword.strip():
+            for row in range(self.document_table_view.table_widget.rowCount()):
+                self.document_table_view.table_widget.showRow(row)
+            logging.info("Search keyword is empty. Showing all rows.")
+            return
+
+        found_any = False
+
+        for row in range(self.document_table_view.table_widget.rowCount()):
+            match_found = False
+            for col in range(self.document_table_view.table_widget.columnCount()):
+                if column_index is not None and col != column_index:
+                    continue
+
+                item = self.document_table_view.table_widget.item(row, col)
+                if item:
+                    cell_text = item.text().lower()
+                    keyword_lower = keyword.lower()
+
+                    if (match_exact and cell_text == keyword_lower) or (not match_exact and keyword_lower in cell_text):
+                        match_found = True
+                        found_any = True
+                        break
+
+            if match_found:
+                self.document_table_view.table_widget.showRow(row)
+            else:
+                self.document_table_view.table_widget.hideRow(row)
+
+        if not found_any:
+            QMessageBox.information(self, "검색 결과", "검색 결과가 없습니다.")
+
+        logging.info(f"Document search completed for keyword: {keyword}")
+
+    def start_consuming(self):
+        """메시지 큐에서 메시지를 소비."""
+        try:
+            self.message_queue_manager.start_consuming()
+        except Exception as e:
+            logging.error(f"Error starting message consumption: {e}")
+
+    def send_message(self, queue_name, message):
+        self.document_processor.send_message(queue_name, message)

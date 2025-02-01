@@ -1,4 +1,3 @@
-# F:\AI-M2\managers\ocr\ocr_manager.py
 import pytesseract
 from pdf2image import convert_from_path
 import shutil
@@ -9,9 +8,13 @@ import os
 import pika
 from PIL import Image
 from typing import List, Optional, Tuple, Dict, Any, Callable
-from .ocr_utils import OCRHelper
-from managers.settings_manager import SettingsManager
+import sys
+import os
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
+
+from managers.ocr.ocr_utils import OCRHelper
+from Settings.settings_manager import SettingsManager
 
 class OCRManager:
     """OCR 작업을 처리하는 클래스."""
@@ -29,6 +32,14 @@ class OCRManager:
         self.progress_bar = monitoring_window.progress_bar if monitoring_window else None
         self.temp_dir = os.path.join(os.environ.get("TEMP", os.path.expanduser("~/.tmp")), "ocr_manager")
         os.makedirs(self.temp_dir, exist_ok=True)
+        # 시스템 매니저와 프로그레스바 초기화 확인
+        if self.monitoring_window:
+            if not hasattr(self.monitoring_window, 'system_manager'):
+                logging.error("monitoring_window에 system_manager가 없습니다.")
+            if not hasattr(self.monitoring_window, 'progress_bar'):
+                logging.error("monitoring_window에 progress_bar가 없습니다.")
+        else:
+            logging.warning("monitoring_window가 None입니다.")
 
     def log_scan_results(self, results: List[str]) -> None:
         """OCR 결과를 로그로 기록."""
@@ -126,11 +137,16 @@ class OCRManager:
             return None
 
     def find_poppler_path(self) -> Optional[str]:
+        """Poppler 경로를 찾습니다."""
         return self.settings_manager.get_setting_path("POPPLER_PATH")
 
     def request_temp_files(self, file_path: str, callback: Optional[Callable] = None) -> Any:
+        """임시 파일을 요청합니다."""
         if self.monitoring_window is None:
             logging.error("monitoring_window가 초기화되지 않았습니다.")
+            return None
+        if not hasattr(self.monitoring_window, 'system_manager'):
+            logging.error("monitoring_window에 system_manager가 없습니다.")
             return None
         return self.monitoring_window.system_manager.send_temp_file_message("create_temp_files", file_path=file_path, callback=callback)
 
@@ -147,6 +163,7 @@ class OCRManager:
             return None # RuntimeError 대신 None 반환
 
     def cleanup_temp_files(self) -> None:
+        """임시 파일을 정리합니다."""
         try:
             if os.path.exists(self.temp_dir):
                 shutil.rmtree(self.temp_dir)
@@ -155,6 +172,7 @@ class OCRManager:
             logging.error(f"Error cleaning temporary files: {e}")
 
     def request_temp_files_cleanup(self, file_paths: List[str]) -> None:
+        """임시 파일 정리를 요청합니다."""
         if self.monitoring_window is None:
             logging.error("monitoring_window가 초기화되지 않았습니다.")
             return
@@ -169,6 +187,7 @@ class OCRManager:
             logging.error("system_manager가 초기화되지 않았습니다.")
 
     def handle_message(self, ch: pika.BlockingConnection, method: pika.spec.Basic.Deliver, properties: pika.BasicProperties, body: bytes) -> None:
+        """메시지 큐에서 OCR 작업 요청을 처리."""
         try:
             message: Dict = json.loads(body.decode())
             message_type = message.get("type")
@@ -209,6 +228,7 @@ class OCRManager:
             ch.basic_reject(delivery_tag=method.delivery_tag, requeue=True) # 그 외 오류는 NACK, requeue=True
 
     def main(self):
+        """메시지 큐에서 메시지를 소비하여 OCR 작업을 수행."""
         try:
             connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
             channel = connection.channel()

@@ -9,13 +9,21 @@ import uuid  # uuid 모듈 추가
 from pdf2image import convert_from_path
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
+import threading
+import pika
+import sys
+# config/development.py 임포트
+try:
+    from config import development  # Update the import path
+except ImportError as e:
+    logging.error(f"config.development 임포트 오류: {e}")
+    sys.exit(1)
 
 class TempFileManager:
     """임시 파일 및 디렉토리를 관리하는 클래스."""
 
-    def __init__(self, settings_manager, ocr_manager):
+    def __init__(self, settings_manager):
         self.settings_manager = settings_manager
-        self.ocr_manager = ocr_manager
         self.temp_dir = self.settings_manager.get_setting_path("temp_dir")
 
         if not self.temp_dir:
@@ -26,21 +34,45 @@ class TempFileManager:
         os.makedirs(self.temp_dir, exist_ok=True)
         logging.info(f"TempFileManager initialized with temp_dir: {self.temp_dir}")
 
-    def _handle_create_temp_files(self, ch, method, properties, message: Dict[str, Any]) -> None:
-        """create_temp_files 메시지 처리."""
-        file_path = message.get("file_path")
-        try:
-            result = self.create_temp_files(file_path)
-            response_message = {"result": result, "status": "success"}  # 성공 상태 추가
-        except Exception as e:
-            logging.error(f"임시 파일 생성 중 오류: {e}")
-            response_message = {"error": str(e), "status": "error"}  # 오류 정보 추가
-        ch.basic_publish(exchange='', routing_key=properties.reply_to, body=json.dumps(response_message))
+        self.backup_interval = settings_manager.get_setting("TEMP_FILE_SAVE_INTERVAL", 600)
+        self.backup_dir = os.path.join(self.temp_dir, "backup")
+        os.makedirs(self.backup_dir, exist_ok=True)
+        self.start_backup_timer()
 
-    def _handle_cleanup_temp_files(self, ch, method, properties, message: Dict[str, Any]) -> None:
-        """cleanup_temp_files 메시지 처리."""
-        file_paths = message.get("file_paths")
-        self.cleanup_specific_files(file_paths) # 명확한 이름의 메서드 호출
+    def start_backup_timer(self):
+        """임시파일 백업 타이머 시작."""
+        self.backup_timer = threading.Timer(self.backup_interval, self.backup_temp_files)
+        self.backup_timer.start()
+
+    def backup_temp_files(self):
+        """임시파일을 백업합니다."""
+        try:
+            for filename in os.listdir(self.temp_dir):
+                file_path = os.path.join(self.temp_dir, filename)
+                if os.path.isfile(file_path):
+                    shutil.copy(file_path, self.backup_dir)
+            logging.info("Temporary files backed up.")
+        except Exception as e:
+            logging.error(f"Error backing up temporary files: {e}")
+        finally:
+            self.start_backup_timer()
+
+    def restore_temp_files(self):
+        """백업된 임시파일을 복원합니다."""
+        try:
+            for filename in os.listdir(self.backup_dir):
+                file_path = os.path.join(self.backup_dir, filename)
+                if os.path.isfile(file_path):
+                    shutil.copy(file_path, self.temp_dir)
+            logging.info("Temporary files restored.")
+        except Exception as e:
+            logging.error(f"Error restoring temporary files: {e}")
+
+    def manage_temp_files(self):
+        """임시파일을 관리합니다."""
+        # 임시파일 관리 로직 추가
+        pass
+
     def handle_message(self, ch, method, properties, body):
         """RabbitMQ 메시지를 처리합니다."""
         try:
@@ -64,59 +96,6 @@ class TempFileManager:
         except Exception as e:
             logging.error(f"메시지 처리 중 오류: {e}")
             ch.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
-
-    def create_temp_files(self, file_path: str) -> Optional[List[str]]:
-        """PDF 페이지를 임시 이미지로 저장."""
-        try:
-            poppler_path = self.ocr_manager.find_poppler_path()
-            if not poppler_path:
-                raise FileNotFoundError("Poppler 경로를 찾을 수 없습니다.")
-
-            pages = convert_from_path(file_path, poppler_path=poppler_path)
-            temp_image_paths: List[str] = []
-            for page in pages:
-                # UUID를 사용하여 더욱 안전한 임시 파일 이름 생성
-                temp_image_path = os.path.join(self.temp_dir, f"page_{uuid.uuid4()}.png")
-                page.save(temp_image_path, "PNG")
-                logging.info(f"Page saved as image: {temp_image_path}")
-                temp_image_paths.append(temp_image_path)
-            return temp_image_paths
-        except Exception as e:
-            logging.error(f"Error saving page as image: {e}")
-            return None # 오류 발생 시 None 반환
-    def cleanup_all_temp_files(self): # 이름 변경
-        """임시 디렉토리의 모든 파일 정리 (보관 기간 적용)."""
-        retention_time = self.settings_manager.get_setting("TEMP_FILE_RETENTION_TIME", 3600)  # 기본값 1시간 (초 단위)
-        cutoff_time = datetime.now() - timedelta(seconds=retention_time)
-
-        try:
-            for filename in os.listdir(self.temp_dir):
-                file_path = os.path.join(self.temp_dir, filename)
-                if os.path.isfile(file_path):
-                    file_creation_time = datetime.fromtimestamp(os.path.getctime(file_path))
-                    if file_creation_time < cutoff_time:
-                        os.remove(file_path)
-                        logging.info(f"Expired temporary file removed: {file_path}")
-            logging.info(f"Temporary directory cleaned.")
-
-        except FileNotFoundError:
-            logging.warning(f"Temporary directory not found: {self.temp_dir}")
-        except Exception as e:
-            logging.error(f"Error cleaning temporary directory: {e}")
-
-    def cleanup_specific_files(self, files: Optional[List[str]]): # 이름 변경 및 타입 힌트 추가
-        """특정 파일들을 정리합니다."""
-        if files:
-            for file_path in files:
-                try:
-                    os.remove(file_path)
-                    logging.info(f"File removed: {file_path}")
-                except FileNotFoundError:
-                    logging.warning(f"File not found: {file_path}")
-                except Exception as e:
-                    logging.error(f"Error removing file {file_path}: {e}")
-        else:
-            self.cleanup_all_temp_files() # 명확하게 이름이 변경된 메서드 호출
 
     def get_temp_file_path(self, file_name: str) -> str:
         return os.path.join(self.temp_dir, file_name)

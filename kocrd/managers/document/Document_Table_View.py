@@ -1,12 +1,18 @@
 # Document_Table_View.py
 from PyQt5.QtWidgets import QTableWidget, QVBoxLayout, QWidget, QTableWidgetItem, QMessageBox
 import logging
+import json
+import os
+
+config_path = os.path.join(os.path.dirname(__file__), '../../config/development.json')
+with open(config_path, 'r', encoding='utf-8') as f:
+    development = json.load(f)
 
 class DocumentTableView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.table_widget = QTableWidget()
-        self.headers = ['파일명', '유형', '날짜', '담당자', '공급자', '물품명', '카탈로그 번호', '결합 내용', '파일 경로']
+        self.headers = development["uis"]["document"]["headers"]
         self.init_ui()
         logging.info("DocumentTableView initialized.")
     def init_ui(self):
@@ -17,15 +23,15 @@ class DocumentTableView(QWidget):
         layout.addWidget(self.table_widget)
         self.setLayout(layout)
     def add_document(self, document_info):
-        """문서를 테이블에 추가."""
         row = self.table_widget.rowCount()
         self.table_widget.insertRow(row)
         for col, header in enumerate(self.headers):
-            self.table_widget.setItem(row, col, QTableWidgetItem(document_info.get(header, "")))
+            item = QTableWidgetItem(str(document_info.get(header, "")))
+            self.table_widget.setItem(row, col, item)
         logging.info(f"Document added to table: {document_info}")
     def filter_table(self, criteria):
         """기준에 따라 테이블 필터링."""
-        for row in range(self.table_widget.rowCount()):
+        for row in range(self.table_widget.rowCount()):  # 괄호 닫기
             match = all(criteria[key] in self.table_widget.item(row, col).text() for col, key in enumerate(criteria))
             self.table_widget.setRowHidden(row, not match)
         logging.info("Document table filtered.")
@@ -46,15 +52,7 @@ class DocumentTableView(QWidget):
                 selected_file_names.append(file_name_item.text())
 
         return selected_file_names
-    def add_document(self, document_info):
-        row = self.table_widget.rowCount()
-        self.table_widget.insertRow(row)
-        for col, header in enumerate(self.headers):
-            item = QTableWidgetItem(str(document_info.get(header, "")))
-            self.table_widget.setItem(row, col, item)
-        logging.info(f"Document added to table: {document_info}")
     def clear_table(self):
-        """테이블 초기화."""
         self.table_widget.setRowCount(0)
         logging.info("Document table cleared.")
     def filter_table(self, criteria):

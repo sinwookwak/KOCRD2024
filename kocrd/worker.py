@@ -10,7 +10,7 @@ import shutil
 # 매니저 임포트
 from managers.database_manager import DatabaseManager
 from managers.ocr.ocr_manager import OCRManager
-from managers.settings_manager import SettingsManager
+from Settings.settings_manager import SettingsManager
 from managers.document.document_manager import DocumentManager
 from managers.ai_managers.ai_ocr_running import AIOCRRunning
 from managers.ai_managers.ai_event_manager import AIEventManager
@@ -107,12 +107,27 @@ def process_ai_ocr_running(channel, method, properties, body, ai_ocr_running):
         logging.error(f"AI OCR 실행 중 오류 발생: {e}")
         channel.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
 
+def create_manager(manager_config, settings_manager):
+    """설정 파일에서 매니저 인스턴스를 생성합니다."""
+    module_name = manager_config["module"]
+    class_name = manager_config["class"]
+    kwargs = manager_config.get("kwargs", {})
+    module = __import__(module_name, fromlist=[class_name])
+    manager_class = getattr(module, class_name)
+    return manager_class(settings_manager, **kwargs)
+
 def main():
     """메인 실행 함수"""
     settings_manager = SettingsManager()
-    database_manager = DatabaseManager(settings_manager)
-    document_manager = DocumentManager(database_manager, settings_manager)
-    ai_model_manager = AIModelManager(settings_manager)
+    
+    # 설정 파일에서 매니저 인스턴스 생성
+    config_path = os.path.join(os.path.dirname(__file__), 'config/development.json')
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+    
+    managers = {}
+    for manager_name, manager_config in config["managers"].items():
+        managers[manager_name] = create_manager(manager_config, settings_manager)
 
     connection = settings_manager.connect_to_rabbitmq()
     if connection is None:
@@ -123,23 +138,16 @@ def main():
         channel = connection.channel()
         channel.basic_qos(prefetch_count=1)  # 추가: 한 번에 하나의 메시지만 가져오도록 설정
 
-        # 큐 선언
-        queues = [
-            "document_queue",
-            "database_packaging_queue",
-            "ai_training_queue",
-            "temp_file_queue",
-            "prediction_requests_queue",
-            "events_queue",
-            "ocr_results"
-        ]
+        # 큐 선언을 설정 파일에서 불러오기
+        queues = config["queues"].values()
+        
         for queue in queues:
             channel.queue_declare(queue=queue, durable=True)
 
         # 소비자 설정
-        channel.basic_consume(queue="document_queue", on_message_callback=lambda ch, method, props, body: process_document(ch, method, props, body, document_manager), auto_ack=False)
-        channel.basic_consume(queue="database_packaging_queue", on_message_callback=lambda ch, method, props, body: process_database_packaging(ch, method, props, body, database_manager), auto_ack=False)
-        channel.basic_consume(queue="ai_training_queue", on_message_callback=lambda ch, method, props, body: process_ai_training(ch, method, props, body, ai_model_manager), auto_ack=False)
+        channel.basic_consume(queue=config["queues"]["document_processing"], on_message_callback=lambda ch, method, props, body: process_document(ch, method, props, body, managers["document"]), auto_ack=False)
+        channel.basic_consume(queue=config["queues"]["database_packaging"], on_message_callback=lambda ch, method, props, body: process_database_packaging(ch, method, props, body, managers["database"]), auto_ack=False)
+        channel.basic_consume(queue=config["queues"]["ai_training_queue"], on_message_callback=lambda ch, method, props, body: process_ai_training(ch, method, props, body, managers["ai_model"]), auto_ack=False)
 
         logging.info("메시지 대기 중... 종료하려면 CTRL+C를 누르세요.")
         channel.start_consuming()

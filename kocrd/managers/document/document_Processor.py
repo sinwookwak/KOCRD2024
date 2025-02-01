@@ -4,24 +4,28 @@ import os
 import logging
 import datetime
 from fpdf import FPDF
-from pdf2image import convert_from_path  # pdf2image 임포트 추가
-DEFAULT_REPORT_FILENAME = os.environ.get("DEFAULT_REPORT_FILENAME", "report.txt")
-DEFAULT_EXCEL_FILENAME = os.environ.get("DEFAULT_EXCEL_FILENAME", "documents.xlsx")
-VALID_FILE_EXTENSIONS = os.environ.get("VALID_FILE_EXTENSIONS", [".txt", ".pdf", ".png", ".jpg", ".xlsx", ".docx"])
-MAX_FILE_SIZE = int(os.environ.get("MAX_FILE_SIZE", 10 * 1024 * 1024)) # 10MB default # 잘못된 환경 변수 값일 경우 예외 발생
+from pdf2image import convert_from_path
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
 import mimetypes
+from sqlalchemy.exc import SQLAlchemyError
+from kocrd.config import development
+
+DEFAULT_REPORT_FILENAME = development["settings"].get("DEFAULT_REPORT_FILENAME", "report.txt")
+DEFAULT_EXCEL_FILENAME = development["settings"].get("DEFAULT_EXCEL_FILENAME", "report.xlsx")
+VALID_FILE_EXTENSIONS = development["settings"].get("VALID_FILE_EXTENSIONS", [".txt", ".pdf", ".png", ".jpg"])
+MAX_FILE_SIZE = development["settings"].get("MAX_FILE_SIZE", 10485760)
 
 class DocumentProcessor:
     """
     문서 처리 로직을 담당하는 클래스.
     OCR 수행, 데이터베이스 저장 등의 기능을 제공합니다.
     """
-    def __init__(self, database_manager, ocr_manager, parent, system_manager): # system_manager 추가
-        self.system_manager = system_manager # system_manager 저장
+    def __init__(self, database_manager, ocr_manager, parent, system_manager, message_queue_manager):
+        self.message_queue_manager = message_queue_manager
+        self.system_manager = system_manager
         self.database_manager = database_manager
         self.ocr_manager = ocr_manager
-        self.parent = parent # QMessageBox 사용을 위해 parent 추가
+        self.parent = parent
         logging.info("DocumentProcessor initialized.")
     def perform_ocr(self, file_path):
         """OCR을 수행하여 텍스트를 추출합니다."""
@@ -36,20 +40,20 @@ class DocumentProcessor:
             raise
     def process_single_document(self, file_path):
         """단일 문서를 처리합니다 (유효성 검사, OCR, 정보 생성 및 저장)."""
-        max_file_size = self.system_manager.get_setting("MAX_FILE_SIZE") # 설정 값 가져오기
+        max_file_size = self.system_manager.get_setting("MAX_FILE_SIZE")
         valid_file_extensions = self.system_manager.get_setting("VALID_FILE_EXTENSIONS")
 
         if not os.path.isfile(file_path):
-            QMessageBox.warning(self.parent, "파일 오류", f"파일이 존재하지 않습니다: {file_path}") # 파일 경로 추가
+            QMessageBox.warning(self.parent, "파일 오류", f"파일이 존재하지 않습니다: {file_path}")
             return None
 
         file_extension = os.path.splitext(file_path)[1].lower()
-        if file_extension not in VALID_FILE_EXTENSIONS:
-            QMessageBox.warning(self.parent, "지원되지 않는 파일", f"허용되지 않는 파일 형식입니다. 허용된 형식: {', '.join(VALID_FILE_EXTENSIONS)}")
+        if file_extension not in valid_file_extensions:
+            QMessageBox.warning(self.parent, "지원되지 않는 파일", f"허용되지 않는 파일 형식입니다. 허용된 형식: {', '.join(valid_file_extensions)}")
             return None
-        file_size = os.path.getsize(file_path) # file_size 변수 정의
-        max_file_size_mb = MAX_FILE_SIZE / (1024 * 1024)
-        if file_size > MAX_FILE_SIZE:
+        file_size = os.path.getsize(file_path)
+        max_file_size_mb = max_file_size / (1024 * 1024)
+        if file_size > max_file_size:
             QMessageBox.warning(self.parent, "파일 크기 초과", f"파일 크기가 {(file_size / (1024 * 1024)):.2f}MB입니다. 최대 허용 크기: {max_file_size_mb:.2f}MB")
             return None
         mime_type, _ = mimetypes.guess_type(file_path)
@@ -75,7 +79,7 @@ class DocumentProcessor:
 
         results = []
         for file_path in file_paths:
-            document_info = self.process_single_document(file_path) # 변경된 메서드 이름 사용
+            document_info = self.process_single_document(file_path)
             if document_info:
                 results.append(document_info)
         return results
@@ -96,7 +100,7 @@ class DocumentProcessor:
             document = self.database_manager.get_document(file_name)
             if not document:
                 logging.error(f"Document not found: {file_name}")
-                return False  # 문서가 없을 경우 False 반환
+                return False
 
             for key, value in new_data.items():
                 if key in document:
@@ -104,10 +108,10 @@ class DocumentProcessor:
 
             self.database_manager.update_document(file_name, document)
             logging.info(f"Document updated successfully: {file_name}")
-            return True # 성공적으로 수정 시 True 반환
+            return True
         except Exception as e:
             logging.error(f"Error editing document {file_name}: {e}")
-            return False # 오류 발생 시 False 반환
+            return False
     def determine_document_type(self, text):
         """
         자동 문서 분석.
@@ -139,10 +143,10 @@ class DocumentProcessor:
         """
         logging.info(f"Saving OCR images for: {pdf_file_path}")
         try:
-            poppler_path = self.ocr_manager.find_poppler_path() #ocr_manager에서 poppler 경로를 가져옴
+            poppler_path = self.ocr_manager.find_poppler_path()
             if not poppler_path:
                 raise FileNotFoundError("Poppler 경로를 찾을 수 없습니다.")
-            images = convert_from_path(pdf_file_path, poppler_path=poppler_path) #pdf를 이미지로 변환
+            images = convert_from_path(pdf_file_path, poppler_path=poppler_path)
             for i, image in enumerate(images):
                 image_path = f"{pdf_file_path}_page_{i + 1}.png"
                 image.save(image_path)
@@ -163,11 +167,29 @@ class DocumentProcessor:
 
             if not file_paths:
                 logging.warning("No files selected for import.")
-                return [] # 빈 리스트 반환
+                return []
 
-            results = self.process_multiple_documents(file_paths) # process_multiple_documents 활용
-            return results # 처리된 문서 정보 리스트 반환
+            results = self.process_multiple_documents(file_paths)
+            return results
 
         except Exception as e:
             logging.error(f"Error importing documents: {e}")
-            return [] # 오류 발생 시 빈 리스트 반환
+            return []
+
+    def get_valid_doc_types(self):
+        """유효한 문서 유형을 데이터베이스에서 로드."""
+        query = 'SELECT DISTINCT doc_type FROM feedback'
+        try:
+            results = self.database_manager.execute_query(query, fetch=True)
+            return [row['doc_type'] for row in results] if results else []
+        except SQLAlchemyError as e:
+            logging.error(f"Error fetching valid document types: {e}")
+            return []
+
+    def send_message(self, queue_name, message):
+        """지정된 큐에 메시지를 전송합니다."""
+        try:
+            self.message_queue_manager.send_message(queue_name, message)
+            logging.info(f"Message sent to queue '{queue_name}': {message}")
+        except Exception as e:
+            logging.error(f"Error sending message to queue '{queue_name}': {e}")

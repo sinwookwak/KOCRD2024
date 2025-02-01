@@ -2,10 +2,14 @@
 import logging
 from datetime import datetime
 from PyQt5.QtWidgets import QInputDialog # UI 관련 import 는 이 파일에서 제거
+from managers.ai_managers.AI_model_manager import AIModelManager
 
 class AIDataManager:
     def __init__(self, database_manager):
+        """AIDataManager 초기화 메서드."""
         self.database_manager = database_manager
+        self.model_manager = AIModelManager.get_instance()  # AIModelManager 인스턴스 사용
+        self.model_manager.set_ai_data_manager(self)  # AIModelManager에 AIDataManager 설정
 
     def save_feedback(self, data):
         """피드백 데이터 저장."""

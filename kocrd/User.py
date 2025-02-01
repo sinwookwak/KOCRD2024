@@ -1,8 +1,8 @@
-# file_name: User
 import shutil
 import logging
 import os
 from PyQt5.QtWidgets import QMessageBox, QInputDialog
+from config import development  # Update the import path
 
 class User:
     """
@@ -55,3 +55,10 @@ class User:
             database_manager.save_document_type_feedback(file_path, doc_type)
             return doc_type
         raise ValueError("No valid document type selected.") # Exception handling
+
+    def load_user_settings(self, settings_manager):
+        """
+        사용자 설정을 불러옵니다.
+        """
+        self.settings = settings_manager.get_user_settings(self.user_id)
+        logging.info(f"User settings loaded for user_id {self.user_id}: {self.settings}")

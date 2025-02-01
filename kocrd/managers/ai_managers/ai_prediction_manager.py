@@ -9,12 +9,12 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from utils.embedding_utils import generate_document_type_embeddings
 import pika.exceptions
+from managers.ai_managers.AI_model_manager import AIModelManager
 
 class AIPredictionManager:
-    def __init__(self, model_manager, ai_data_manager, settings_manager, database_manager, system_manager, rabbitmq_manager):
+    def __init__(self, model_manager, settings_manager, database_manager, system_manager, rabbitmq_manager):
         self.database_manager = database_manager
         self.model_manager = model_manager
-        self.ai_data_manager = ai_data_manager
         self.settings_manager = settings_manager
         self.system_manager = system_manager
         self.rabbitmq_manager = rabbitmq_manager
@@ -23,15 +23,18 @@ class AIPredictionManager:
         self.document_type_embeddings = {}
         self.document_embedding_path = self.settings_manager.get("document_embedding_path")
         self.document_types_path = self.settings_manager.get("document_types_path")
-        self.queues = self.settings_manager.get("queues") # queues 설정 추가
+        self.queues = self.settings_manager.get("queues")
+        self.ai_data_manager = self.model_manager.ai_data_manager  # AIDataManager 인스턴스 가져오기
         self.load_ko_e5_model()
         self.load_document_type_embeddings()
 
     def send_prediction_request(self, data):
+        """예측 요청 메시지를 큐에 전송."""
         message = {"type": "prediction_request", "data": data}
         self.send_message_to_queue(self.queues["prediction_requests"], message) # queues 사용
 
     def send_message_to_queue(self, queue_name, message):
+        """메시지를 지정된 큐에 전송."""
         try:
             self.rabbitmq_manager.send_message(queue_name, json.dumps(message))
         except pika.exceptions.AMQPError as e:
@@ -41,6 +44,7 @@ class AIPredictionManager:
 
 
     def load_ko_e5_model(self):
+        """KoE5 모델 로드."""
         try:
             self.ko_e5_model = SentenceTransformer("nlpai-lab/KoE5")
             logging.info("KoE5 모델 로드 완료.")
@@ -50,9 +54,11 @@ class AIPredictionManager:
             self.ko_e5_model = None
 
     def set_use_ml_model(self, use_ml_model):
+        """머신러닝 모델 사용 여부 설정."""
         self.use_ml_model = use_ml_model
 
     def predict_document_type(self, text, file_path):
+        """문서 유형 예측."""
         document_type = "Unknown"
         is_rule_based = True
         if self.use_ml_model and self.ko_e5_model is not None:
@@ -60,8 +66,13 @@ class AIPredictionManager:
                 processed_text = self.preprocess_text(text)
                 model_input = self.text_to_input(processed_text)
                 if model_input is not None and not np.all(model_input == 0):
-                    document_type = self.postprocess_prediction(model_input) # 코사인 유사도를 이용하여 가장 유사한 문서 유형 찾기
+                    document_type = self.postprocess_prediction(model_input)
                     is_rule_based = False
+
+                    # 피드백 반영
+                    feedback = self.ai_data_manager.get_feedback(file_path)
+                    if feedback:
+                        document_type = feedback.get("document_type", document_type)
             except Exception as e:
                 logging.exception(f"머신러닝 모델 예측 오류: {e}")
                 self.system_manager.handle_error(f"머신러닝 모델 예측 오류: {e}", "모델 예측 오류")
@@ -73,9 +84,11 @@ class AIPredictionManager:
         return document_type, is_rule_based
 
     def preprocess_text(self, text):
+        """텍스트 전처리."""
         return text
 
     def text_to_input(self, text):
+        """텍스트를 모델 입력 형식으로 변환."""
         if self.ko_e5_model is None:
             logging.error("KoE5 모델이 로드되지 않았습니다.")
             return None
@@ -104,6 +117,7 @@ class AIPredictionManager:
 
 
     def load_document_type_embeddings(self):
+        """문서 유형 임베딩 로드."""
         embedding_file_path = self.document_embedding_path
         if os.path.exists(embedding_file_path):
             try:
@@ -128,6 +142,7 @@ class AIPredictionManager:
                 self.load_document_type_embeddings()
 
     def handle_message(self, ch, method, properties, body):
+        """메시지 큐에서 예측 요청 메시지를 처리."""
         try:
             message = json.loads(body)
             message_type = message.get("type")
