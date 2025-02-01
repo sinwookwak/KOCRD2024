@@ -22,6 +22,7 @@ class SettingsManager:
         self.config = self.load_config()
         self.settings: Dict[str, Union[str, int, list, dict]] = {} # type hint 추가
         self.load_config()
+        self.load_from_env()  # 환경 변수에서 설정 로드 추가
         self.connection: Optional[pika.BlockingConnection] = None # 메시지 큐 연결 객체 추가
         self.channel: Optional[pika.BlockingConnection] = None
         self.temp_manager = SettingsTempManager(self)  # SettingsTempManager 인스턴스 생성

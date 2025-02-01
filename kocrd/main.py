@@ -24,28 +24,34 @@ def initialize_settings(settings_path):
             config = json.load(f)
     except UnicodeDecodeError as e:
         logging.critical(f"설정 파일을 읽는 중 오류 발생: {e}")
-        sys.exit(1)
+        raise
     settings_manager = SettingsManager(config_path)
+    settings_manager.load_from_env()  # 환경 변수에서 설정 로드 추가
     return settings_manager, config
 
 def get_required_setting(settings, key, error_message):
     value = settings.get(key)
     if value is None:
         logging.critical(error_message)
-        sys.exit(1)
+        raise KeyError(error_message)
     return value
 
 def main():
     app = QApplication(sys.argv)
-    settings_manager, config = initialize_settings("config/development.json")  # Update the config file path
+    try:
+        settings_manager, config = initialize_settings("config/development.json")  # Update the config file path
+    except Exception as e:
+        logging.critical(f"Failed to initialize settings: {e}")
+        return
+
     global development
     development = config  # JSON 객체로 로드된 설정을 전역 변수로 설정
 
     # 상수 가져오기
     if "constants" not in config:
         logging.critical("Critical error: 'constants' not found in settings")
-        sys.exit(1)
-        
+        return
+
     constants = config["constants"]
     MODEL_PATH_KEY = constants["MODEL_PATH_KEY"]
     TESSERACT_CMD_KEY = constants["TESSERACT_CMD_KEY"]
@@ -78,13 +84,13 @@ def main():
         except FileNotFoundError as e:
             logging.error(f"모델 파일 로드 실패: {e}")
             QMessageBox.critical(None, "오류", f"모델 파일 로드 실패: {e}")
-            sys.exit(1)
+            return
         except Exception as e:
             logging.exception(f"모델 적용 중 오류 발생: {e}")
-            sys.exit(1)
+            return
     except Exception as e:
         logging.exception(f"Unexpected error: {e}")
-        sys.exit(1)
+        return
 
 if __name__ == "__main__":
     main()
