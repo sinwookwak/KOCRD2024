@@ -8,6 +8,7 @@ from regex import F
 import tensorflow as tf
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from system import DatabaseManager, RabbitMQManager, SettingsManager
+from typing import Dict, Any, Optional
 
 class AIModelManager:
     _instance = None
@@ -94,8 +95,13 @@ class AIModelManager:
             logging.exception(f"GPT 모델 로딩 중 오류 발생: {e}")
             return None, None
 
+    def request_ai_training(self, data: Optional[Dict[str, Any]] = None):
+        """AI 학습 요청 처리"""
+        self.train_ai()
+        logging.info("AI 학습 완료")
+
     def generate_text(self, command: str) -> Optional[str]:
-        """GPT 모델을 사용하여 텍스트 생성."""
+        """GPT 모델을 사용하여 텍스트 생성"""
         if not self.tokenizer or not self.gpt_model:
             logging.error("GPT 모델 또는 토크나이저가 초기화되지 않았습니다.")
             return "GPT 모델 초기화 오류"

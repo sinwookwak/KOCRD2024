@@ -1,4 +1,4 @@
-import pika
+# file: system.py
 import json
 import logging
 import os
@@ -198,23 +198,19 @@ class SystemManager:
         """AI 모델 실행 프로세스 트리거"""
         if process_type == "database_packaging":
             self.get_temp_file_manager().database_packaging()
-        else:
-            manager = self.get_manager("document")
-            if process_type == "document_processing":
-                manager.request_document_processing(data)
-            elif process_type == "database_packaging":
-                self.get_database_manager().request_database_packaging()
-            elif process_type == "ai_training":
-                self.get_manager("ai_training").request_ai_training(data)
-            elif process_type == "generate_text":
-                ai_manager = self.get_ai_manager()
-                if (ai_manager):
-                    return ai_manager.generate_text(data.get("command", ""))
-                else:
-                    logging.error("AIManager가 초기화되지 않았습니다.")
+        elif process_type == "document_processing":
+            self.get_manager("document").request_document_processing(data)
+        elif process_type == "ai_training":
+            self.get_manager("ai_training").request_ai_training(data)
+        elif process_type == "generate_text":
+            ai_manager = self.get_ai_manager()
+            if ai_manager:
+                return ai_manager.generate_text(data.get("command", ""))
             else:
-                logging.warning(f"🔴 알 수 없는 프로세스 유형: {process_type}")
-                QMessageBox.warning(self.main_window, "오류", "알 수 없는 작업 유형입니다.")
+                logging.error("AIManager가 초기화되지 않았습니다.")
+        else:
+            logging.warning(f"🔴 알 수 없는 프로세스 유형: {process_type}")
+            QMessageBox.warning(self.main_window, "오류", "알 수 없는 작업 유형입니다.")
 
     def handle_error(self, message, error_code=None):
         if error_code:
