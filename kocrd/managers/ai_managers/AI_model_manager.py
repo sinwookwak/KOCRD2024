@@ -8,8 +8,6 @@ import tensorflow as tf
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 
 from Settings.settings_manager import SettingsManager
-from kocrd.managers.database_manager import DatabaseManager
-from kocrd.managers.rabbitmq_manager import RabbitMQManager
 
 class AIModelManager:
     _instance = None
