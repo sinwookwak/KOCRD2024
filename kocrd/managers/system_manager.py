@@ -33,6 +33,31 @@ class SystemManager:
         self._init_components(self.settings)
         self.initialize_managers()
 
+    @staticmethod
+    def initialize_settings(settings_path="config/development.json"):
+        config_path = os.path.join(os.path.dirname(__file__), settings_path)
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+            if "constants" not in config:
+                raise KeyError("Missing 'constants' in configuration file.")
+        except FileNotFoundError:
+            logging.critical(f"Configuration file not found: {config_path}")
+            raise
+        except json.JSONDecodeError as e:
+            logging.critical(f"Error decoding JSON from configuration file: {e}")
+            raise
+        except KeyError as e:
+            logging.critical(f"Configuration error: {e}")
+            raise
+        except Exception as e:
+            logging.critical(f"Unexpected error loading configuration file: {e}")
+            raise
+
+        settings_manager = SettingsManager(config_path)
+        settings_manager.load_from_env()
+        return settings_manager, config
+
     def load_development_settings(self):
         config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'development.json')
         with open(config_path, 'r') as f:

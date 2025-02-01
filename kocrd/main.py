@@ -17,30 +17,6 @@ def run_worker():
     import worker
     worker.main()
 
-def initialize_settings(settings_path="config/development.json"):
-    config_path = os.path.join(os.path.dirname(__file__), settings_path)
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config = json.load(f)
-        if "constants" not in config:
-            raise KeyError("Missing 'constants' in configuration file.")
-    except FileNotFoundError:
-        logging.critical(f"Configuration file not found: {config_path}")
-        raise
-    except json.JSONDecodeError as e:
-        logging.critical(f"Error decoding JSON from configuration file: {e}")
-        raise
-    except KeyError as e:
-        logging.critical(f"Configuration error: {e}")
-        raise
-    except Exception as e:
-        logging.critical(f"Unexpected error loading configuration file: {e}")
-        raise
-
-    settings_manager = SettingsManager(config_path)
-    settings_manager.load_from_env()
-    return settings_manager, config
-
 def get_required_setting(settings, key, error_message):
     value = settings.get(key)
     if value is None:
@@ -56,7 +32,7 @@ def main():
     logging.basicConfig(level=logging.INFO)
     app = QApplication(sys.argv)
     try:
-        settings_manager, config = initialize_settings("config/development.json")
+        settings_manager, config = SystemManager.initialize_settings("config/development.json")
     except Exception as e:
         logging.critical(f"Failed to initialize settings: {e}")
         return
@@ -98,7 +74,7 @@ def main():
 
 if __name__ == "__main__":
     try:
-        settings_manager, config = initialize_settings()
+        settings_manager, config = SystemManager.initialize_settings()
         main()
     except KeyError as e:
         logging.critical(f"Configuration error: {e}")
