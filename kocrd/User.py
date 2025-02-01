@@ -2,7 +2,7 @@ import shutil
 import logging
 import os
 from PyQt5.QtWidgets import QMessageBox, QInputDialog
-from config import development  # Update the import path
+from kocrd.config import development  # Update the import path
 
 class User:
     """

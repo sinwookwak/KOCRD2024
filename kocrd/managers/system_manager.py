@@ -20,7 +20,6 @@ from managers.rabbitmq_manager import RabbitMQManager
 from Settings.settings_manager import SettingsManager
 from managers.analysis_manager import AnalysisManager
 
-from utils.embedding_utils import generate_document_type_embeddings
 from kocrd.config import development
 
 class SystemManager:
