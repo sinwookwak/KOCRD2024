@@ -2,6 +2,7 @@
 import logging
 from datetime import datetime
 from PyQt5.QtWidgets import QInputDialog
+from ai_model_manager import AIModelManager
 
 class AIDataManager:
     def __init__(self, database_manager, model_manager):
@@ -9,6 +10,7 @@ class AIDataManager:
         self.database_manager = database_manager
         self.model_manager = model_manager  # AIModelManager 인스턴스 주입
         self.model_manager.set_ai_data_manager(self)  # AIModelManager에 AIDataManager 설정
+        self.rabbitmq_manager = AIModelManager.get_instance().rabbitmq_manager  # AIModelManager에서 가져오기
 
     def save_feedback(self, data):
         """피드백 데이터 저장."""

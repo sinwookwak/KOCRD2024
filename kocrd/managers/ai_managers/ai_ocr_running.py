@@ -16,7 +16,7 @@ class OCRResultHandler:
         self.settings_manager = self.system_manager.get_manager("settings_manager")
         self.ai_model_manager = AIModelManager.get_instance()  # AIModelManager 인스턴스 가져오기
         self.ai_data_manager = ai_data_manager  # AIDataManager 인스턴스 주입
-        self.rabbitmq_manager = self.system_manager.rabbitmq_manager
+        self.rabbitmq_manager = self.ai_model_manager.rabbitmq_manager  # AIModelManager에서 가져오기
         self.ai_event_manager = AIEventManager(system_manager, ai_data_manager, None)  # AIEventManager 인스턴스 생성
 
     def create_ai_request(self, message_type: str, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -58,7 +58,7 @@ class AIOCRRunning:
         self.system_manager = system_manager
         self.settings_manager = self.system_manager.get_manager("settings_manager")
         self.ai_model_manager = AIModelManager.get_instance()  # AIModelManager 인스턴스 가져오기
-        self.rabbitmq_manager = self.system_manager.rabbitmq_manager
+        self.rabbitmq_manager = self.ai_model_manager.rabbitmq_manager  # AIModelManager에서 가져오기
         self.ocr_result_handler = OCRResultHandler(self.system_manager, ai_data_manager)  # AIDataManager 인스턴스 주입
         self.message_consumer = MessageConsumer(self.rabbitmq_manager)
 

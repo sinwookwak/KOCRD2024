@@ -9,6 +9,7 @@ from transformers import GPT2Tokenizer, GPT2LMHeadModel
 
 from Settings.settings_manager import SettingsManager
 from kocrd.managers.database_manager import DatabaseManager
+from kocrd.managers.rabbitmq_manager import RabbitMQManager
 
 
 class AIModelManager:
@@ -30,6 +31,7 @@ class AIModelManager:
             self.ai_data_manager = ai_data_manager  # AIDataManager 인스턴스 주입
             self.ai_event_manager = ai_event_manager  # AIEventManager 인스턴스 주입
             self.database_manager: Optional[DatabaseManager] = None
+            self.rabbitmq_manager: Optional[RabbitMQManager] = None
             self._load_models()
             self.initialized = True
 
@@ -45,6 +47,10 @@ class AIModelManager:
         """DatabaseManager 인스턴스 설정."""
         self.database_manager = database_manager
 
+    def set_rabbitmq_manager(self, rabbitmq_manager: RabbitMQManager):
+        """RabbitMQManager 인스턴스 설정."""
+        self.rabbitmq_manager = rabbitmq_manager
+
     def get_ai_data_manager(self):
         """AIDataManager 인스턴스 반환."""
         return self.ai_data_manager
@@ -56,6 +62,10 @@ class AIModelManager:
     def get_database_manager(self):
         """DatabaseManager 인스턴스 반환."""
         return self.database_manager
+
+    def get_rabbitmq_manager(self):
+        """RabbitMQManager 인스턴스 반환."""
+        return self.rabbitmq_manager
 
     @classmethod
     def get_instance(cls):
@@ -112,6 +122,18 @@ class AIModelManager:
             logging.info(f"Generated text saved to database: {file_name}")
         except Exception as e:
             logging.error(f"Error saving generated text to database: {e}")
+            raise
+
+    def send_message_to_queue(self, queue_name: str, message: str):
+        """RabbitMQ 큐에 메시지 전송."""
+        if not self.rabbitmq_manager:
+            logging.error("RabbitMQManager가 설정되지 않았습니다.")
+            return
+        try:
+            self.rabbitmq_manager.send_message(queue_name, message)
+            logging.info(f"Message sent to queue {queue_name}: {message}")
+        except Exception as e:
+            logging.error(f"Error sending message to queue {queue_name}: {e}")
             raise
 
     def save_model(self, save_path: str) -> None:

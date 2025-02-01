@@ -12,7 +12,7 @@ class AIEventManager:
     def __init__(self, system_manager, ai_data_manager, ai_prediction_manager):
         self.system_manager = system_manager
         self.settings_manager = self.system_manager.get_manager("settings_manager")
-        self.rabbitmq_manager = self.system_manager.rabbitmq_manager
+        self.rabbitmq_manager = AIModelManager.get_instance().rabbitmq_manager  # AIModelManager에서 가져오기
         self.model_manager = AIModelManager.get_instance()  # 싱글톤 인스턴스 사용
         self.model_manager.set_ai_event_manager(self)  # AIModelManager에 AIEventManager 설정
         self.ai_data_manager = ai_data_manager  # AIDataManager 인스턴스 주입
