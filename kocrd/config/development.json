@@ -32,8 +32,7 @@
     "menubar": {
       "class": "MenubarManager",
       "module": "kocrd.managers.menubar_manager",
-      "dependencies": [],
-      "inject_system_manager": "true"
+      "dependencies": []
     },
     "ai_model": {
       "class": "AIModelManager",
@@ -64,8 +63,7 @@
       "class": "DocumentManager",
       "module": "kocrd.managers.document.document_manager",
       "dependencies": ["ocr", "database", "message_queue"],
-      "inject_main_window": "true",
-      "inject_system_manager": "true"
+      "inject_main_window": "true"
     },
     "ai_trainer": {
       "class": "AITrainer",
@@ -99,20 +97,17 @@
     "menubar": {
       "class": "MenubarUI",
       "module": "kocrd.ui.menubar_ui",
-      "dependencies": [],
-      "inject_system_manager": "true"
+      "dependencies": []
     },
     "document": {
       "class": "DocumentUI",
       "module": "kocrd.ui.document_ui",
-      "dependencies": [],
-      "inject_system_manager": "true"
+      "dependencies": []
     },
     "monitoring": {
       "class": "MonitoringUI",
       "module": "kocrd.ui.monitoring_ui",
-      "dependencies": [],
-      "inject_system_manager": "true"
+      "dependencies": []
     }
   },
   "settings": {

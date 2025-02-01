@@ -1,14 +1,11 @@
-# file_name: system_manager.py
 import logging
 import json
 import sys
 import os
-import pika
 import pytesseract
 from typing import Dict, Any, Optional
-from PyQt5.QtWidgets import QMessageBox, QApplication
+from PyQt5.QtWidgets import QMessageBox
 
-from ocr.ocr_manager import OCRManager
 from managers.temp_file_manager import TempFileManager
 from managers.database_manager import DatabaseManager
 from kocrd.window.menubar.menubar_manager import MenubarManager
@@ -16,8 +13,6 @@ from managers.document.document_manager import DocumentManager
 from managers.rabbitmq_manager import RabbitMQManager
 from Settings.settings_manager import SettingsManager
 
-from kocrd.config import development
-from utils.embedding_utils import generate_document_type_embeddings, run_embedding_generation
 from utils.embedding_utils import EmbeddingUtils
 
 class SystemManager:
@@ -153,10 +148,6 @@ class SystemManager:
             else:
                 logging.warning(f"🔴 알 수 없는 프로세스 유형: {process_type}")
                 QMessageBox.warning(self.main_window, "오류", "알 수 없는 작업 유형입니다.")
-
-    def handle_message(self, ch, method, properties, body):
-        """RabbitMQ 메시지를 처리합니다."""
-        self.get_rabbitmq_manager().process_message(ch, method, properties, body)
 
     def handle_error(self, message, error_code=None):
         if error_code:

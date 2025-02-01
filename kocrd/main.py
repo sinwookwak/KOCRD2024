@@ -9,13 +9,12 @@ import json
 # 프로젝트 루트 디렉토리를 sys.path에 추가
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from Settings.settings_manager import SettingsManager
-from managers.system_manager import SystemManager
+import system
 
 def run_worker():
     """Worker 프로세스를 실행하는 함수."""
-    import worker
-    worker.main()
+    import system
+    system.main()
 
 def get_required_setting(settings, key, error_message):
     value = settings.get(key)
@@ -32,7 +31,7 @@ def main():
     logging.basicConfig(level=logging.INFO)
     app = QApplication(sys.argv)
     try:
-        settings_manager, config = SystemManager.initialize_settings("config/development.json")
+        settings_manager, config = system.SystemManager.initialize_settings("config/development.json")
     except Exception as e:
         logging.critical(f"Failed to initialize settings: {e}")
         return
@@ -55,7 +54,7 @@ def main():
         tesseract_cmd = get_required_setting(ocr_kwargs, constants.get("TESSERACT_CMD_KEY", ""), f"Critical error: '{constants.get('TESSERACT_CMD_KEY', '')}' not found in ocr_kwargs")
         tessdata_dir = get_required_setting(ocr_kwargs, constants.get("TESSDATA_DIR_KEY", ""), f"Critical error: '{constants.get('TESSDATA_DIR_KEY', '')}' not found in ocr_kwargs")
 
-        system_manager = SystemManager(settings_manager, None, tesseract_cmd, tessdata_dir)
+        system_manager = system.SystemManager(settings_manager, None, tesseract_cmd, tessdata_dir)
 
         try:
             ai_model_manager = system_manager.get_manager("ai_model")
@@ -74,7 +73,7 @@ def main():
 
 if __name__ == "__main__":
     try:
-        settings_manager, config = SystemManager.initialize_settings()
+        settings_manager, config = system.SystemManager.initialize_settings()
         main()
     except KeyError as e:
         logging.critical(f"Configuration error: {e}")
