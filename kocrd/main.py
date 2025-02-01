@@ -23,7 +23,10 @@ def initialize_settings(settings_path):
         logging.debug(f"Loading settings from {config_path}")
         with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
-        logging.debug(f"Settings loaded: {config}")
+        if "constants" not in config:
+            logging.critical("Critical error: 'constants' not found in settings")
+            logging.debug(f"Current config: {config}")
+            raise KeyError("Critical error: 'constants' not found in settings")
     except UnicodeDecodeError as e:
         logging.critical(f"설정 파일을 읽는 중 오류 발생: {e}")
         raise
@@ -38,16 +41,14 @@ def initialize_settings(settings_path):
     return settings_manager, config
 
 def get_required_setting(settings, key, error_message):
-    logging.debug(f"Retrieving setting for key: {key}")
     value = settings.get(key)
     if value is None:
         logging.critical(error_message)
         raise KeyError(error_message)
-    logging.debug(f"Retrieved setting for key {key}: {value}")
     return value
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)  # 로깅 레벨을 DEBUG로 설정
+    logging.basicConfig(level=logging.INFO)  # 로깅 레벨을 INFO로 설정
     app = QApplication(sys.argv)
     try:
         settings_manager, config = initialize_settings("config/development.json")  # Update the config file path
@@ -60,13 +61,7 @@ def main():
     development = config  # JSON 객체로 로드된 설정을 전역 변수로 설정
 
     # 상수 가져오기
-    if "constants" not in config:
-        logging.critical("Critical error: 'constants' not found in settings")
-        logging.debug(f"Current config: {config}")
-        return
-
     constants = config["constants"]
-    logging.debug(f"Constants loaded: {constants}")
     MODEL_PATH_KEY = constants["MODEL_PATH_KEY"]
     TESSERACT_CMD_KEY = constants["TESSERACT_CMD_KEY"]
     TESSDATA_DIR_KEY = constants["TESSDATA_DIR_KEY"]
