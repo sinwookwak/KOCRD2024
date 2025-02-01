@@ -2,8 +2,8 @@
 import logging
 import json
 import pika
-import pika.channel  # Added import
-import pika.spec     # Added import
+import pika.channel
+import pika.spec
 from typing import Callable, Optional, Dict, Any
 
 class RabbitMQManager:

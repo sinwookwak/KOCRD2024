@@ -1,7 +1,6 @@
 # ai_data_manager.py
 import logging
 from datetime import datetime
-from PyQt5.QtWidgets import QInputDialog # UI 관련 import 는 이 파일에서 제거
 
 class AIDataManager:
     def __init__(self, database_manager, model_manager):
@@ -19,7 +18,7 @@ class AIDataManager:
             logging.exception(f"피드백 저장 오류: {e}") # logging.exception 사용, 예외 다시 발생시키지 않음
 
     def request_user_feedback(self, file_path):
-        """사용자 피드백 요청. UI 로직은 이 함수에 남겨둠."""
+        """사용자 피드백 요청."""
         valid_doc_types = self.database_manager.get_valid_doc_types()
         doc_type, ok = QInputDialog.getItem(
             None, '문서 유형 확인', f'문서 "{file_path}"의 유형을 선택해주세요:', valid_doc_types, 0, False
