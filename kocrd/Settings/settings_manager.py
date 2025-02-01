@@ -1,45 +1,36 @@
-# file_name: settings_manager.py
 import os
 import json
 import tempfile
 import logging
 import pika
-import time
 import sys
 
-# 프로젝트 루트 디렉토리를 sys.path에 추가
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 
 from PyQt5.QtWidgets import QDialog, QMessageBox, QFileDialog
 from typing import Union, List, Tuple, Callable, Dict, Optional
 from pika.exceptions import AMQPConnectionError
-from Settings.Settings_temp import SettingsTempManager  # 추가
+from Settings.Settings_temp import SettingsTempManager
 
 class SettingsManager:
     """설정 관리 클래스."""
-    def __init__(self, config_file="config/development.json"):  # Update the default config file path
-        self.config_file = os.path.abspath(config_file)  # 절대 경로로 변경
+    def __init__(self, config_file="config/development.json"):
+        self.config_file = os.path.abspath(config_file)
         self.config = self.load_config()
-        self.settings: Dict[str, Union[str, int, list, dict]] = {} # type hint 추가
+        self.settings: Dict[str, Union[str, int, list, dict]] = {}
         self.load_config()
-        self.load_from_env()  # 환경 변수에서 설정 로드 추가
-        self.connection: Optional[pika.BlockingConnection] = None # 메시지 큐 연결 객체 추가
+        self.load_from_env()
+        self.connection: Optional[pika.BlockingConnection] = None
         self.channel: Optional[pika.BlockingConnection] = None
-        self.temp_manager = SettingsTempManager(self)  # SettingsTempManager 인스턴스 생성
+        self.temp_manager = SettingsTempManager(self)
 
     def load_config(self):
         """JSON 설정 파일을 로드합니다."""
         try:
             with open(self.config_file, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except FileNotFoundError:
-            logging.error(f"설정 파일 '{self.config_file}'을 찾을 수 없습니다.")
-            sys.exit(1)
-        except json.JSONDecodeError as e:
-            logging.error(f"설정 파일 파싱 오류: {e}")
-            sys.exit(1)
-        except Exception as e:
-            logging.error(f"설정 파일 로드 중 오류: {e}")
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            logging.error(f"설정 파일 로드 오류: {e}")
             sys.exit(1)
 
     def load_from_env(self):
@@ -53,24 +44,23 @@ class SettingsManager:
             "document_embedding_path": (str, r"F:\AI-M1\model\document_embedding.json"),
             "document_types_path": (str, r"F:\AI-M1\model\document_types.json"),
             "temp_dir": (str, tempfile.gettempdir()),
-            # 메시지 큐 설정 추가
             "RABBITMQ_HOST": (str, "localhost"),
             "RABBITMQ_PORT": (int, 5672),
             "RABBITMQ_QUEUE": (str, "task_queue"),
             "RABBITMQ_USER": (str, "guest"),
             "RABBITMQ_PASSWORD": (str, "guest"),
             "RABBITMQ_FEEDBACK_QUEUE": (str, "feedback_queue"),
-            "ai_version": (str, "1.0.0"),  # 기본 AI 버전 설정
+            "ai_version": (str, "1.0.0"),
         }
         for var_name, (cast_func, default_value) in env_vars.items():
             env_value = os.environ.get(var_name)
             try:
                 self.settings[var_name] = cast_func(env_value) if env_value is not None else default_value
-                log_message = f"Loaded {var_name} from {'environment' if env_value is not None else 'default'}: {self.settings[var_name]}"
-                logging.info(log_message)
-            except (ValueError, json.JSONDecodeError, TypeError) as e:  # TypeError 추가
+                logging.info(f"Loaded {var_name} from {'environment' if env_value is not None else 'default'}: {self.settings[var_name]}")
+            except (ValueError, json.JSONDecodeError, TypeError) as e:
                 logging.warning(f"Invalid {var_name} environment variable: {e}. Using default.")
                 self.settings[var_name] = default_value
+
     def set_defaults(self):
         """기본 설정값을 설정합니다."""
         self.settings = {
@@ -78,21 +68,20 @@ class SettingsManager:
             "DEFAULT_REPORT_FILENAME": "report.txt",
             "DEFAULT_EXCEL_FILENAME": "documents.xlsx",
             "VALID_FILE_EXTENSIONS": [".txt", ".pdf", ".png", ".jpg", ".xlsx", ".docx"],
-            "MODEL_PATH": r"F:\AI-M1\model\Korean_CNN_model(97.8).h5", # 기본 모델 경로 설정
-            "document_embedding_path": r"F:\AI-M1\model\document_embedding.",
+            "MODEL_PATH": r"F:\AI-M1\model\Korean_CNN_model(97.8).h5",
+            "document_embedding_path": r"F:\AI-M1\model\document_embedding.json",
             "document_types_path": r"F:\AI-M1\model\document_types.json",
             "temp_dir": tempfile.gettempdir(),
-            # 메시지 큐 설정 추가
             "RABBITMQ_HOST": "localhost",
             "RABBITMQ_PORT": 5672,
             "RABBITMQ_QUEUE": "task_queue",
             "RABBITMQ_USER": "guest",
             "RABBITMQ_PASSWORD": "guest",
             "RABBITMQ_EVENTS_QUEUE": "events_queue",
-            "RABBITMQ_PREDICTION_REQUESTS_QUEUE" : "prediction_requests_queue", 
-            "RABBITMQ_PREDICTION_RESULTS_QUEUE" : "prediction_results_queue", 
+            "RABBITMQ_PREDICTION_REQUESTS_QUEUE": "prediction_requests_queue",
+            "RABBITMQ_PREDICTION_RESULTS_QUEUE": "prediction_results_queue",
             "RABBITMQ_FEEDBACK_QUEUE": "feedback_queue",
-            "ai_version": "1.0.0",  # 기본 AI 버전 설정
+            "ai_version": "1.0.0",
         }
         self.set_rabbitmq_defaults()
 
@@ -108,7 +97,7 @@ class SettingsManager:
             "RABBITMQ_PREDICTION_RESULTS_QUEUE": "prediction_results_queue",
             "RABBITMQ_FEEDBACK_QUEUE": "feedback_queue"
         }
-        self.settings.update(self.rabbitmq_settings) # settings에 rabbitmq 설정 추가
+        self.settings.update(self.rabbitmq_settings)
 
     def get_setting(self, setting_name: str, default: Union[str, int, list, dict, None] = None) -> Union[str, int, list, dict, None]:
         """설정 값을 반환합니다."""
@@ -144,7 +133,7 @@ class SettingsManager:
     def open_settings_dialog(self, parent=None):
         """설정 다이얼로그를 엽니다."""
         logging.info(f"Opening settings dialog. Parent: {parent}")
-        from Settings.SettingsDialogUI.SettingsDialogUI import SettingsDialogUI  # SettingsDialogUI 모듈 불러오기
+        from Settings.SettingsDialogUI.SettingsDialogUI import SettingsDialogUI
         dialog = SettingsDialogUI(settings_manager=self, parent=parent)
         dialog.exec_()
 
@@ -164,39 +153,35 @@ class SettingsManager:
 
             if engine_attr_name and init_func:
                 try:
-                    # 데이터베이스 엔진 초기화 로직 (필요한 경우 구현)
-                    # new_engine = create_engine(f'sqlite:///{file_path}')
-                    # setattr(parent, engine_attr_name, new_engine)
-                    # init_func(new_engine)
                     QMessageBox.information(parent, "성공", f"새로운 경로가 설정되었습니다:\n{file_path}")
                 except Exception as e:
                     logging.error(f"데이터베이스 엔진 초기화 실패: {e}")
                     QMessageBox.critical(parent, "오류", f"데이터베이스 엔진 초기화에 실패했습니다: {e}")
-                    self.set_setting(setting_name, old_path)  # 설정 롤백
+                    self.set_setting(setting_name, old_path)
                     logging.info(f"{setting_name} path reverted to: {old_path}")
         else:
             logging.info(f"{setting_name} path selection cancelled.")
 
-    def connect_to_rabbitmq(self) -> Tuple[pika.BlockingConnection, pika.channel.Channel]:
+    def connect_to_rabbitmq(self) -> Tuple[Optional[pika.BlockingConnection], Optional[pika.channel.Channel]]:
         """RabbitMQ에 연결하고 연결 객체와 채널 객체를 반환합니다."""
         try:
             host = self.get_setting("RABBITMQ_HOST")
             port = int(self.get_setting("RABBITMQ_PORT"))
             user = self.get_setting("RABBITMQ_USER")
             password = self.get_setting("RABBITMQ_PASSWORD")
-            virtual_host = self.get_setting("RABBITMQ_VIRTUAL_HOST", "/")  # virtual_host 설정 가져오기, 기본값 '/'
+            virtual_host = self.get_setting("RABBITMQ_VIRTUAL_HOST", "/")
             credentials = pika.PlainCredentials(user, password)
 
             parameters = pika.ConnectionParameters(
                 host=host,
                 port=port,
-                virtual_host=virtual_host,  # virtual_host 설정
+                virtual_host=virtual_host,
                 credentials=credentials
             )
 
             connection = pika.BlockingConnection(parameters)
             channel = connection.channel()
-            logging.info(f"Connected to RabbitMQ: {host}:{port}:{virtual_host}")  # virtual_host 로깅 추가
+            logging.info(f"Connected to RabbitMQ: {host}:{port}:{virtual_host}")
             return connection, channel
 
         except AMQPConnectionError as e:
@@ -214,19 +199,18 @@ class SettingsManager:
             return
 
         try:
-            channel.queue_declare(queue=queue_name)  # 큐가 없으면 생성
+            channel.queue_declare(queue=queue_name)
             channel.basic_publish(exchange='', routing_key=queue_name, body=message)
             logging.info(f"Sent message to {queue_name}: {message}")
         except pika.exceptions.AMQPConnectionError as e:
             logging.error(f"Failed to send message: {e}")
-            raise # 예외를 다시 발생시켜 상위에서 처리하도록 함
+            raise
         finally:
             connection.close()
             logging.info("RabbitMQ connection closed.")
 
     def consume_messages(self, queue_name: str, callback: Callable):
         """지정된 RabbitMQ 큐에서 메시지를 소비합니다."""
-
         connection, channel = self.connect_to_rabbitmq()
         if channel is None:
             logging.error("RabbitMQ 연결 실패. 메시지를 받을 수 없습니다.")
@@ -245,12 +229,12 @@ class SettingsManager:
             logging.info("RabbitMQ connection closed.")
 
     def disconnect_from_rabbitmq(self):
-      """RabbitMQ 연결을 종료합니다."""
-      if self.connection and self.connection.is_open:
-        self.connection.close()
-        logging.info("Disconnected from RabbitMQ.")
-      self.connection = None
-      self.channel = None
+        """RabbitMQ 연결을 종료합니다."""
+        if self.connection and self.connection.is_open:
+            self.connection.close()
+            logging.info("Disconnected from RabbitMQ.")
+        self.connection = None
+        self.channel = None
 
     def get_user_settings(self, user_id):
         """사용자 설정을 반환합니다."""
@@ -258,14 +242,8 @@ class SettingsManager:
         try:
             with open(user_settings_file, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except FileNotFoundError:
-            logging.warning(f"User settings file not found: {user_settings_file}")
-            return {}
-        except json.JSONDecodeError as e:
-            logging.error(f"Error parsing user settings file: {e}")
-            return {}
-        except Exception as e:
-            logging.error(f"Error loading user settings file: {e}")
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            logging.error(f"사용자 설정 파일 로드 오류: {e}")
             return {}
 
     def cleanup_all_temp_files(self):
