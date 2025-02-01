@@ -20,7 +20,7 @@ from managers.analysis_manager import AnalysisManager
 from managers.ai_managers.AI_model_manager import AIModelManager
 
 # 로깅 설정
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 def process_document(channel, method, properties, body, document_manager):
     """문서 처리 함수"""

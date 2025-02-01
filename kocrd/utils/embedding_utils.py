@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 from sentence_transformers import SentenceTransformer
 
 # 로깅 설정
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 def load_embedding_model(model_name: str = "nlpai-lab/KoE5", local_model_path: Optional[str] = None) -> SentenceTransformer:
     """임베딩 모델을 로드합니다."""

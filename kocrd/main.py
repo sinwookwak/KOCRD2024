@@ -20,26 +20,38 @@ def run_worker():
 def initialize_settings(settings_path):
     config_path = os.path.join(os.path.dirname(__file__), settings_path)
     try:
+        logging.debug(f"Loading settings from {config_path}")
         with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
+        logging.debug(f"Settings loaded: {config}")
     except UnicodeDecodeError as e:
         logging.critical(f"설정 파일을 읽는 중 오류 발생: {e}")
+        raise
+    except FileNotFoundError as e:
+        logging.critical(f"설정 파일을 찾을 수 없습니다: {e}")
+        raise
+    except json.JSONDecodeError as e:
+        logging.critical(f"설정 파일을 파싱하는 중 오류 발생: {e}")
         raise
     settings_manager = SettingsManager(config_path)
     settings_manager.load_from_env()  # 환경 변수에서 설정 로드 추가
     return settings_manager, config
 
 def get_required_setting(settings, key, error_message):
+    logging.debug(f"Retrieving setting for key: {key}")
     value = settings.get(key)
     if value is None:
         logging.critical(error_message)
         raise KeyError(error_message)
+    logging.debug(f"Retrieved setting for key {key}: {value}")
     return value
 
 def main():
+    logging.basicConfig(level=logging.DEBUG)  # 로깅 레벨을 DEBUG로 설정
     app = QApplication(sys.argv)
     try:
         settings_manager, config = initialize_settings("config/development.json")  # Update the config file path
+        logging.info("Settings initialized successfully.")
     except Exception as e:
         logging.critical(f"Failed to initialize settings: {e}")
         return
@@ -50,15 +62,19 @@ def main():
     # 상수 가져오기
     if "constants" not in config:
         logging.critical("Critical error: 'constants' not found in settings")
+        logging.debug(f"Current config: {config}")
         return
 
     constants = config["constants"]
+    logging.debug(f"Constants loaded: {constants}")
     MODEL_PATH_KEY = constants["MODEL_PATH_KEY"]
     TESSERACT_CMD_KEY = constants["TESSERACT_CMD_KEY"]
     TESSDATA_DIR_KEY = constants["TESSDATA_DIR_KEY"]
     MANAGERS_KEY = constants["MANAGERS_KEY"]
     AI_MODEL_KEY = constants["AI_MODEL_KEY"]
     KWARGS_KEY = constants["KWARGS_KEY"]
+
+    logging.info("Constants loaded successfully.")
 
     # Worker 프로세스 시작
     worker_process = multiprocessing.Process(target=run_worker)
@@ -75,6 +91,8 @@ def main():
         ocr_kwargs = get_required_setting(ocr, KWARGS_KEY, f"Critical error: '{KWARGS_KEY}' not found in ocr")
         tesseract_cmd = get_required_setting(ocr_kwargs, TESSERACT_CMD_KEY, f"Critical error: '{TESSERACT_CMD_KEY}' not found in ocr_kwargs")
         tessdata_dir = get_required_setting(ocr_kwargs, TESSDATA_DIR_KEY, f"Critical error: '{TESSDATA_DIR_KEY}' not found in ocr_kwargs")
+
+        logging.info("Settings values loaded successfully.")
 
         system_manager = SystemManager(settings_manager, None, tesseract_cmd, tessdata_dir)
 
