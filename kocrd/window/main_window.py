@@ -2,9 +2,9 @@
 import logging
 from PyQt5.QtWidgets import QMainWindow, QWidget, QSplitter, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox, QProgressBar, QTextEdit
 from PyQt5.QtCore import pyqtSignal
-from kocrd.window.document_ui_system import DocumentUISystem
-from kocrd.window.monitoring_ui_system import MonitoringUISystem
-from kocrd.window.menubar.menubar_manager import MenubarManager
+from window.document_ui_system import DocumentUISystem
+from window.monitoring_ui_system import MonitoringUISystem
+from window.menubar.menubar_manager import MenubarManager
 
 class MainWindow(QMainWindow):
     command_processed = pyqtSignal(str, str)  # (Command Text, AI Response) 신호
@@ -105,4 +105,4 @@ class MainWindow(QMainWindow):
             logging.error(f"Error displaying content: {e}")
 
 # system_manager 모듈을 나중에 임포트
-from kocrd.managers.system_manager import SystemManager
+from system import SystemManager

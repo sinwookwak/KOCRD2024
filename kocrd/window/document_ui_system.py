@@ -9,7 +9,7 @@ import os
 # 프로젝트 루트 디렉토리를 sys.path에 추가
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from kocrd.window.monitoring_ui_system import MonitoringUISystem
+from window.monitoring_ui_system import MonitoringUISystem
 
 class DocumentUI:
     """문서 목록 테이블 UI 생성 클래스."""

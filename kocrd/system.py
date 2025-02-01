@@ -106,6 +106,7 @@ class SystemManager:
         self.managers["menubar"] = self.create_menubar_manager()
         self.managers["document"] = self.create_document_manager()
         self.managers["ocr"] = self.create_ocr_manager()
+        self.managers["ai_model"] = self.create_ai_model_manager()  # AIModelManager 추가
         self._configure_tesseract()
 
     def create_manager_instance(self, manager_config):
@@ -122,6 +123,9 @@ class SystemManager:
 
     def create_database_manager(self):
         return DatabaseManager(self.settings_manager.get_setting("db_path"), self.settings_manager.get_setting("backup_path"))
+
+    def create_ai_model_manager(self):
+        return AIModelManager(self.settings_manager)  # AIModelManager 생성
 
     def get_temp_file_manager(self):
         return self.managers.get("temp_file")
