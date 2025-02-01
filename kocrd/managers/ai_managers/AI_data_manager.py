@@ -1,6 +1,7 @@
 # ai_data_manager.py
 import logging
 from datetime import datetime
+from PyQt5.QtWidgets import QInputDialog
 
 class AIDataManager:
     def __init__(self, database_manager, model_manager):

@@ -7,6 +7,7 @@ import time
 from typing import Callable, Dict, Any
 import pika.exceptions
 from ai_model_manager import AIModelManager
+from ai_event_manager import AIEventManager
 
 class OCRResultHandler:
     """OCR 결과 메시지 처리 담당."""
@@ -16,6 +17,7 @@ class OCRResultHandler:
         self.ai_model_manager = AIModelManager.get_instance()  # AIModelManager 인스턴스 가져오기
         self.ai_data_manager = ai_data_manager  # AIDataManager 인스턴스 주입
         self.rabbitmq_manager = self.system_manager.rabbitmq_manager
+        self.ai_event_manager = AIEventManager(system_manager, ai_data_manager, None)  # AIEventManager 인스턴스 생성
 
     def create_ai_request(self, message_type: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """AI 요청 메시지 생성 (확장성 고려)."""
@@ -26,37 +28,8 @@ class OCRResultHandler:
         }
 
     def handle_message(self, ch, method, properties, body):
-        """OCR 결과 메시지 처리 및 AI 요청 전송."""
-        try:
-            message = json.loads(body)
-            message_type = message.get("type")
-            if message_type == "OCR_COMPLETED":
-                extracted_text = message.get("data", {}).get("extracted_text") # data 필드 추가
-                file_path = message.get("data", {}).get("file_path")
-                if extracted_text:
-                    ai_request = self.create_ai_request("PREDICT_DOCUMENT_TYPE", {"text": extracted_text, "file_path": file_path})
-                    queue_name = self.settings_manager.get_queue_name("prediction_requests")
-                    self.system_manager.send_message(queue_name, ai_request)
-                else:
-                    logging.warning(f"No text extracted from file: {file_path}")
-            # 다른 AI 작업 처리 (예시)
-            elif message_type == "IMAGE_CLASSIFICATION_COMPLETED":
-                image_path = message.get("data", {}).get("image_path")
-                # 이미지 분류 결과 처리 및 추가 작업 수행
-                try:
-                    classification_result = self.ai_model_manager.predict(image_path)
-                    ai_request = self.create_ai_request("HANDLE_IMAGE_CLASSIFICATION_RESULT", {"result": classification_result, "image_path": image_path})
-                    queue_name = self.settings_manager.get_queue_name("ai_result_handling")
-                    self.system_manager.send_message(queue_name, ai_request)
-                except Exception as e:
-                     logging.exception(f"이미지 분류 후처리 오류: {e}")
-            else:
-                logging.warning(f"Unknown message type: {message_type}")
-
-        except json.JSONDecodeError as e:
-            logging.exception(f"OCR 결과 JSON 디코딩 오류: {e}, body: {body}")
-        except Exception as e:
-            logging.exception(f"OCR 결과 처리 중 오류: {e}")
+        """AIEventManager의 handle_message 메서드 호출."""
+        self.ai_event_manager.handle_message(ch, method, properties, body)
 
 class MessageConsumer:
     """메시지 큐 소비 담당."""

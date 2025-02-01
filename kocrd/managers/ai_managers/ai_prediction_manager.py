@@ -11,12 +11,11 @@ from utils.embedding_utils import generate_document_type_embeddings
 import pika.exceptions
 
 class AIPredictionManager:
-    def __init__(self, model_manager, settings_manager, database_manager, system_manager, rabbitmq_manager, ai_data_manager):
+    def __init__(self, model_manager, settings_manager, database_manager, system_manager, ai_data_manager):
         self.database_manager = database_manager
         self.model_manager = model_manager
         self.settings_manager = settings_manager
         self.system_manager = system_manager
-        self.rabbitmq_manager = rabbitmq_manager
         self.use_ml_model = False
         self.ko_e5_model = None
         self.document_type_embeddings = {}
@@ -26,11 +25,6 @@ class AIPredictionManager:
         self.ai_data_manager = ai_data_manager  # AIDataManager 인스턴스 주입
         self.load_ko_e5_model()
         self.load_document_type_embeddings()
-
-    def send_prediction_request(self, data):
-        """예측 요청 메시지를 큐에 전송."""
-        message = {"type": "prediction_request", "data": data}
-        self.send_message_to_queue(self.queues["prediction_requests"], message) # queues 사용
 
     def send_message_to_queue(self, queue_name, message):
         """메시지를 지정된 큐에 전송."""
@@ -55,7 +49,7 @@ class AIPredictionManager:
         """머신러닝 모델 사용 여부 설정."""
         self.use_ml_model = use_ml_model
 
-    def predict_document_type(self, text, file_path):
+    def predict_document_type(self, text):
         """문서 유형 예측."""
         document_type = "Unknown"
         is_rule_based = True
@@ -66,11 +60,6 @@ class AIPredictionManager:
                 if model_input is not None and not np.all(model_input == 0):
                     document_type = self.postprocess_prediction(model_input)
                     is_rule_based = False
-
-                    # 피드백 반영
-                    feedback = self.ai_data_manager.get_feedback(file_path)
-                    if feedback:
-                        document_type = feedback.get("document_type", document_type)
             except Exception as e:
                 logging.exception(f"머신러닝 모델 예측 오류: {e}")
                 self.system_manager.handle_error(f"머신러닝 모델 예측 오류: {e}", "모델 예측 오류")
@@ -137,40 +126,3 @@ class AIPredictionManager:
             embeddings = generate_document_type_embeddings(self.document_types_path)
             if embeddings:
                 self.load_document_type_embeddings()
-
-    def handle_message(self, ch, method, properties, body):
-        """메시지 큐에서 예측 요청 메시지를 처리."""
-        try:
-            message = json.loads(body)
-            message_type = message.get("type")
-            if message_type == "PREDICT_DOCUMENT_TYPE":
-                text = message.get("text")
-                file_path = message.get("file_path")
-                if not text or not file_path:
-                    logging.warning(f"PREDICT_DOCUMENT_TYPE 메시지에 필요한 인자가 없습니다: {message}")
-                    return
-
-                document_type, is_rule_based = self.predict_document_type(text, file_path)
-                result_message = {
-                    "type": "PREDICT_DOCUMENT_TYPE_RESULT",
-                    "file_path": file_path,
-                    "document_type": document_type,
-                    "is_rule_based": is_rule_based,
-                    "reply_to": self.queues["events_queue"] # queues 사용
-                }
-                self.send_message_to_queue(self.queues["prediction_results"], result_message) # queues 사용
-
-                feedback_request_message = {
-                    "type": "UI_FEEDBACK_REQUEST",
-                    "file_path": file_path,
-                    "predicted_type": document_type
-                }
-                self.send_message_to_queue(self.queues["ui_feedback_requests"], feedback_request_message) # queues 사용
-            else:
-                logging.warning(f"알 수 없는 메시지 타입: {message_type}")
-        except json.JSONDecodeError as e:
-            logging.exception(f"메시지 JSON 디코딩 오류: {e}, body: {body}")
-            self.system_manager.handle_error(f"메시지 JSON 디코딩 오류: {e}", "메시지 오류")
-        except Exception as e:
-            logging.exception(f"메시지 처리 중 오류: {e}")
-            self.system_manager.handle_error(f"메시지 처리 중 오류: {e}", "메시지 오류")

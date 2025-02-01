@@ -1,4 +1,4 @@
-# file_name: AI_model_manager
+# file_name: ai_model_manager
 import logging
 import os
 import shutil
