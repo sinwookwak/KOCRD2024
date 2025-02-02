@@ -3,11 +3,15 @@ from PyQt5.QtWidgets import QAction, QMessageBox, QFileDialog
 import logging
 import os
 import sys
+import json
 
 class MenubarUI:
     """메뉴바 UI 생성 클래스."""
     def __init__(self, menu_bar):
         self.menu_bar = menu_bar
+        self.config = self.load_config()
+        self.messages = self.config.get("messages", {})
+        self.error_messages = self.config.get("error_messages", {})
 
     def init_file_menu(self, menu_bar, parent, system_manager):
         """파일 메뉴를 초기화."""
@@ -56,22 +60,44 @@ class MenubarUI:
         options |= QFileDialog.DontUseNativeDialog
         file_path, _ = QFileDialog.getOpenFileName(
             parent,
-            "딥러닝 학습 데이터 선택",
+            self.messages["start_deep_learning_title"]["ko"],
             "",
             "Model Parameters (*.traineddata);;All Files (*)",
             options=options
         )
         if file_path:
-            QMessageBox.information(parent, "학습 시작", f"선택된 파일로 학습이 시작됩니다:\n{file_path}")
+            QMessageBox.information(
+                parent,
+                self.messages["start_deep_learning_title"]["ko"],
+                self.messages["training_started"]["ko"].format(file_path=file_path)
+            )
             parent.system_manager.ai_manager.train_with_parameters(file_path)  # 학습 시작
         else:
-            QMessageBox.warning(parent, "취소됨", "학습 데이터 파일이 선택되지 않았습니다.")
+            QMessageBox.warning(
+                parent,
+                self.messages["start_deep_learning_title"]["ko"],
+                self.messages["training_cancelled"]["ko"]
+            )
 
     def open_settings_dialog(self, settings_manager, parent):
         """환경설정 대화창 열기."""
         from kocrd.Settings.SettingsDialogUI.SettingsDialogUI import SettingsDialogUI
         dialog = SettingsDialogUI(settings_manager, parent)  # 수정된 초기화 방식 반영
         dialog.exec_()
+
+    def load_config(self):
+        """설정 파일을 로드하거나 기본 설정을 생성합니다."""
+        config_path = "window_config.json"
+        if os.path.exists(config_path):
+            with open(config_path, "r", encoding="utf-8") as file:
+                return json.load(file)
+        else:
+            default_config = {
+                "about_text": "Date Extractor AI\n© 2024"
+            }
+            with open(config_path, "w", encoding="utf-8") as file:
+                json.dump(default_config, file, indent=4)
+            return default_config
 
     def get_menubar_ui(self):
         """MenubarManager의 UI 반환."""

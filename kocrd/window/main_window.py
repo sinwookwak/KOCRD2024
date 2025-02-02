@@ -1,5 +1,7 @@
 # file_name: main_window.py
 import logging
+import os
+import json
 from PyQt5.QtWidgets import QMainWindow, QWidget, QSplitter, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox, QProgressBar, QTextEdit
 from PyQt5.QtCore import pyqtSignal
 from window.document_ui_system import DocumentUISystem
@@ -25,6 +27,9 @@ class MainWindow(QMainWindow):
         self.monitoring_ui_system = MonitoringUISystem(self)  # MonitoringUISystem 인스턴스 생성
         self.menubar_manager = MenubarManager(system_manager)  # MenubarManager 인스턴스 생성
         self.setMenuBar(self.menubar_manager.get_ui())  # Menubar UI 설정
+        self.config = self.load_config()
+        self.messages = self.config.get("messages", {})
+        self.error_messages = self.config.get("error_messages", {})
         self.init_ui()
         logging.info("MainWindow initialized.")
 
@@ -33,8 +38,13 @@ class MainWindow(QMainWindow):
         self.monitoring_ui_system.init_ui()
 
     def closeEvent(self, event):
-        reply = QMessageBox.question(self, '프로그램 종료', '프로그램을 종료하시겠습니까?',
-                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        reply = QMessageBox.question(
+            self, 
+            self.messages["program_exit_title"]["ko"], 
+            self.messages["program_exit_confirmation"]["ko"],
+            QMessageBox.Yes | QMessageBox.No, 
+            QMessageBox.No
+        )
         if reply == QMessageBox.Yes:
             try:
                 self.system_manager.database_packaging() # SystemManager에 위임
@@ -60,8 +70,8 @@ class MainWindow(QMainWindow):
             self.monitoring_ui_system.display_chat_response(response)
             self.command_processed.emit(command_text, response)
         except Exception as e:
-            logging.error(f"Error handling command '{command_text}': {e}")
-            QMessageBox.critical(self, "Command Error", f"Error handling command: {str(e)}")
+            logging.error(self.error_messages["command_error"].format(error=e))
+            QMessageBox.critical(self, "Command Error", self.error_messages["command_error"].format(error=e))
 
     def process_ocr_event(self, file_path):
         """OCR 이벤트 처리."""
@@ -70,8 +80,8 @@ class MainWindow(QMainWindow):
             log_message = f"Extracted Text: {text}"
             self.monitoring_ui_system.display_log(log_message)
         except Exception as e:
-            logging.error(f"Error processing OCR event: {e}")
-            QMessageBox.critical(self, "OCR Error", f"OCR 처리 중 오류가 발생했습니다: {e}")
+            logging.error(self.error_messages["ocr_error"].format(error=e))
+            QMessageBox.critical(self, "OCR Error", self.error_messages["ocr_error"].format(error=e))
 
     def handle_monitoring_event(self, event_type):
         """AI_Monitoring_event와 연동."""
@@ -79,8 +89,8 @@ class MainWindow(QMainWindow):
             self.event_manager.handle_monitoring_event(event_type)
             logging.info(f"Monitoring event '{event_type}' handled successfully.")
         except Exception as e:
-            logging.error(f"Error handling monitoring event: {e}")
-            QMessageBox.critical(self, "Monitoring Event Error", f"Monitoring event 처리 중 오류가 발생했습니다: {e}")
+            logging.error(self.error_messages["monitoring_event_error"].format(error=e))
+            QMessageBox.critical(self, "Monitoring Event Error", self.error_messages["monitoring_event_error"].format(error=e))
 
     def handle_chat(self, message):
         """사용자 메시지 처리."""
@@ -93,8 +103,8 @@ class MainWindow(QMainWindow):
             self.monitoring_ui_system.display_chat_message(message, response)
 
         except Exception as e:
-            logging.error(f"Error in chat handling: {e}")
-            self.monitoring_ui_system.display_chat_message(message, "AI 응답 처리 중 오류가 발생했습니다.")
+            logging.error(self.error_messages["chat_error"])
+            self.monitoring_ui_system.display_chat_message(message, self.error_messages["chat_error"])
 
     def display_document_content(self, text, source="AI"):
         """문서 내용 표시."""
@@ -102,7 +112,21 @@ class MainWindow(QMainWindow):
             self.monitoring_ui_system.display_log(f"[{source}]:\n{text}\n")
             logging.info(f"Displayed content from {source}.")
         except Exception as e:
-            logging.error(f"Error displaying content: {e}")
+            logging.error(self.error_messages["content_display_error"].format(error=e))
+
+    def load_config(self):
+        """설정 파일을 로드하거나 기본 설정을 생성합니다."""
+        config_path = "window_config.json"
+        if os.path.exists(config_path):
+            with open(config_path, "r", encoding="utf-8") as file:
+                return json.load(file)
+        else:
+            default_config = {
+                "about_text": "Date Extractor AI\n© 2024"
+            }
+            with open(config_path, "w", encoding="utf-8") as file:
+                json.dump(default_config, file, indent=4)
+            return default_config
 
 # system_manager 모듈을 나중에 임포트
 from system import SystemManager

@@ -28,7 +28,9 @@ class SettingsManager:
         """JSON 설정 파일을 로드합니다."""
         try:
             with open(self.config_file, "r", encoding="utf-8") as f:
-                return json.load(f)
+                config = json.load(f)
+                self.settings.update(config.get("rabbitmq", {}))
+                return config
         except (FileNotFoundError, json.JSONDecodeError) as e:
             logging.error(f"설정 파일 로드 오류: {e}")
             sys.exit(1)
@@ -51,6 +53,9 @@ class SettingsManager:
             "RABBITMQ_PASSWORD": (str, "guest"),
             "RABBITMQ_FEEDBACK_QUEUE": (str, "feedback_queue"),
             "ai_version": (str, "1.0.0"),
+            "RABBITMQ_EXCHANGE_NAME": (str, "default_exchange"),
+            "RABBITMQ_EXCHANGE_TYPE": (str, "direct"),
+            "RABBITMQ_ROUTING_KEY": (str, "default_key")
         }
         for var_name, (cast_func, default_value) in env_vars.items():
             env_value = os.environ.get(var_name)
@@ -82,6 +87,9 @@ class SettingsManager:
             "RABBITMQ_PREDICTION_RESULTS_QUEUE": "prediction_results_queue",
             "RABBITMQ_FEEDBACK_QUEUE": "feedback_queue",
             "ai_version": "1.0.0",
+            "RABBITMQ_EXCHANGE_NAME": "default_exchange",
+            "RABBITMQ_EXCHANGE_TYPE": "direct",
+            "RABBITMQ_ROUTING_KEY": "default_key"
         }
         self.set_rabbitmq_defaults()
 
@@ -209,6 +217,27 @@ class SettingsManager:
             connection.close()
             logging.info("RabbitMQ connection closed.")
 
+    def send_exchange_message(self, message: str):
+        """메시지를 지정된 RabbitMQ 교환기에 보냅니다."""
+        connection, channel = self.connect_to_rabbitmq()
+        if channel is None:
+            logging.error("RabbitMQ 연결 실패. 메시지 전송 불가")
+            return
+
+        try:
+            exchange_settings = self.get_message_exchange_settings()
+            channel.exchange_declare(exchange=exchange_settings["exchange_name"], exchange_type=exchange_settings["exchange_type"])
+            channel.basic_publish(exchange=exchange_settings["exchange_name"], routing_key=exchange_settings["routing_key"], body=message)
+            logging.info(f"Sent message to exchange {exchange_settings['exchange_name']} with routing key {exchange_settings['routing_key']}: {message}")
+        except pika.exceptions.AMQPConnectionError as e:
+            logging.error(f"Failed to send message: {e}")
+        except Exception as e:
+            logging.error(f"Unexpected error occurred while sending message: {e}")
+        finally:
+            if connection and connection.is_open:
+                connection.close()
+                logging.info("RabbitMQ connection closed.")
+
     def consume_messages(self, queue_name: str, callback: Callable):
         """지정된 RabbitMQ 큐에서 메시지를 소비합니다."""
         connection, channel = self.connect_to_rabbitmq()
@@ -269,3 +298,11 @@ class SettingsManager:
             logging.info(f"Feedback saved to {feedback_file}")
         except Exception as e:
             logging.error(f"피드백 저장 오류: {e}")
+
+    def get_message_exchange_settings(self) -> dict:
+        """메시지 교환을 위한 설정값을 반환합니다."""
+        return {
+            "exchange_name": self.get_setting("exchange_name", "default_exchange"),
+            "exchange_type": self.get_setting("exchange_type", "direct"),
+            "routing_key": self.get_setting("routing_key", "default_key")
+        }

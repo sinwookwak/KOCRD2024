@@ -41,6 +41,9 @@ class SettingsDialogUI(QDialog):
         layout.addLayout(button_layout)
 
         self.temp_settings = {}  # 임시 설정 저장소
+        self.messages = self.settings_manager.config.get("messages", {})
+        self.log_messages = self.settings_manager.config.get("log_messages", {})
+        self.error_messages = self.settings_manager.config.get("error_messages", {})
 
     def init_ui(self):
         """UI 초기화."""
@@ -177,28 +180,28 @@ class SettingsDialogUI(QDialog):
         """모델 경로를 저장."""
         model_path = self.ai_model_path_edit.text()
         if not model_path:
-            QMessageBox.warning(self, "경로 없음", "모델 경로를 입력하거나 선택해 주세요.")
+            QMessageBox.warning(self, self.messages.get("path_missing_title", "경로 없음"), self.messages.get("path_missing_text", "모델 경로를 입력하거나 선택해 주세요."))
             return
 
         # 경로 유효성 검사
         if not os.path.isdir(os.path.dirname(model_path)):
-            QMessageBox.critical(self, "잘못된 경로", "유효한 경로를 입력하세요.")
+            QMessageBox.critical(self, self.messages.get("invalid_path_title", "잘못된 경로"), self.messages.get("invalid_path_text", "유효한 경로를 입력하세요."))
             return
 
         # settings_manager를 통해 저장 (가정)
         if self.settings_manager:
             self.settings_manager.set_ai_model_path(model_path)  # settings_manager에 경로 저장
             self.parent.system_manager.update_ai_model_path(model_path)  # 부모 클래스에 알림
-        QMessageBox.information(self, "저장 완료", f"모델 경로가 저장되었습니다:\n{model_path}")
+        QMessageBox.information(self, self.messages.get("save_complete_title", "저장 완료"), self.messages.get("save_complete_text", f"모델 경로가 저장되었습니다:\n{model_path}"))
 
     def save_ai_version(self):
         """AI 버전을 저장합니다."""
         version = self.version_edit.text()
         if version:
             self.settings_manager.set_setting("ai_version", version)
-            QMessageBox.information(self, "저장 완료", f"AI 버전이 저장되었습니다: {version}")
+            QMessageBox.information(self, self.messages.get("save_complete_title", "저장 완료"), self.messages.get("save_complete_text", f"AI 버전이 저장되었습니다: {version}"))
         else:
-            QMessageBox.warning(self, "경고", "버전을 입력하세요.")
+            QMessageBox.warning(self, self.messages.get("warning_title", "경고"), self.messages.get("warning_text", "버전을 입력하세요."))
 
     def perform_ocr_task(self):
         """OCR 작업을 수행합니다."""
@@ -227,14 +230,14 @@ class SettingsDialogUI(QDialog):
 
     def load_user_settings(self):
         """사용자 설정을 불러옵니다."""
-        user_id, ok = QInputDialog.getText(self, "사용자 설정 불러오기", "사용자 ID를 입력하세요:")
+        user_id, ok = QInputDialog.getText(self, self.messages.get("load_user_settings_title", "사용자 설정 불러오기"), self.messages.get("load_user_settings_text", "사용자 ID를 입력하세요:"))
         if ok and user_id:
             self.parent.user.load_user_settings(self.settings_manager)
-            QMessageBox.information(self, "성공", "사용자 설정이 불러와졌습니다.")
+            QMessageBox.information(self, self.messages.get("load_success_title", "성공"), self.messages.get("load_success_text", "사용자 설정이 불러와졌습니다."))
         else:
-            QMessageBox.warning(self, "실패", "사용자 ID를 입력하세요.")
+            QMessageBox.warning(self, self.messages.get("load_failure_title", "실패"), self.messages.get("load_failure_text", "사용자 ID를 입력하세요."))
 
     def cleanup_temp_files(self):
         """임시 파일을 정리합니다."""
         self.settings_manager.cleanup_all_temp_files()
-        QMessageBox.information(self, "정리 완료", "임시 파일이 정리되었습니다.")
+        QMessageBox.information(self, self.messages.get("cleanup_complete_title", "정리 완료"), self.messages.get("cleanup_complete_text", "임시 파일이 정리되었습니다."))

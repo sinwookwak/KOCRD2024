@@ -12,7 +12,13 @@ class MenubarManager:
         self.system_manager = system_manager
         self.menu_bar = QMenuBar(system_manager.parent)
         self.main_window = system_manager.parent
+        self.config_path = "config.json"
         logging.info("MenubarManager initialized with main_window.")
+
+        self.config = self.load_config()
+        self.messages = self.config.get("messages", {})
+        self.log_messages = self.config.get("log_messages", {})
+        self.error_messages = self.config.get("error_messages", {})
 
         # MenubarUI를 통한 메뉴 생성 (menu_bar 전달)
         self.ui = MenubarUI(self.menu_bar)
@@ -31,18 +37,23 @@ class MenubarManager:
     def open_settings_dialog(self):
         """환경 설정 대화창을 엽니다."""
         dialog = self.system_manager.settings_manager.get_settings_ui(self.system_manager.parent)
-        if dialog.exec_() == QDialog.Accepted:
+        if (dialog.exec_() == QDialog.Accepted):
             logging.info("Settings dialog closed with changes.")
         else:
             logging.info("Settings dialog closed without changes.")
 
     def start_deep_learning(self):
         """딥러닝 학습 시작."""
-        QMessageBox.information(None, "딥러닝 학습 시작", "딥러닝 학습이 시작되었습니다.")
+        current_language = "ko"  # This should be dynamically set based on user preference
+        QMessageBox.information(
+            self.main_window,
+            self.messages["start_deep_learning_title"][current_language],
+            self.messages["start_deep_learning_text"][current_language]
+        )
 
     def load_config(self):
         """설정 파일을 로드하거나 기본 설정을 생성합니다."""
-        config_path = "config.json"
+        config_path = "window_config.json"
         if os.path.exists(config_path):
             with open(config_path, "r", encoding="utf-8") as file:
                 return json.load(file)

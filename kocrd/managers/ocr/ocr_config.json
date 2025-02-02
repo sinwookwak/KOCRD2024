@@ -1,0 +1,35 @@
+{
+    "message_types": {
+        "PERFORM_OCR": "perform_ocr",
+        "OCR_RESULT": "ocr_result"
+    },
+    "queues": {
+        "ocr_queue": "ocr_queue",
+        "events_queue": "events_queue"
+    },
+    "logging": {
+        "info": {
+            "01": "Documents filtered successfully",
+            "02": "Document search completed for keyword: {keyword}",
+            "03": "{file_path}의 OCR 결과: {ocr_result}",
+            "04": "Page {page_num} saved as image: {temp_image_path}",
+            "05": "Temporary files cleaned up.",
+            "06": "Starting OCR scan for {file_path}",
+            "07": "Extracting text from {file_path}",
+            "08": "Performing OCR on image"
+        },
+        "error": {
+            "01": "Error: {e}",
+            "02": "Page {page_num} 이미지 변환 실패",
+            "03": "PDF 처리 중 오류 발생: {e}",
+            "04": "지원하지 않는 파일 형식: {file_path}",
+            "05": "텍스트 추출 중 오류 발생: {e}",
+            "06": "Error saving page {page_num} as image: {e}",
+            "07": "Error cleaning temporary files: {e}",
+            "08": "Error during OCR scan for {file_path}: {e}"
+        }
+    },
+    "messages": {
+        "01": "문서를 필터링 하는 중 오류가 발생했습니다."
+    }
+}

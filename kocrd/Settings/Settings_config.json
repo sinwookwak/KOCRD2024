@@ -1,32 +1,4 @@
 {
-  "buttons": [
-    {
-      "label": "버튼1",
-      "callback": "callback_method1"
-    },
-    {
-      "label": "버튼2",
-      "callback": "callback_method2"
-    },
-    {
-      "label": "버튼3",
-      "callback": "callback_method3"
-    }
-  ],
-  "monitoring_ui": {
-    "widgets": [
-      {
-        "name": "widget1"
-      },
-      {
-        "name": "widget2"
-      },
-      {
-        "name": "widget3"
-      }
-    ]
-  },
-  "table_columns": ["파일명", "유형", "날짜", "공급자", "상태"],
   "messages": {
     "clear_table_confirmation": "파일 테이블의 모든 데이터를 삭제하시겠습니까?",
     "clear_table_success": "파일 테이블이 초기화되었습니다.",
@@ -75,5 +47,16 @@
     "monitoring_event_error": "Monitoring event 처리 중 오류가 발생했습니다: {error}",
     "chat_error": "AI 응답 처리 중 오류가 발생했습니다.",
     "content_display_error": "Error displaying content: {error}"
+  },
+  "rabbitmq": {
+    "exchange_name": "default_exchange",
+    "exchange_type": "direct",
+    "routing_key": "default_key",
+    "host": "localhost",
+    "port": 5672,
+    "user": "guest",
+    "password": "guest",
+    "queue": "task_queue",
+    "feedback_queue": "feedback_queue"
   }
 }
