@@ -26,5 +26,16 @@
       }
     ]
   },
-  "table_columns": ["파일명", "유형", "날짜", "공급자", "상태"]
+  "table_columns": ["파일명", "유형", "날짜", "공급자", "상태"],
+  "messages": {
+    "clear_table_confirmation": "파일 테이블의 모든 데이터를 삭제하시겠습니까?",
+    "clear_table_success": "파일 테이블이 초기화되었습니다.",
+    "filter_error": "문서를 필터링 하는 중 오류가 발생했습니다.",
+    "update_error": "문서 유형을 업데이트 하는 중 오류가 발생했습니다:",
+    "delete_confirmation": "문서 '{file_name}'을(를) 삭제하시겠습니까?",
+    "delete_success": "문서 '{file_name}'이(가) 삭제되었습니다.",
+    "delete_error": "문서를 삭제하는 중 오류가 발생했습니다:",
+    "select_document_error": "수정할 문서를 선택하세요.",
+    "search_empty": "검색 키워드가 비어 있습니다. 모든 행을 표시합니다."
+  }
 }
