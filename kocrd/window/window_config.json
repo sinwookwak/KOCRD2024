@@ -1,0 +1,30 @@
+{
+  "buttons": [
+    {
+      "label": "버튼1",
+      "callback": "callback_method1"
+    },
+    {
+      "label": "버튼2",
+      "callback": "callback_method2"
+    },
+    {
+      "label": "버튼3",
+      "callback": "callback_method3"
+    }
+  ],
+  "monitoring_ui": {
+    "widgets": [
+      {
+        "name": "widget1"
+      },
+      {
+        "name": "widget2"
+      },
+      {
+        "name": "widget3"
+      }
+    ]
+  },
+  "table_columns": ["파일명", "유형", "날짜", "공급자", "상태"]
+}

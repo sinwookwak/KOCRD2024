@@ -21,7 +21,7 @@ class DocumentUI:
         """문서 테이블 생성."""
         self.table_widget = QTableWidget()
 
-        with open('development.json', 'r') as f:
+        with open('../window/window_config.json', 'r') as f:
             config = json.load(f)
 
         self.table_widget.setColumnCount(len(config["table_columns"]))
@@ -196,7 +196,7 @@ class DocumentUISystem:
             log_display.setReadOnly(True)
             monitoring_layout.addWidget(log_display)
 
-            with open('development.json', 'r') as f:
+            with open('../window/window_config.json', 'r') as f:
                 config = json.load(f)
 
             for widget_config in config["monitoring_ui"]["widgets"]:

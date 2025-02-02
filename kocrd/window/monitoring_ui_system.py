@@ -50,7 +50,7 @@ class MonitoringUISystem(QWidget):
         """버튼 섹션 생성."""
         button_section = QHBoxLayout()
 
-        with open('development.json', 'r') as f:
+        with open('../window/window_config.json', 'r') as f:
             config = json.load(f)
 
         for button_config in config["buttons"]:
@@ -116,7 +116,7 @@ class MonitoringUISystem(QWidget):
             log_display.setReadOnly(True)
             monitoring_layout.addWidget(log_display)
 
-            with open('development.json', 'r') as f:
+            with open('../window/window_config.json', 'r') as f:
                 config = json.load(f)
 
             for widget_config in config["monitoring_ui"]["widgets"]:
