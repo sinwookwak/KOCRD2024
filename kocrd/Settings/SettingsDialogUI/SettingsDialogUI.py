@@ -180,7 +180,7 @@ class SettingsDialogUI(QDialog):
         """모델 경로를 저장."""
         model_path = self.ai_model_path_edit.text()
         if not model_path:
-            QMessageBox.warning(self, self.messages.get("path_missing_title", "경로 없음"), self.messages.get("path_missing_text", "모델 경로를 입력하거나 선택해 주세요."))
+            QMessageBox.warning(self, self.messages.get("12", "경로 없음"), self.messages.get("13", "모델 경로를 입력하거나 선택해 주세요."))
             return
 
         # 경로 유효성 검사
@@ -192,21 +192,21 @@ class SettingsDialogUI(QDialog):
         if self.settings_manager:
             self.settings_manager.set_ai_model_path(model_path)  # settings_manager에 경로 저장
             self.parent.system_manager.update_ai_model_path(model_path)  # 부모 클래스에 알림
-        QMessageBox.information(self, self.messages.get("save_complete_title", "저장 완료"), self.messages.get("save_complete_text", f"모델 경로가 저장되었습니다:\n{model_path}"))
+        QMessageBox.information(self, self.messages.get("14", "저장 완료"), self.messages.get("15", f"모델 경로가 저장되었습니다:\n{model_path}"))
 
     def save_ai_version(self):
         """AI 버전을 저장합니다."""
         version = self.version_edit.text()
         if version:
             self.settings_manager.set_setting("ai_version", version)
-            QMessageBox.information(self, self.messages.get("save_complete_title", "저장 완료"), self.messages.get("save_complete_text", f"AI 버전이 저장되었습니다: {version}"))
+            QMessageBox.information(self, self.messages.get("14", "저장 완료"), self.messages.get("15", f"AI 버전이 저장되었습니다: {version}"))
         else:
-            QMessageBox.warning(self, self.messages.get("warning_title", "경고"), self.messages.get("warning_text", "버전을 입력하세요."))
+            QMessageBox.warning(self, self.messages.get("16", "경고"), self.messages.get("17", "버전을 입력하세요."))
 
     def perform_ocr_task(self):
         """OCR 작업을 수행합니다."""
         self.parent.system_manager.perform_ocr_task()
-        QMessageBox.information(self, "작업 완료", "OCR 작업이 수행되었습니다.")
+        QMessageBox.information(self, self.messages.get("26", "작업 완료"), self.messages.get("27", "OCR 작업이 수행되었습니다."))
 
     def save_settings(self):
         """설정을 저장."""
@@ -214,13 +214,13 @@ class SettingsDialogUI(QDialog):
         for key, value in self.temp_settings.items():
             self.settings_manager.set_setting(key, value)
         self.settings_manager.set_temp_dir(self.temp_dir_edit.text())
-        QMessageBox.information(self, "저장 완료", "설정이 저장되었습니다.")
+        QMessageBox.information(self, self.messages.get("14", "저장 완료"), self.messages.get("15", "설정이 저장되었습니다."))
         self.accept()
 
     def cancel_settings(self):
         """설정을 취소하고 임시 파일 삭제."""
         self.temp_settings.clear()
-        QMessageBox.information(self, "취소", "변경 사항이 취소되었습니다.")
+        QMessageBox.information(self, self.messages.get("28", "취소"), self.messages.get("29", "변경 사항이 취소되었습니다."))
         self.reject()
 
     def closeEvent(self, event):
@@ -230,14 +230,14 @@ class SettingsDialogUI(QDialog):
 
     def load_user_settings(self):
         """사용자 설정을 불러옵니다."""
-        user_id, ok = QInputDialog.getText(self, self.messages.get("load_user_settings_title", "사용자 설정 불러오기"), self.messages.get("load_user_settings_text", "사용자 ID를 입력하세요:"))
+        user_id, ok = QInputDialog.getText(self, self.messages.get("18", "사용자 설정 불러오기"), self.messages.get("19", "사용자 ID를 입력하세요:"))
         if ok and user_id:
             self.parent.user.load_user_settings(self.settings_manager)
-            QMessageBox.information(self, self.messages.get("load_success_title", "성공"), self.messages.get("load_success_text", "사용자 설정이 불러와졌습니다."))
+            QMessageBox.information(self, self.messages.get("20", "성공"), self.messages.get("21", "사용자 설정이 불러와졌습니다."))
         else:
-            QMessageBox.warning(self, self.messages.get("load_failure_title", "실패"), self.messages.get("load_failure_text", "사용자 ID를 입력하세요."))
+            QMessageBox.warning(self, self.messages.get("22", "실패"), self.messages.get("23", "사용자 ID를 입력하세요."))
 
     def cleanup_temp_files(self):
         """임시 파일을 정리합니다."""
         self.settings_manager.cleanup_all_temp_files()
-        QMessageBox.information(self, self.messages.get("cleanup_complete_title", "정리 완료"), self.messages.get("cleanup_complete_text", "임시 파일이 정리되었습니다."))
+        QMessageBox.information(self, self.messages.get("24", "정리 완료"), self.messages.get("25", "임시 파일이 정리되었습니다."))

@@ -1,0 +1,77 @@
+{
+    "DEFAULT_REPORT_FILENAME": "report.txt",
+    "DEFAULT_EXCEL_FILENAME": "report.xlsx",
+    "VALID_FILE_EXTENSIONS": [".txt", ".pdf", ".png", ".jpg"],
+    "MAX_FILE_SIZE": 10485760,
+    "MESSAGE_QUEUE": {
+        "01": "document_queue",
+        "02": "localhost",
+        "03": 5672
+    },
+    "messages": {
+        "01": "파일 테이블의 모든 데이터를 삭제하시겠습니까?",
+        "02": "파일 테이블이 초기화되었습니다.",
+        "03": "문서를 필터링 하는 중 오류가 발생했습니다.",
+        "04": "Documents filtered successfully.",
+        "05": "문서 유형을 업데이트 하는 중 오류가 발생했습니다:",
+        "06": "Document type updated successfully.",
+        "07": "문서 '{file_name}'을(를) 삭제하시겠습니까?",
+        "08": "문서 '{file_name}'이(가) 삭제되었습니다.",
+        "09": "문서를 삭제하는 중 오류가 발생했습니다:",
+        "10": "수정할 문서를 선택하세요.",
+        "11": "검색 키워드가 비어 있습니다. 모든 행을 표시합니다.",
+        "log": {
+            "01": "Documents filtered successfully",
+            "02": "Document search completed for keyword: {keyword}",
+            "03": "{file_path}의 문서 처리 결과: {document_result}",
+            "04": "Page {page_num} saved as image: {temp_image_path}",
+            "05": "Temporary files cleaned up.",
+            "06": "Starting document processing for {file_path}",
+            "07": "Extracting text from {file_path}",
+            "08": "Performing OCR on document",
+            "09": "Document processing completed: {file_path}",
+            "10": "Document saved successfully: {file_path}"
+        },
+        "warning": {
+            "01": "PyMuPDF가 설치되어 있지 않습니다. 이미지 변환 후 OCR을 수행합니다.",
+            "02": "처리할 파일 경로가 제공되지 않았습니다.",
+            "03": "파일 경로가 제공되지 않았습니다.",
+            "04": "알 수 없는 메시지 타입: {message_type}",
+            "05": "추출된 텍스트가 유효하지 않습니다 (비어 있음).",
+            "06": "텍스트 추출 실패",
+            "07": "문서 처리 결과 추출 실패",
+            "08": "monitoring_window가 None입니다."
+        },
+        "error": {
+            "01": "Error: {e}",
+            "02": "Page {page_num} 이미지 변환 실패",
+            "03": "PDF 처리 중 오류 발생: {e}",
+            "04": "지원하지 않는 파일 형식: {file_path}",
+            "05": "텍스트 추출 중 오류 발생: {e}",
+            "06": "Error saving page {page_num} as image: {e}",
+            "07": "Error cleaning temporary files: {e}",
+            "08": "Error during document processing for {file_path}: {e}",
+            "09": "monitoring_window에 system_manager가 없습니다.",
+            "10": "monitoring_window에 progress_bar가 없습니다.",
+            "11": "RabbitMQ 연결 오류: {e}",
+            "12": "JSON 파싱 오류: {e}. 메시지 내용: {body.decode()}",
+            "13": "문서 메시지 처리 중 오류 발생: {e}. 메시지 내용: {body.decode()}",
+            "14": "system_manager가 초기화되지 않았습니다.",
+            "15": "monitoring_window가 초기화되지 않았습니다.",
+            "16": "Error displaying content: {error}",
+            "17": "AI 응답 처리 중 오류가 발생했습니다.",
+            "18": "Monitoring event 처리 중 오류가 발생했습니다: {error}",
+            "19": "OCR 처리 중 오류가 발생했습니다: {error}",
+            "20": "Error handling command: {error}",
+            "21": "문서를 필터링 하는 중 오류가 발생했습니다."
+        }
+    },
+    "message_types": {
+        "01": "process_document",
+        "02": "document_result"
+    },
+    "queues": {
+        "01": "document_queue",
+        "02": "events_queue"
+    }
+}

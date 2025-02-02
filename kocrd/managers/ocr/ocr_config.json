@@ -1,14 +1,15 @@
 {
     "message_types": {
-        "PERFORM_OCR": "perform_ocr",
-        "OCR_RESULT": "ocr_result"
+        "01": "perform_ocr",
+        "02": "ocr_result"
     },
     "queues": {
-        "ocr_queue": "ocr_queue",
-        "events_queue": "events_queue"
+        "01": "ocr_queue",
+        "02": "events_queue"
     },
-    "logging": {
-        "info": {
+    "messages": {
+        "01": "문서를 필터링 하는 중 오류가 발생했습니다.",
+        "log": {
             "01": "Documents filtered successfully",
             "02": "Document search completed for keyword: {keyword}",
             "03": "{file_path}의 OCR 결과: {ocr_result}",
@@ -47,8 +48,5 @@
             "14": "system_manager가 초기화되지 않았습니다.",
             "15": "monitoring_window가 초기화되지 않았습니다."
         }
-    },
-    "messages": {
-        "01": "문서를 필터링 하는 중 오류가 발생했습니다."
     }
 }

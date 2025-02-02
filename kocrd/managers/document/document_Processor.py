@@ -3,6 +3,7 @@
 import os
 import logging
 import datetime
+import json
 from fpdf import FPDF
 from pdf2image import convert_from_path
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
@@ -10,14 +11,21 @@ import mimetypes
 from sqlalchemy.exc import SQLAlchemyError
 from kocrd.config import development
 
-# 설정 값을 가져오는 함수 추가
-def get_setting(key, default=None):
-    return getattr(development, key, default)
+# 설정 파일을 호출하도록 수정
+config_path = os.path.join(os.path.dirname(__file__), 'Document_config.json')
+with open(config_path, 'r', encoding='utf-8') as f:
+    config = json.load(f)
 
-DEFAULT_REPORT_FILENAME = get_setting("DEFAULT_REPORT_FILENAME", "report.txt")
-DEFAULT_EXCEL_FILENAME = get_setting("DEFAULT_EXCEL_FILENAME", "report.xlsx")
-VALID_FILE_EXTENSIONS = get_setting("VALID_FILE_EXTENSIONS", [".txt", ".pdf", ".png", ".jpg"])
-MAX_FILE_SIZE = get_setting("MAX_FILE_SIZE", 10485760)
+DEFAULT_REPORT_FILENAME = config["DEFAULT_REPORT_FILENAME"]
+DEFAULT_EXCEL_FILENAME = config["DEFAULT_EXCEL_FILENAME"]
+VALID_FILE_EXTENSIONS = config["VALID_FILE_EXTENSIONS"]
+MAX_FILE_SIZE = config["MAX_FILE_SIZE"]
+MESSAGE_QUEUE = config["MESSAGE_QUEUE"]
+MESSAGE_TYPES = config["message_types"]
+QUEUES = config["queues"]
+LOGGING_INFO = config["logging"]["info"]
+LOGGING_WARNING = config["logging"]["warning"]
+LOGGING_ERROR = config["logging"]["error"]
 
 class DocumentProcessor:
     """
@@ -40,7 +48,7 @@ class DocumentProcessor:
                 raise ValueError(f"No text extracted for: {file_path}")
             return extracted_text
         except Exception as e:
-            logging.error(f"Error performing OCR on {file_path}: {e}")
+            logging.error(config["messages"]["error"]["19"].format(error=e))
             raise
     def process_single_document(self, file_path):
         """단일 문서를 처리합니다 (유효성 검사, OCR, 정보 생성 및 저장)."""
@@ -114,16 +122,12 @@ class DocumentProcessor:
             logging.info(f"Document updated successfully: {file_name}")
             return True
         except Exception as e:
-            logging.error(f"Error editing document {file_name}: {e}")
+            logging.error(config["messages"]["error"]["20"].format(error=e))
             return False
     def determine_document_type(self, text):
-        """
-        자동 문서 분석.
-        Args: text (str): OCR로 추출된 텍스트.
-        Returns: str: 문서 유형 (예: "Invoice", "Report" 등).
-        """
+        """자동 문서 분석."""
         if not text:
-            logging.warning("No text provided for document type determination.")
+            logging.warning(config["messages"]["warning"]["05"])
             return "Unknown"
 
         try:
@@ -135,17 +139,12 @@ class DocumentProcessor:
             else:
                 return "Unknown"
         except Exception as e:
-            logging.error(f"Error determining document type: {e}")
+            logging.error(config["messages"]["error"]["20"].format(error=e))
             return "Unknown"
 
     def save_ocr_images(self, pdf_file_path):
-        """
-        PDF 파일에서 OCR 이미지를 추출하고 저장합니다.
-
-        Args:
-            pdf_file_path (str): 처리할 PDF 파일 경로.
-        """
-        logging.info(f"Saving OCR images for: {pdf_file_path}")
+        """PDF 파일에서 OCR 이미지를 추출하고 저장합니다."""
+        logging.info(config["messages"]["log"]["06"].format(pdf_file_path=pdf_file_path))
         try:
             poppler_path = self.ocr_manager.find_poppler_path()
             if not poppler_path:
@@ -156,9 +155,9 @@ class DocumentProcessor:
                 image.save(image_path)
                 logging.info(f"OCR image saved: {image_path}")
         except FileNotFoundError as e:
-            logging.error(str(e))
+            logging.error(config["messages"]["error"]["01"].format(e=e))
         except Exception as e:
-            logging.error(f"Error saving OCR images: {e}")
+            logging.error(config["messages"]["error"]["20"].format(error=e))
 
     def batch_import_documents(self):
         """문서를 일괄적으로 가져오고 처리합니다."""
@@ -177,23 +176,24 @@ class DocumentProcessor:
             return results
 
         except Exception as e:
-            logging.error(f"Error importing documents: {e}")
+            logging.error(config["messages"]["error"]["20"].format(error=e))
             return []
 
     def get_valid_doc_types(self):
         """유효한 문서 유형을 데이터베이스에서 로드."""
-        query = 'SELECT DISTINCT doc_type FROM feedback'
         try:
+            query = 'SELECT DISTINCT doc_type FROM feedback'
             results = self.database_manager.execute_query(query, fetch=True)
             return [row['doc_type'] for row in results] if results else []
         except SQLAlchemyError as e:
-            logging.error(f"Error fetching valid document types: {e}")
+            logging.error(config["messages"]["error"]["20"].format(error=e))
             return []
 
-    def send_message(self, queue_name, message):
+    def send_message(self, message):
         """지정된 큐에 메시지를 전송합니다."""
         try:
+            queue_name = QUEUES["document_queue"]
             self.message_queue_manager.send_message(queue_name, message)
             logging.info(f"Message sent to queue '{queue_name}': {message}")
         except Exception as e:
-            logging.error(f"Error sending message to queue '{queue_name}': {e}")
+            logging.error(config["messages"]["error"]["20"].format(error=e))

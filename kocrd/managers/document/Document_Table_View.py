@@ -4,15 +4,15 @@ import logging
 import json
 import os
 
-config_path = os.path.join(os.path.dirname(__file__), '../../config/development.json')
+config_path = os.path.join(os.path.dirname(__file__), 'Document_config.json')
 with open(config_path, 'r', encoding='utf-8') as f:
-    development = json.load(f)
+    config = json.load(f)
 
 class DocumentTableView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.table_widget = QTableWidget()
-        self.headers = development["uis"]["document"]["headers"]
+        self.headers = config["headers"]
         self.init_ui()
         logging.info("DocumentTableView initialized.")
     def init_ui(self):
@@ -35,10 +35,10 @@ class DocumentTableView(QWidget):
             match = all(criteria[key] in self.table_widget.item(row, col).text() for col, key in enumerate(criteria))
             self.table_widget.setRowHidden(row, not match)
         logging.info("Document table filtered.")
-    def get_selected_file_names(self): # 복수개 선택 가능하도록 수정
+    def get_selected_file_names(self):
         selected_items = self.table_widget.selectedItems()
         if not selected_items:
-            QMessageBox.warning(self.parent, "선택 오류", "파일이 선택되지 않았습니다.")
+            QMessageBox.warning(self.parent, "선택 오류", config["messages"]["error"]["21"])
             return None
 
         selected_file_names = []

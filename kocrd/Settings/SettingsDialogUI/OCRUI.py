@@ -71,12 +71,12 @@ class OCRUI:
     def save_feedback(self, system_manager):
         """수정된 피드백을 저장."""
         selected_item = self.feedback_list.currentItem()
-        if selected_item:
+        if (selected_item):
             feedback_data = selected_item.data(Qt.UserRole)
             feedback_data['ocr_text'] = self.ocr_result_edit.text()
             feedback_data['feedback_text'] = self.feedback_input_edit.text()
             system_manager.save_feedback(feedback_data)
-            QMessageBox.information(self, self.messages.get("save_complete_title", "저장 완료"), self.messages.get("save_complete_text", "피드백이 저장되었습니다."))
+            QMessageBox.information(self, self.messages.get("14", "저장 완료"), self.messages.get("15", "피드백이 저장되었습니다."))
 
     def setup_widget(self, system_manager):
         """모니터링 창 생성."""
@@ -131,7 +131,7 @@ class OCRUI:
         self.settings_manager.set_setting("tesseract_cmd", tesseract_cmd)
         self.settings_manager.set_setting("tessdata_dir", tessdata_dir)
 
-        logging.info(self.log_messages.get("ocr_settings_saved", "OCR settings saved."))
+        logging.info(self.log_messages.get("16", "OCR settings saved."))
 
         # DatabaseManager를 통해 설정 저장
         database_manager = self.settings_manager.get_manager("database")

@@ -2,16 +2,26 @@
 
 import logging
 import os
+import json
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QWidget, QVBoxLayout
 import pandas as pd
 from fpdf import FPDF
 from managers.document.Document_Table_View import DocumentTableView
-from kocrd.config.development import settings
 
-DEFAULT_REPORT_FILENAME = settings.get("DEFAULT_REPORT_FILENAME", "report.txt")
-DEFAULT_EXCEL_FILENAME = settings.get("DEFAULT_EXCEL_FILENAME", "report.xlsx")
-VALID_FILE_EXTENSIONS = settings.get("VALID_FILE_EXTENSIONS", [".txt", ".pdf", ".png", ".jpg"])
-MAX_FILE_SIZE = settings.get("MAX_FILE_SIZE", 10485760)
+config_path = os.path.join(os.path.dirname(__file__), 'Document_config.json')
+with open(config_path, 'r', encoding='utf-8') as f:
+    config = json.load(f)
+
+DEFAULT_REPORT_FILENAME = config["DEFAULT_REPORT_FILENAME"]
+DEFAULT_EXCEL_FILENAME = config["DEFAULT_EXCEL_FILENAME"]
+VALID_FILE_EXTENSIONS = config["VALID_FILE_EXTENSIONS"]
+MAX_FILE_SIZE = config["MAX_FILE_SIZE"]
+MESSAGE_QUEUE = config["MESSAGE_QUEUE"]
+MESSAGE_TYPES = config["message_types"]
+QUEUES = config["queues"]
+LOGGING_INFO = config["logging"]["info"]
+LOGGING_WARNING = config["logging"]["warning"]
+LOGGING_ERROR = config["logging"]["error"]
 
 class DocumentController(QWidget):
     def __init__(self, document_processor, parent, system_manager): # system_manager 추가
@@ -45,6 +55,7 @@ class DocumentController(QWidget):
             for document_info in document_infos:
                 self.document_table_view.add_document(document_info)
     def generate_report(self, output_path=None):
+        """보고서를 생성합니다."""
         default_report_filename = self.system_manager.get_setting("DEFAULT_REPORT_FILENAME")
         # DocumentTableView의 데이터를 가져와 보고서 생성
         extracted_texts = []
@@ -74,8 +85,8 @@ class DocumentController(QWidget):
             logging.info(f"Report saved to {output_path}")
             QMessageBox.information(self.parent, "저장 완료", f"보고서가 저장되었습니다: {output_path}")
         except Exception as e:
-            logging.error(f"Error saving report: {e}")
-            QMessageBox.critical(self.parent, "저장 오류", f"보고서를 저장하는 중 오류가 발생했습니다: {e}")
+            logging.error(config["messages"]["error"]["20"].format(error=e))
+            QMessageBox.critical(self.parent, "저장 오류", config["messages"]["error"]["20"].format(error=e))
     def export_to_pdf(self, filename="output.pdf"):
         # DocumentTableView의 데이터를 가져와 PDF 생성
         data = []
@@ -96,6 +107,7 @@ class DocumentController(QWidget):
         pdf.output(filename)
         logging.info(f"PDF saved to {filename}.")
     def save_to_excel(self, file_path=None):
+        """Excel 파일로 저장합니다."""
         default_excel_filename = self.system_manager.get_setting("DEFAULT_EXCEL_FILENAME")
         # DocumentTableView의 데이터를 가져와 Excel 저장
         rows = []
@@ -122,14 +134,14 @@ class DocumentController(QWidget):
             logging.info(f"Data saved to Excel: {file_path}")
             QMessageBox.information(self.parent, "저장 완료", f"Excel 파일로 문서 정보가 저장되었습니다: {file_path}")
         except PermissionError as e:
-            logging.error(f"Permission error when saving Excel file {file_path}: {e}")
-            QMessageBox.critical(self.parent, "저장 오류", f"Excel 파일 {file_path}을(를) 저장하는 중 권한 오류가 발생했습니다: {e}")
+            logging.error(config["messages"]["error"]["20"].format(error=e))
+            QMessageBox.critical(self.parent, "저장 오류", config["messages"]["error"]["20"].format(error=e))
         except IOError as e:
-            logging.error(f"IO error when saving Excel file {file_path}: {e}")
-            QMessageBox.critical(self.parent, "저장 오류", f"Excel 파일 {file_path}을(를) 저장하는 중 오류가 발생했습니다: {e}")
+            logging.error(config["messages"]["error"]["20"].format(error=e))
+            QMessageBox.critical(self.parent, "저장 오류", config["messages"]["error"]["20"].format(error=e))
         except Exception as e:
-            logging.error(f"Unexpected error when saving Excel file {file_path}: {e}")
-            QMessageBox.critical(self.parent, "저장 오류", f"예기치 않은 오류가 발생했습니다: {e}")
+            logging.error(config["messages"]["error"]["20"].format(error=e))
+            QMessageBox.critical(self.parent, "저장 오류", config["messages"]["error"]["20"].format(error=e))
     def clear_table(self):
         self.document_table_view.clear_table()
     def filter_documents(self, criteria):
@@ -141,6 +153,7 @@ class DocumentController(QWidget):
         if document_info:
             self.document_table_view.add_document(document_info)
     def search_documents(self, keyword, column_index=None, match_exact=False):
+        """문서를 검색합니다."""
         if not keyword.strip():
             for row in range(self.document_table_view.table_widget.rowCount()):
                 self.document_table_view.table_widget.showRow(row)
@@ -149,38 +162,48 @@ class DocumentController(QWidget):
 
         found_any = False
 
-        for row in range(self.document_table_view.table_widget.rowCount()):
-            match_found = False
-            for col in range(self.document_table_view.table_widget.columnCount()):
-                if column_index is not None and col != column_index:
-                    continue
+        try:
+            for row in range(self.document_table_view.table_widget.rowCount()):
+                match_found = False
+                for col in range(self.document_table_view.table_widget.columnCount()):
+                    if column_index is not None and col != column_index:
+                        continue
 
-                item = self.document_table_view.table_widget.item(row, col)
-                if item:
-                    cell_text = item.text().lower()
-                    keyword_lower = keyword.lower()
+                    item = self.document_table_view.table_widget.item(row, col)
+                    if item:
+                        cell_text = item.text().lower()
+                        keyword_lower = keyword.lower()
 
-                    if (match_exact and cell_text == keyword_lower) or (not match_exact and keyword_lower in cell_text):
-                        match_found = True
-                        found_any = True
-                        break
+                        if (match_exact and cell_text == keyword_lower) or (not match_exact and keyword_lower in cell_text):
+                            match_found = True
+                            found_any = True
+                            break
 
-            if match_found:
-                self.document_table_view.table_widget.showRow(row)
-            else:
-                self.document_table_view.table_widget.hideRow(row)
+                if match_found:
+                    self.document_table_view.table_widget.showRow(row)
+                else:
+                    self.document_table_view.table_widget.hideRow(row)
 
-        if not found_any:
-            QMessageBox.information(self, "검색 결과", "검색 결과가 없습니다.")
+            if not found_any:
+                QMessageBox.information(self, "검색 결과", "검색 결과가 없습니다.")
 
-        logging.info(f"Document search completed for keyword: {keyword}")
+            logging.info(f"Document search completed for keyword: {keyword}")
+        except Exception as e:
+            logging.error(config["messages"]["error"]["20"].format(error=e))
+            QMessageBox.critical(self.parent, "검색 오류", config["messages"]["error"]["20"].format(error=e))
 
     def start_consuming(self):
         """메시지 큐에서 메시지를 소비."""
         try:
             self.message_queue_manager.start_consuming()
         except Exception as e:
-            logging.error(f"Error starting message consumption: {e}")
+            logging.error(config["messages"]["error"]["20"].format(error=e))
 
-    def send_message(self, queue_name, message):
-        self.document_processor.send_message(queue_name, message)
+    def send_message(self, message):
+        """메시지를 큐에 전송."""
+        try:
+            queue_name = QUEUES["document_queue"]
+            self.document_processor.send_message(queue_name, message)
+            logging.info(f"Message sent to queue '{queue_name}': {message}")
+        except Exception as e:
+            logging.error(config["messages"]["error"]["20"].format(error=e))

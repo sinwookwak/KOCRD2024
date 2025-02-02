@@ -12,12 +12,18 @@ from sqlalchemy.exc import SQLAlchemyError
 from pdf2image import convert_from_path
 from typing import List, Optional
 
-config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'development.json')
+config_path = os.path.join(os.path.dirname(__file__), 'Document_config.json')
 with open(config_path, 'r', encoding='utf-8') as f:
-    development = json.load(f)
+    config = json.load(f)
 
-VALID_FILE_EXTENSIONS = development.get("VALID_FILE_EXTENSIONS", [".txt", ".pdf", ".png", ".jpg"])
-MAX_FILE_SIZE = development.get("MAX_FILE_SIZE", 10485760)
+VALID_FILE_EXTENSIONS = config["VALID_FILE_EXTENSIONS"]
+MAX_FILE_SIZE = config["MAX_FILE_SIZE"]
+MESSAGE_QUEUE = config["MESSAGE_QUEUE"]
+MESSAGE_TYPES = config["message_types"]
+QUEUES = config["queues"]
+LOGGING_INFO = config["logging"]["info"]
+LOGGING_WARNING = config["logging"]["warning"]
+LOGGING_ERROR = config["logging"]["error"]
 
 from .Document_Controller import DocumentController
 from .Document_Table_View import DocumentTableView # 상대 경로 import
@@ -56,9 +62,14 @@ class DocumentManager(QWidget):
         """저장된 문서 정보를 로드."""
         return self.database_manager.load_documents()
 
-    def send_message(self, queue_name, message):
+    def send_message(self, message):
         """메시지를 큐에 전송."""
-        self.message_queue_manager.send_message(queue_name, message)
+        try:
+            queue_name = QUEUES["document_queue"]
+            self.message_queue_manager.send_message(queue_name, message)
+            logging.info(f"Message sent to queue '{queue_name}': {message}")
+        except Exception as e:
+            logging.error(config["messages"]["error"]["20"].format(error=e))
 
     def get_ui(self):
         return self.document_controller.get_ui()
