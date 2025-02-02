@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # KOCRD2024
 #OCR 문서 자동 관리 AI 프로그램
 
@@ -17,5 +16,3 @@
 <해당 프로그램 개발자는 전문 개발자가 아닌 독학으로 배운 아마추어로 퀄리티가 낮을수 있습니다.>
 <해당 프로그램을 상업적 목적으로 사용하지 말아주세요>
 =======
-# KOCRD2024
->>>>>>> parent of 25fa3621e (Merge branch 'main' of https://github.com/sinwookwak/KOCRD2024)
