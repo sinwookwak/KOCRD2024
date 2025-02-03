@@ -8,7 +8,7 @@ from typing import Callable, Dict, Any
 import pika.exceptions
 from ai_model_manager import AIModelManager
 from ai_event_manager import AIEventManager
-from ai_config import get_message, handle_error
+from ai_config import get_message, handle_error, send_message_to_queue
 
 
 class OCRResultHandler:
@@ -18,7 +18,6 @@ class OCRResultHandler:
         self.settings_manager = self.system_manager.get_manager("settings_manager")
         self.ai_model_manager = AIModelManager.get_instance()  # AIModelManager 인스턴스 가져오기
         self.ai_data_manager = ai_data_manager  # AIDataManager 인스턴스 주입
-        self.rabbitmq_manager = self.ai_model_manager.rabbitmq_manager  # AIModelManager에서 가져오기
         self.ai_event_manager = AIEventManager(system_manager, ai_data_manager, None)  # AIEventManager 인스턴스 생성
 
     def create_ai_request(self, message_type: str, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -32,6 +31,7 @@ class OCRResultHandler:
     def handle_message(self, ch, method, properties, body):
         """AIEventManager의 handle_message 메서드 호출."""
         self.ai_event_manager.handle_message(ch, method, properties, body)
+        send_message_to_queue(self.system_manager, "events_queue", body)
 
 class MessageConsumer:
     """메시지 큐 소비 담당."""
@@ -52,7 +52,7 @@ class MessageConsumer:
             print('프로그램을 종료합니다.')
             self.rabbitmq_manager.close_connection()
         except Exception as e:
-            logging.exception(f"메시지 소비 중 오류: {e}")
+            handle_error(self.system_manager, "error", "05", e, "메시지 소비 중 오류")
             self.rabbitmq_manager.close_connection()
 
 class AIOCRRunning:

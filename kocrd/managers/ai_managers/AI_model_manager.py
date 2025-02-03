@@ -9,7 +9,7 @@ import tensorflow as tf
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from system import DatabaseManager, SettingsManager
 from typing import Dict, Any, Optional
-from ai_config import get_message, handle_error
+from ai_config import get_message, handle_error, send_message_to_queue
 
 class AIModelManager:
     _instance = None
@@ -30,7 +30,6 @@ class AIModelManager:
             self.ai_data_manager = ai_data_manager
             self.ai_event_manager = ai_event_manager
             self.database_manager: Optional[DatabaseManager] = None
-            self.rabbitmq_manager: Optional[RabbitMQManager] = None
             self._load_models()
             self.initialized = True
 
@@ -46,10 +45,6 @@ class AIModelManager:
         """DatabaseManager 인스턴스 설정."""
         self.database_manager = database_manager
 
-    def set_rabbitmq_manager(self, rabbitmq_manager: RabbitMQManager):
-        """RabbitMQManager 인스턴스 설정."""
-        self.rabbitmq_manager = rabbitmq_manager
-
     def get_ai_data_manager(self):
         """AIDataManager 인스턴스 반환."""
         return self.ai_data_manager
@@ -61,10 +56,6 @@ class AIModelManager:
     def get_database_manager(self):
         """DatabaseManager 인스턴스 반환."""
         return self.database_manager
-
-    def get_rabbitmq_manager(self):
-        """RabbitMQManager 인스턴스 반환."""
-        return self.rabbitmq_manager
 
     @classmethod
     def get_instance(cls):
@@ -130,15 +121,7 @@ class AIModelManager:
 
     def send_message_to_queue(self, queue_name: str, message: str):
         """RabbitMQ 큐에 메시지 전송."""
-        if not self.rabbitmq_manager:
-            logging.error("RabbitMQManager가 설정되지 않았습니다.")
-            return
-        try:
-            self.rabbitmq_manager.send_message(queue_name, message)
-            logging.info(f"Message sent to queue {queue_name}: {message}")
-        except Exception as e:
-            handle_error(self.system_manager, "error", "05", e, "메시지 전송 오류")
-            raise
+        send_message_to_queue(self.system_manager, queue_name, message)
 
     def save_model(self, save_path: str) -> None:
         """모델 저장."""

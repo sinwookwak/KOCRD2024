@@ -5,7 +5,7 @@ import json
 import os
 from sklearn.model_selection import train_test_split
 from PyQt5.QtWidgets import QMessageBox
-from ai_config import get_message, handle_error
+from ai_config import get_message, handle_error, send_message_to_queue
 
 class AITrainingManager:
     def __init__(self, model_manager, settings_manager, system_manager, ai_data_manager):
@@ -55,12 +55,6 @@ class AITrainingManager:
         except Exception as e:
             handle_error(self.system_manager, "error", "05", e, "학습 오류")
             return None
-
-    def handle_error(self, category, code, exception, error_type):
-        """에러 처리 및 로깅."""
-        error_message = get_message(category, code).format(e=exception)
-        self.system_manager.handle_error(error_message, error_type)
-        logging.exception(error_message)
 
     def apply_parameters(self, parameters):
         """모델에 하이퍼파라미터 적용."""
