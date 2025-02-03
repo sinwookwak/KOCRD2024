@@ -5,7 +5,7 @@ import json
 import os
 from sklearn.model_selection import train_test_split
 from PyQt5.QtWidgets import QMessageBox
-from ai_config import get_message
+from ai_config import get_message, handle_error
 
 class AITrainingManager:
     def __init__(self, model_manager, settings_manager, system_manager, ai_data_manager):
@@ -22,14 +22,10 @@ class AITrainingManager:
             y = data[label]
             return train_test_split(X, y, test_size=0.2)
         except KeyError as e:
-            error_message = get_message("error", "01").format(e=e)
-            self.system_manager.handle_error(error_message, "데이터 오류")
-            logging.error(error_message) # 로그 추가
+            handle_error(self.system_manager, "error", "01", e, "데이터 오류")
             return None, None, None, None
-        except Exception as e: # 추가적인 예외 처리
-            error_message = get_message("error", "05").format(e=e)
-            self.system_manager.handle_error(error_message, "데이터 오류")
-            logging.exception(error_message) # 로그 추가
+        except Exception as e:
+            handle_error(self.system_manager, "error", "05", e, "데이터 오류")
             return None, None, None, None
 
     def train_model(self, data, features, label):
@@ -53,16 +49,18 @@ class AITrainingManager:
             self.system_manager.start_document_analysis()
 
             return result
-        except ValueError as e: # ValueError 처리 추가
-            error_message = str(e)
-            self.system_manager.handle_error(error_message, "모델 오류")
-            logging.error(error_message)
+        except ValueError as e:
+            handle_error(self.system_manager, "error", "05", e, "모델 오류")
             return None
         except Exception as e:
-            error_message = get_message("error", "05").format(e=e)
-            self.system_manager.handle_error(error_message, "학습 오류")
-            logging.exception(error_message)
+            handle_error(self.system_manager, "error", "05", e, "학습 오류")
             return None
+
+    def handle_error(self, category, code, exception, error_type):
+        """에러 처리 및 로깅."""
+        error_message = get_message(category, code).format(e=exception)
+        self.system_manager.handle_error(error_message, error_type)
+        logging.exception(error_message)
 
     def apply_parameters(self, parameters):
         """모델에 하이퍼파라미터 적용."""
@@ -70,9 +68,7 @@ class AITrainingManager:
             self.model_manager.apply_parameters(parameters)
             logging.info("Parameters applied successfully.")
         except Exception as e:
-            error_message = f"파라미터 적용 중 오류: {e}"
-            self.system_manager.handle_error(error_message, "파라미터 오류")
-            logging.exception(error_message)
+            handle_error(self.system_manager, "error", "05", e, "파라미터 오류")
 
     def train_with_parameters(self, file_path, features, label):
         """사용자가 제공한 파라미터 파일로 모델을 학습."""
@@ -85,15 +81,9 @@ class AITrainingManager:
                 self.train_model(data, features, label)
             logging.info("Model training completed with provided parameters.")
             QMessageBox.information(None, "학습 완료", "모델 학습이 성공적으로 완료되었습니다.")
-        except json.JSONDecodeError:
-            error_message = f"선택한 파일이 JSON 형식이 아닙니다: {file_path}"
-            self.system_manager.handle_error(error_message, "파일 오류")
-            logging.error(error_message)
-        except FileNotFoundError:
-            error_message = f"파일을 찾을 수 없습니다: {file_path}"
-            self.system_manager.handle_error(error_message, "파일 오류")
-            logging.error(error_message)
+        except json.JSONDecodeError as e:
+            handle_error(self.system_manager, "error", "12", e, "파일 오류")
+        except FileNotFoundError as e:
+            handle_error(self.system_manager, "error", "05", e, "파일 오류")
         except Exception as e:
-            error_message = f"모델 학습 중 오류: {e}"
-            self.system_manager.handle_error(error_message, "학습 오류")
-            logging.exception(error_message)
+            handle_error(self.system_manager, "error", "05", e, "학습 오류")

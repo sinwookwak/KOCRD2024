@@ -9,7 +9,7 @@ import tensorflow as tf
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from system import DatabaseManager, SettingsManager
 from typing import Dict, Any, Optional
-from ai_config import get_message
+from ai_config import get_message, handle_error
 
 class AIModelManager:
     _instance = None
@@ -81,8 +81,7 @@ class AIModelManager:
                 self.model = tf.keras.models.load_model(self.model_path)
                 logging.info(f"TensorFlow 모델 로딩 완료: {self.model_path}")
         except Exception as e:
-            error_message = get_message("error", "05").format(e=e)
-            logging.exception(error_message)
+            handle_error(self.system_manager, "error", "05", e, "모델 로드 오류")
             raise
 
     def _load_gpt_model(self, model_path: str) -> Tuple[Optional[GPT2Tokenizer], Optional[GPT2LMHeadModel]]:
@@ -94,8 +93,7 @@ class AIModelManager:
             logging.info(f"GPT 모델 로딩 완료: {model_path if os.path.exists(model_path) else 'gpt2'}")
             return self.tokenizer, self.gpt_model
         except Exception as e:
-            error_message = get_message("error", "05").format(e=e)
-            logging.exception(error_message)
+            handle_error(self.system_manager, "error", "05", e, "모델 로드 오류")
             return None, None
 
     def request_ai_training(self, data: Optional[Dict[str, Any]] = None):
@@ -115,7 +113,7 @@ class AIModelManager:
             output = self.gpt_model.generate(input_ids=input_ids, attention_mask=attention_mask, max_new_tokens=50, pad_token_id=pad_token_id)
             return self.tokenizer.decode(output[0], skip_special_tokens=True)
         except Exception as e:
-            logging.exception(f"GPT 텍스트 생성 중 오류 발생: {e}")
+            handle_error(self.system_manager, "error", "05", e, "GPT 텍스트 생성 오류")
             return "GPT 텍스트 생성 오류"
 
     def save_generated_text_to_db(self, file_name: str, text: str):
@@ -127,7 +125,7 @@ class AIModelManager:
             self.database_manager.save_text(file_name, text)
             logging.info(f"Generated text saved to database: {file_name}")
         except Exception as e:
-            logging.error(f"Error saving generated text to database: {e}")
+            handle_error(self.system_manager, "error", "05", e, "텍스트 저장 오류")
             raise
 
     def send_message_to_queue(self, queue_name: str, message: str):
@@ -139,7 +137,7 @@ class AIModelManager:
             self.rabbitmq_manager.send_message(queue_name, message)
             logging.info(f"Message sent to queue {queue_name}: {message}")
         except Exception as e:
-            logging.error(f"Error sending message to queue {queue_name}: {e}")
+            handle_error(self.system_manager, "error", "05", e, "메시지 전송 오류")
             raise
 
     def save_model(self, save_path: str) -> None:
@@ -150,7 +148,7 @@ class AIModelManager:
             self.model.save(save_path)
             logging.info(f"모델 저장 완료: {save_path}")
         except Exception as e:
-            logging.exception(f"모델 저장 중 오류 발생: {e}")
+            handle_error(self.system_manager, "error", "05", e, "모델 저장 오류")
             raise
 
     def apply_trained_model(self, model_path: str) -> None:
@@ -159,9 +157,9 @@ class AIModelManager:
             logging.info(f"학습된 모델 로딩 중: {model_path}")
             self.model = tf.keras.models.load_model(model_path)
             logging.info("모델 로딩 완료")
-        except FileNotFoundError:
-            logging.error(f"모델 파일을 찾을 수 없습니다: {model_path}")
+        except FileNotFoundError as e:
+            handle_error(self.system_manager, "error", "05", e, "모델 파일 오류")
             raise
         except Exception as e:
-            logging.exception(f"학습된 모델 적용 오류: {e}")
+            handle_error(self.system_manager, "error", "05", e, "모델 적용 오류")
             raise

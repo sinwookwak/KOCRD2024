@@ -8,6 +8,8 @@ from typing import Callable, Dict, Any
 import pika.exceptions
 from ai_model_manager import AIModelManager
 from ai_event_manager import AIEventManager
+from ai_config import get_message, handle_error
+
 
 class OCRResultHandler:
     """OCR 결과 메시지 처리 담당."""

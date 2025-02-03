@@ -9,7 +9,7 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from utils.embedding_utils import generate_document_type_embeddings
 import pika.exceptions
-from ai_config import get_message
+from ai_config import get_message, handle_error
 
 class AIPredictionManager:
     def __init__(self, model_manager, settings_manager, database_manager, system_manager, ai_data_manager):
@@ -30,17 +30,11 @@ class AIPredictionManager:
 
     def send_message_to_queue(self, queue_name, message):
         """메시지를 지정된 큐에 전송."""
-        rabbitmq_manager = self.ai_model_manager.get_rabbitmq_manager()
-        if not rabbitmq_manager:
-            logging.error("RabbitMQManager가 설정되지 않았습니다.")
-            self.system_manager.handle_error("RabbitMQManager가 설정되지 않았습니다.", "RabbitMQ 오류")
-            return
         try:
-            rabbitmq_manager.send_message(queue_name, json.dumps(message))
-        except pika.exceptions.AMQPError as e:
-            error_message = get_message("error", "11").format(e=e)
-            logging.error(error_message)
-            self.system_manager.handle_error(error_message, "RabbitMQ 오류")
+            queue_config = get_message("queues", queue_name)
+            # 메시지를 큐에 전송하는 로직 추가
+        except Exception as e:
+            handle_error(self.system_manager, "error", "11", e, "RabbitMQ 오류")
             raise
 
     def load_ko_e5_model(self):
@@ -49,9 +43,7 @@ class AIPredictionManager:
             self.ko_e5_model = SentenceTransformer("nlpai-lab/KoE5")
             logging.info("KoE5 모델 로드 완료.")
         except Exception as e:
-            error_message = get_message("error", "05").format(e=e)
-            logging.exception(error_message)
-            self.system_manager.handle_error(error_message, "모델 로드 오류")
+            handle_error(self.system_manager, "error", "05", e, "모델 로드 오류")
             self.ko_e5_model = None
 
     def set_use_ml_model(self, use_ml_model):
@@ -70,8 +62,7 @@ class AIPredictionManager:
                     document_type = self.postprocess_prediction(model_input)
                     is_rule_based = False
             except Exception as e:
-                logging.exception(f"머신러닝 모델 예측 오류: {e}")
-                self.system_manager.handle_error(f"머신러닝 모델 예측 오류: {e}", "모델 예측 오류")
+                handle_error(self.system_manager, "error", "05", e, "모델 예측 오류")
         else:
             if "invoice" in text.lower():
                 document_type = "Invoice"
@@ -92,7 +83,7 @@ class AIPredictionManager:
             embeddings = self.ko_e5_model.encode([text])
             return embeddings
         except Exception as e:
-            logging.exception(f"KoE5 임베딩 생성 오류: {e}")
+            handle_error(self.system_manager, "error", "05", e, "임베딩 생성 오류")
             return None
 
     def postprocess_prediction(self, prediction):
@@ -121,15 +112,13 @@ class AIPredictionManager:
                     for doc_type, embedding in embeddings.items():
                         self.document_type_embeddings[doc_type] = np.array(embedding)
                     logging.info("문서 유형 임베딩 로드 완료.")
-            except (json.JSONDecodeError, FileNotFoundError) as e: # 두 예외를 한번에 처리
-                logging.error(f"임베딩 파일 오류: {e}")
-                self.system_manager.handle_error(f"임베딩 파일 오류: {e}", "파일 오류")
+            except (json.JSONDecodeError, FileNotFoundError) as e:
+                handle_error(self.system_manager, "error", "05", e, "임베딩 파일 오류")
                 embeddings = generate_document_type_embeddings(self.document_types_path)
                 if embeddings:
                     self.load_document_type_embeddings()
             except Exception as e:
-                logging.exception(f"문서 유형 임베딩 로드 오류: {e}")
-                self.system_manager.handle_error(f"문서 유형 임베딩 로드 오류: {e}", "임베딩 로드 오류")
+                handle_error(self.system_manager, "error", "05", e, "임베딩 로드 오류")
         else:
             logging.info(f"문서 유형 임베딩 파일({embedding_file_path})을 찾을 수 없습니다. 재생성합니다.")
             embeddings = generate_document_type_embeddings(self.document_types_path)

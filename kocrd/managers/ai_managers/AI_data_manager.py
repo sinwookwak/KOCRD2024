@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from PyQt5.QtWidgets import QInputDialog
 from ai_model_manager import AIModelManager
-from ai_config import get_message
+from ai_config import get_message, handle_error
 
 class AIDataManager:
     def __init__(self, database_manager, model_manager):
@@ -19,8 +19,7 @@ class AIDataManager:
             self.database_manager.save_feedback(data)
             logging.info(f"피드백 저장 완료: {data}")
         except Exception as e:
-            error_message = get_message("error", "05").format(e=e)
-            logging.exception(error_message) # logging.exception 사용, 예외 다시 발생시키지 않음
+            handle_error(self.system_manager, "error", "05", e, "피드백 저장 오류")
 
     def request_user_feedback(self, file_path):
         """사용자 피드백 요청."""

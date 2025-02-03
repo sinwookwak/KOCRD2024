@@ -5,7 +5,7 @@ import pika
 from datetime import datetime
 from typing import Dict, Any, Callable
 from ai_model_manager import AIModelManager
-from ai_config import get_message
+from ai_config import get_message, handle_error
 
 class AIEventManager:
     """이벤트 처리, 데이터 저장, 메시지 전송 담당."""
@@ -49,7 +49,7 @@ class AIEventManager:
             try:
                 self.model_manager.apply_trained_model(model_path) # AIModelManager의 apply_trained_model 사용
             except Exception as e:
-                logging.exception(f"모델 적용 중 오류: {e}")
+                handle_error(self.system_manager, "error", "05", e, "모델 적용 오류")
 
         # 문서 분석 재개
         self.system_manager.start_document_analysis()
@@ -87,8 +87,7 @@ class AIEventManager:
             message_type = message.get("type")
 
             if message_type not in self.message_handlers: # 메시지 타입 유효성 검사
-                error_message = get_message("warning", "04").format(message_type=message_type)
-                logging.warning(error_message)
+                handle_error(self.system_manager, "warning", "04", message_type, "알 수 없는 메시지 타입")
                 self.request_feedback(message, error_message)
                 return
 
@@ -132,12 +131,10 @@ class AIEventManager:
                 return
 
         except json.JSONDecodeError as e:
-            error_message = get_message("error", "12").format(e=e, body=body.decode())
-            logging.exception(error_message)
+            handle_error(self.system_manager, "error", "12", e, "JSON 디코딩 오류")
             self.request_feedback(body, error_message)
         except Exception as e:
-            error_message = get_message("error", "05").format(e=e)
-            logging.exception(error_message)
+            handle_error(self.system_manager, "error", "05", e, "메시지 처리 오류")
             self.request_feedback(message, error_message)
 
     def request_feedback(self, original_message: Any, error_reason: str):
@@ -169,5 +166,4 @@ class AIEventManager:
             logging.error(f"RabbitMQ 연결 오류: {e}")
             # 필요한 경우 재연결 로직 추가
         except Exception as e:
-            logging.exception(f"main 함수 실행 중 오류: {e}")
-            # 필요한 경우 추가적인 오류 처리
+            handle_error(self.system_manager, "error", "05", e, "main 함수 실행 중 오류")
