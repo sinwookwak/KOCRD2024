@@ -7,8 +7,9 @@ from typing import Optional, Tuple
 from regex import F
 import tensorflow as tf
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
-from system import DatabaseManager, RabbitMQManager, SettingsManager
+from system import DatabaseManager, SettingsManager
 from typing import Dict, Any, Optional
+from ai_config import get_message
 
 class AIModelManager:
     _instance = None
@@ -80,7 +81,8 @@ class AIModelManager:
                 self.model = tf.keras.models.load_model(self.model_path)
                 logging.info(f"TensorFlow 모델 로딩 완료: {self.model_path}")
         except Exception as e:
-            logging.exception(f"모델 로딩 중 오류 발생: {e}")
+            error_message = get_message("error", "05").format(e=e)
+            logging.exception(error_message)
             raise
 
     def _load_gpt_model(self, model_path: str) -> Tuple[Optional[GPT2Tokenizer], Optional[GPT2LMHeadModel]]:
@@ -92,7 +94,8 @@ class AIModelManager:
             logging.info(f"GPT 모델 로딩 완료: {model_path if os.path.exists(model_path) else 'gpt2'}")
             return self.tokenizer, self.gpt_model
         except Exception as e:
-            logging.exception(f"GPT 모델 로딩 중 오류 발생: {e}")
+            error_message = get_message("error", "05").format(e=e)
+            logging.exception(error_message)
             return None, None
 
     def request_ai_training(self, data: Optional[Dict[str, Any]] = None):

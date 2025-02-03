@@ -9,6 +9,7 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from utils.embedding_utils import generate_document_type_embeddings
 import pika.exceptions
+from ai_config import get_message
 
 class AIPredictionManager:
     def __init__(self, model_manager, settings_manager, database_manager, system_manager, ai_data_manager):
@@ -37,8 +38,9 @@ class AIPredictionManager:
         try:
             rabbitmq_manager.send_message(queue_name, json.dumps(message))
         except pika.exceptions.AMQPError as e:
-            logging.error(f"RabbitMQ 전송 오류: {e}")
-            self.system_manager.handle_error(f"RabbitMQ 전송 오류: {e}", "RabbitMQ 오류")
+            error_message = get_message("error", "11").format(e=e)
+            logging.error(error_message)
+            self.system_manager.handle_error(error_message, "RabbitMQ 오류")
             raise
 
     def load_ko_e5_model(self):
@@ -47,8 +49,9 @@ class AIPredictionManager:
             self.ko_e5_model = SentenceTransformer("nlpai-lab/KoE5")
             logging.info("KoE5 모델 로드 완료.")
         except Exception as e:
-            logging.exception(f"KoE5 모델 로드 오류: {e}")
-            self.system_manager.handle_error(f"KoE5 모델 로드 오류: {e}", "모델 로드 오류")
+            error_message = get_message("error", "05").format(e=e)
+            logging.exception(error_message)
+            self.system_manager.handle_error(error_message, "모델 로드 오류")
             self.ko_e5_model = None
 
     def set_use_ml_model(self, use_ml_model):

@@ -13,7 +13,6 @@ from managers.temp_file_manager import TempFileManager
 from managers.database_manager import DatabaseManager
 from kocrd.window.menubar.menubar_manager import MenubarManager
 from managers.document.document_manager import DocumentManager
-from managers.rabbitmq_manager import RabbitMQManager
 from Settings.settings_manager import SettingsManager
 
 from kocrd.config import development
@@ -31,6 +30,9 @@ class SystemManager:
         self.settings = self.load_development_settings()
         self._init_components(self.settings)
         self.initialize_managers()
+        self.rabbitmq_connection = None
+        self.rabbitmq_channel = None
+        self._configure_rabbitmq()
 
     @staticmethod
     def initialize_settings(settings_path="config/development.json"):
@@ -72,7 +74,6 @@ class SystemManager:
             self.managers[manager_name] = manager_instance
 
         self.managers["temp_file"] = self.create_temp_file_manager()
-        self.managers["rabbitmq"] = self.create_rabbitmq_manager()
         self.managers["database"] = self.create_database_manager()
         self.managers["analysis"] = self.create_analysis_manager()
         self.managers["menubar"] = self.create_menubar_manager()
@@ -83,9 +84,6 @@ class SystemManager:
     def create_temp_file_manager(self):
         return TempFileManager(self.settings_manager)
 
-    def create_rabbitmq_manager(self):
-        return RabbitMQManager(self.settings_manager)
-
     def create_database_manager(self):
         return DatabaseManager(self.settings_manager.get_setting("db_path"), self.settings_manager.get_setting("backup_path"))
 
@@ -94,9 +92,6 @@ class SystemManager:
 
     def get_database_manager(self):
         return self.managers.get("database")
-
-    def get_rabbitmq_manager(self):
-        return self.managers.get("rabbitmq")
 
     def create_menubar_manager(self):
         return MenubarManager(self.main_window)
@@ -114,6 +109,14 @@ class SystemManager:
             logging.info(f"🟢 Tessdata 설정 완료: {self.tessdata_dir}")
         logging.info(f"🟢 Tesseract 설정 완료: {self.tesseract_cmd}")
         logging.info("🟢 SystemManager 초기화 완료.")
+
+    def _configure_rabbitmq(self):
+        rabbitmq_settings = self.settings["managers"]["message_queue"]["kwargs"]
+        credentials = pika.PlainCredentials(rabbitmq_settings["username"], rabbitmq_settings["password"])
+        parameters = pika.ConnectionParameters(rabbitmq_settings["host"], rabbitmq_settings["port"], '/', credentials)
+        self.rabbitmq_connection = pika.BlockingConnection(parameters)
+        self.rabbitmq_channel = self.rabbitmq_connection.channel()
+        logging.info("🟢 RabbitMQ 설정 완료.")
 
     def _init_components(self, settings: Dict[str, Any]) -> None:
         """설정 파일을 기반으로 매니저 및 UI 초기화"""
@@ -156,7 +159,8 @@ class SystemManager:
 
     def handle_message(self, ch, method, properties, body):
         """RabbitMQ 메시지를 처리합니다."""
-        self.get_rabbitmq_manager().process_message(ch, method, properties, body)
+        # 메시지 처리 로직을 여기에 추가합니다.
+        logging.info(f"Received message: {body}")
 
     def handle_error(self, message, error_code=None):
         if error_code:
@@ -169,7 +173,9 @@ class SystemManager:
         EmbeddingUtils.run_embedding_generation(self.settings_manager)
 
     def close_rabbitmq_connection(self):
-        self.get_rabbitmq_manager().close_connection()
+        if self.rabbitmq_connection:
+            self.rabbitmq_connection.close()
+            logging.info("🟢 RabbitMQ 연결 종료.")
 
     def get_ai_manager(self):
         return self.managers.get("ai_prediction")

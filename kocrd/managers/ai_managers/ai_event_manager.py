@@ -5,6 +5,7 @@ import pika
 from datetime import datetime
 from typing import Dict, Any, Callable
 from ai_model_manager import AIModelManager
+from ai_config import get_message
 
 class AIEventManager:
     """이벤트 처리, 데이터 저장, 메시지 전송 담당."""
@@ -86,8 +87,9 @@ class AIEventManager:
             message_type = message.get("type")
 
             if message_type not in self.message_handlers: # 메시지 타입 유효성 검사
-                logging.warning(f"알 수 없는 메시지 타입: {message_type}, 메시지: {message}")
-                self.request_feedback(message, "알 수 없는 메시지 타입") # 피드백 요청
+                error_message = get_message("warning", "04").format(message_type=message_type)
+                logging.warning(error_message)
+                self.request_feedback(message, error_message)
                 return
 
             handler = self.message_handlers[message_type]
@@ -130,11 +132,13 @@ class AIEventManager:
                 return
 
         except json.JSONDecodeError as e:
-            logging.exception(f"메시지 JSON 디코딩 오류: {e}, body: {body}")
-            self.request_feedback(body, "JSON 디코딩 오류") # 원본 body 전달
+            error_message = get_message("error", "12").format(e=e, body=body.decode())
+            logging.exception(error_message)
+            self.request_feedback(body, error_message)
         except Exception as e:
-            logging.exception(f"메시지 처리 중 오류: {e}")
-            self.request_feedback(message, "메시지 처리 오류")
+            error_message = get_message("error", "05").format(e=e)
+            logging.exception(error_message)
+            self.request_feedback(message, error_message)
 
     def request_feedback(self, original_message: Any, error_reason: str):
         """사용자에게 피드백을 요청하는 메시지를 생성하고 전송."""

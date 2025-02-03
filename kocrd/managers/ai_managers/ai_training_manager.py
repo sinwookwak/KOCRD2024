@@ -5,6 +5,7 @@ import json
 import os
 from sklearn.model_selection import train_test_split
 from PyQt5.QtWidgets import QMessageBox
+from ai_config import get_message
 
 class AITrainingManager:
     def __init__(self, model_manager, settings_manager, system_manager, ai_data_manager):
@@ -21,12 +22,12 @@ class AITrainingManager:
             y = data[label]
             return train_test_split(X, y, test_size=0.2)
         except KeyError as e:
-            error_message = f"데이터에 필요한 열이 없습니다: {e}"
+            error_message = get_message("error", "01").format(e=e)
             self.system_manager.handle_error(error_message, "데이터 오류")
             logging.error(error_message) # 로그 추가
             return None, None, None, None
         except Exception as e: # 추가적인 예외 처리
-            error_message = f"데이터 준비 중 오류 발생: {e}"
+            error_message = get_message("error", "05").format(e=e)
             self.system_manager.handle_error(error_message, "데이터 오류")
             logging.exception(error_message) # 로그 추가
             return None, None, None, None
@@ -58,7 +59,7 @@ class AITrainingManager:
             logging.error(error_message)
             return None
         except Exception as e:
-            error_message = f"모델 학습 중 오류: {e}"
+            error_message = get_message("error", "05").format(e=e)
             self.system_manager.handle_error(error_message, "학습 오류")
             logging.exception(error_message)
             return None

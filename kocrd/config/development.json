@@ -55,9 +55,15 @@
       "inject_settings": "true"
     },
     "message_queue": {
-      "class": "RabbitMQManager",
-      "module": "kocrd.managers.rabbitmq_manager",
-      "dependencies": []
+      "class": "SystemManager",
+      "module": "kocrd.managers.system_manager",
+      "dependencies": [],
+      "kwargs": {
+        "host": "RABBITMQ_HOST",
+        "port": "RABBITMQ_PORT",
+        "username": "RABBITMQ_USERNAME",
+        "password": "RABBITMQ_PASSWORD"
+      }
     },
     "document": {
       "class": "DocumentManager",
