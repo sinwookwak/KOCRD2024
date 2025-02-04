@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QSplitter, QVBoxLayout, QHBoxL
 from PyQt5.QtCore import pyqtSignal
 from window.document_ui_system import DocumentUISystem
 from window.monitoring_ui_system import MonitoringUISystem
-from window.menubar.menubar_manager import MenubarManager
+from kocrd.window.menubar_manager import MenubarManager
 
 class MainWindow(QMainWindow):
     command_processed = pyqtSignal(str, str)  # (Command Text, AI Response) 신호

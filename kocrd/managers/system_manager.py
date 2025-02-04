@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QMessageBox, QApplication
 from ocr.ocr_manager import OCRManager
 from managers.temp_file_manager import TempFileManager
 from managers.database_manager import DatabaseManager
-from kocrd.window.menubar.menubar_manager import MenubarManager
+from kocrd.window.menubar_manager import MenubarManager
 from managers.document.document_manager import DocumentManager
 from Settings.settings_manager import SettingsManager
 

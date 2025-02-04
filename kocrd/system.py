@@ -14,7 +14,7 @@ from managers.document.document_manager import DocumentManager
 from managers.ai_managers.ai_model_manager import AIModelManager
 from managers.temp_file_manager import TempFileManager
 from managers.rabbitmq_manager import RabbitMQManager
-from window.menubar.menubar_manager import MenubarManager
+from kocrd.window.menubar_manager import MenubarManager
 from utils.embedding_utils import EmbeddingUtils
 
 logging.basicConfig(level=logging.DEBUG)
