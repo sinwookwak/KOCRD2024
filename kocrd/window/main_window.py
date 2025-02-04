@@ -40,8 +40,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         reply = QMessageBox.question(
             self, 
-            self.messages["program_exit_title"]["ko"], 
-            self.messages["program_exit_confirmation"]["ko"],
+            self.get_message("program_exit_title"), 
+            self.get_message("program_exit_confirmation"),
             QMessageBox.Yes | QMessageBox.No, 
             QMessageBox.No
         )
@@ -70,8 +70,8 @@ class MainWindow(QMainWindow):
             self.monitoring_ui_system.display_chat_response(response)
             self.command_processed.emit(command_text, response)
         except Exception as e:
-            logging.error(self.error_messages["command_error"].format(error=e))
-            QMessageBox.critical(self, "Command Error", self.error_messages["command_error"].format(error=e))
+            logging.error(self.get_error_message("command_error").format(error=e))
+            QMessageBox.critical(self, "Command Error", self.get_error_message("command_error").format(error=e))
 
     def process_ocr_event(self, file_path):
         """OCR 이벤트 처리."""
@@ -80,8 +80,8 @@ class MainWindow(QMainWindow):
             log_message = f"Extracted Text: {text}"
             self.monitoring_ui_system.display_log(log_message)
         except Exception as e:
-            logging.error(self.error_messages["ocr_error"].format(error=e))
-            QMessageBox.critical(self, "OCR Error", self.error_messages["ocr_error"].format(error=e))
+            logging.error(self.get_error_message("ocr_error").format(error=e))
+            QMessageBox.critical(self, "OCR Error", self.get_error_message("ocr_error").format(error=e))
 
     def handle_monitoring_event(self, event_type):
         """AI_Monitoring_event와 연동."""
@@ -89,8 +89,8 @@ class MainWindow(QMainWindow):
             self.event_manager.handle_monitoring_event(event_type)
             logging.info(f"Monitoring event '{event_type}' handled successfully.")
         except Exception as e:
-            logging.error(self.error_messages["monitoring_event_error"].format(error=e))
-            QMessageBox.critical(self, "Monitoring Event Error", self.error_messages["monitoring_event_error"].format(error=e))
+            logging.error(self.get_error_message("monitoring_event_error").format(error=e))
+            QMessageBox.critical(self, "Monitoring Event Error", self.get_error_message("monitoring_event_error").format(error=e))
 
     def handle_chat(self, message):
         """사용자 메시지 처리."""
@@ -103,8 +103,8 @@ class MainWindow(QMainWindow):
             self.monitoring_ui_system.display_chat_message(message, response)
 
         except Exception as e:
-            logging.error(self.error_messages["chat_error"])
-            self.monitoring_ui_system.display_chat_message(message, self.error_messages["chat_error"])
+            logging.error(self.get_error_message("chat_error"))
+            self.monitoring_ui_system.display_chat_message(message, self.get_error_message("chat_error"))
 
     def display_document_content(self, text, source="AI"):
         """문서 내용 표시."""
@@ -112,7 +112,7 @@ class MainWindow(QMainWindow):
             self.monitoring_ui_system.display_log(f"[{source}]:\n{text}\n")
             logging.info(f"Displayed content from {source}.")
         except Exception as e:
-            logging.error(self.error_messages["content_display_error"].format(error=e))
+            logging.error(self.get_error_message("content_display_error").format(error=e))
 
     def load_config(self):
         """설정 파일을 로드하거나 기본 설정을 생성합니다."""
@@ -127,6 +127,14 @@ class MainWindow(QMainWindow):
             with open(config_path, "w", encoding="utf-8") as file:
                 json.dump(default_config, file, indent=4)
             return default_config
+
+    def get_message(self, key):
+        """메시지 키를 통해 메시지를 가져옵니다."""
+        return self.messages.get(key, "메시지를 찾을 수 없습니다.")
+
+    def get_error_message(self, key):
+        """에러 메시지 키를 통해 에러 메시지를 가져옵니다."""
+        return self.error_messages.get(key, "에러 메시지를 찾을 수 없습니다.")
 
 # system_manager 모듈을 나중에 임포트
 from system import SystemManager

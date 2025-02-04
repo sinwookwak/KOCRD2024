@@ -3,6 +3,7 @@ import json
 import logging
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSplitter, QTextEdit, QProgressBar, QLineEdit, QPushButton, QHBoxLayout, QListWidget
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
+import os
 
 class MonitoringUISystem(QWidget):
     """모니터링 UI 시스템 클래스."""
@@ -50,7 +51,8 @@ class MonitoringUISystem(QWidget):
         """버튼 섹션 생성."""
         button_section = QHBoxLayout()
 
-        with open('../window/window_config.json', 'r') as f:
+        config_path = os.path.join(os.path.dirname(__file__), 'window_config.json')
+        with open(config_path, 'r') as f:
             config = json.load(f)
 
         for button_config in config["buttons"]:
@@ -116,7 +118,8 @@ class MonitoringUISystem(QWidget):
             log_display.setReadOnly(True)
             monitoring_layout.addWidget(log_display)
 
-            with open('../window/window_config.json', 'r') as f:
+            config_path = os.path.join(os.path.dirname(__file__), 'window_config.json')
+            with open(config_path, 'r') as f:
                 config = json.load(f)
 
             for widget_config in config["monitoring_ui"]["widgets"]:

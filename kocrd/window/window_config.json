@@ -28,52 +28,52 @@
   },
   "table_columns": ["파일명", "유형", "날짜", "공급자", "상태"],
   "messages": {
-    "clear_table_confirmation": "파일 테이블의 모든 데이터를 삭제하시겠습니까?",
-    "clear_table_success": "파일 테이블이 초기화되었습니다.",
-    "filter_error": "문서를 필터링 하는 중 오류가 발생했습니다.",
-    "filter_success": "Documents filtered successfully.",
-    "update_error": "문서 유형을 업데이트 하는 중 오류가 발생했습니다:",
-    "update_success": "Document type updated successfully.",
-    "delete_confirmation": "문서 '{file_name}'을(를) 삭제하시겠습니까?",
-    "delete_success": "문서 '{file_name}'이(가) 삭제되었습니다.",
-    "delete_error": "문서를 삭제하는 중 오류가 발생했습니다:",
-    "select_document_error": "수정할 문서를 선택하세요.",
-    "search_empty": "검색 키워드가 비어 있습니다. 모든 행을 표시합니다.",
-    "start_deep_learning_title": {
+    "01": "파일 테이블의 모든 데이터를 삭제하시겠습니까?",
+    "02": "파일 테이블이 초기화되었습니다.",
+    "03": "문서를 필터링 하는 중 오류가 발생했습니다.",
+    "04": "Documents filtered successfully.",
+    "05": "문서 유형을 업데이트 하는 중 오류가 발생했습니다:",
+    "06": "Document type updated successfully.",
+    "07": "문서 '{file_name}'을(를) 삭제하시겠습니까?",
+    "08": "문서 '{file_name}'이(가) 삭제되었습니다.",
+    "09": "문서를 삭제하는 중 오류가 발생했습니다:",
+    "10": "수정할 문서를 선택하세요.",
+    "11": "검색 키워드가 비어 있습니다. 모든 행을 표시합니다.",
+    "12": {
       "ko": "딥러닝 학습 시작",
       "en": "Start Deep Learning"
     },
-    "start_deep_learning_text": {
+    "13": {
       "ko": "딥러닝이 시작되었습니다.",
       "en": "Deep learning has started."
     },
-    "training_started": {
+    "14": {
       "ko": "선택된 파일로 학습이 시작됩니다:\n{file_path}",
       "en": "Training started with selected file:\n{file_path}"
     },
-    "training_cancelled": {
+    "15": {
       "ko": "학습 데이터 파일이 선택되지 않았습니다.",
       "en": "Training data file was not selected."
     },
-    "program_exit_confirmation": {
+    "16": {
       "ko": "프로그램을 종료하시겠습니까?",
       "en": "Do you want to exit the program?"
     },
-    "program_exit_title": {
+    "17": {
       "ko": "프로그램 종료",
       "en": "Exit Program"
     }
   },
   "log_messages": {
-    "filter_success": "Documents filtered successfully.",
-    "search_completed": "Document search completed for keyword: {keyword}"
+    "01": "Documents filtered successfully.",
+    "02": "Document search completed for keyword: {keyword}"
   },
   "error_messages": {
-    "filter_error": "문서를 필터링 하는 중 오류가 발생했습니다.",
-    "command_error": "Error handling command: {error}",
-    "ocr_error": "OCR 처리 중 오류가 발생했습니다: {error}",
-    "monitoring_event_error": "Monitoring event 처리 중 오류가 발생했습니다: {error}",
-    "chat_error": "AI 응답 처리 중 오류가 발생했습니다.",
-    "content_display_error": "Error displaying content: {error}"
+    "01": "문서를 필터링 하는 중 오류가 발생했습니다.",
+    "02": "Error handling command: {error}",
+    "03": "OCR 처리 중 오류가 발생했습니다: {error}",
+    "04": "Monitoring event 처리 중 오류가 발생했습니다: {error}",
+    "05": "AI 응답 처리 중 오류가 발생했습니다.",
+    "06": "Error displaying content: {error}"
   }
 }

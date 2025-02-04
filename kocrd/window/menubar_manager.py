@@ -11,7 +11,7 @@ class MenubarManager:
         self.system_manager = system_manager
         self.menu_bar = QMenuBar(system_manager.parent)
         self.main_window = system_manager.parent
-        self.config_path = "config.json"
+        self.config_path = "config/window_config.json"
         logging.info("MenubarManager initialized with main_window.")
 
         self.config = self.load_config()
@@ -74,7 +74,7 @@ class MenubarManager:
         options |= QFileDialog.DontUseNativeDialog
         file_path, _ = QFileDialog.getOpenFileName(
             self.main_window,
-            self.messages["start_deep_learning_title"]["ko"],
+            self.get_message("12"),
             "",
             "Model Parameters (*.traineddata);;All Files (*)",
             options=options
@@ -82,15 +82,15 @@ class MenubarManager:
         if file_path:
             QMessageBox.information(
                 self.main_window,
-                self.messages["start_deep_learning_title"]["ko"],
-                self.messages["training_started"]["ko"].format(file_path=file_path)
+                self.get_message("12"),
+                self.get_message("14").format(file_path=file_path)
             )
             self.system_manager.ai_manager.train_with_parameters(file_path)  # 학습 시작
         else:
             QMessageBox.warning(
                 self.main_window,
-                self.messages["start_deep_learning_title"]["ko"],
-                self.messages["training_cancelled"]["ko"]
+                self.get_message("12"),
+                self.get_message("15")
             )
 
     def open_settings_dialog(self):
@@ -100,7 +100,7 @@ class MenubarManager:
 
     def load_config(self):
         """설정 파일을 로드하거나 기본 설정을 생성합니다."""
-        config_path = "window_config.json"
+        config_path = self.config_path
         if os.path.exists(config_path):
             with open(config_path, "r", encoding="utf-8") as file:
                 return json.load(file)
@@ -111,6 +111,10 @@ class MenubarManager:
             with open(config_path, "w", encoding="utf-8") as file:
                 json.dump(default_config, file, indent=4)
             return default_config
+
+    def get_message(self, key):
+        """메시지 키를 통해 메시지를 가져옵니다."""
+        return self.messages.get(key, "메시지를 찾을 수 없습니다.")
 
     def get_ui(self):
         """MenuBar UI 반환."""

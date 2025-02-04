@@ -20,8 +20,31 @@ class DocumentUISystem:
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
 
-        with open('../window/window_config.json', 'r') as f:
+        config_path = os.path.join(os.path.dirname(__file__), 'window_config.json')
+        with open(config_path, 'r') as f:
             self.config = json.load(f)
+
+        self.messages = self.config.get("messages", {})
+
+    def _execute_action(self, action, confirmation_key=None, success_key=None, error_key=None, **kwargs):
+        if confirmation_key:
+            reply = QMessageBox.question(
+                self.main_window, "확인",
+                self.messages.get(confirmation_key, "확인 메시지를 찾을 수 없습니다.").format(**kwargs),
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            )
+            if reply == QMessageBox.No:
+                return
+
+        try:
+            result = action() if callable(action) else None  # Execute the action and store the result
+            if success_key:
+                QMessageBox.information(self.main_window, "완료", self.messages.get(success_key, "성공 메시지를 찾을 수 없습니다.").format(**kwargs))
+            return result # Return the result of the action
+        except Exception as e:
+            logging.error(f"Error: {e}")
+            if error_key:
+                QMessageBox.warning(self.main_window, "오류", self.messages.get(error_key, "오류 메시지를 찾을 수 없습니다."))
 
     def init_ui(self):
         central_widget = QWidget(self.main_window)
@@ -73,7 +96,7 @@ class DocumentUISystem:
 
     def clear_table(self):
         """파일 테이블을 초기화합니다."""
-        self._show_message_box("clear_table_confirmation", "clear_table_success", self._clear_table_action)
+        self._execute_action(self._clear_table_action, "clear_table_confirmation", "clear_table_success")
 
     def _clear_table_action(self):
         self.table_widget.setRowCount(0)  # 모든 행 삭제
@@ -98,10 +121,10 @@ class DocumentUISystem:
         current_file_name = self.table_widget.item(selected_row, 0).text()
         new_type, ok = QInputDialog.getText(self.main_window, "문서 유형 수정", f"{current_file_name}의 새로운 문서 유형을 입력하세요:")
         if ok and new_type:
-            self._execute_with_logging(
+            self._execute_action(
                 lambda: self._update_document_type(database_manager, current_file_name, new_type, selected_row),
-                "update_success",
-                "update_error"
+                success_key="update_success",
+                error_key="update_error"
             )
 
     def _update_document_type(self, database_manager, current_file_name, new_type, selected_row):
@@ -147,10 +170,10 @@ class DocumentUISystem:
 
         selected_row = selected_items[0].row()
         file_name = self.table_widget.item(selected_row, 0).text()
-        self._show_message_box(
-            "delete_confirmation",
-            "delete_success",
+        self._execute_action(
             lambda: self._delete_document_action(database_manager, file_name, selected_row),
+            confirmation_key="delete_confirmation",
+            success_key="delete_success",
             file_name=file_name
         )
 
