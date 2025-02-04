@@ -1,4 +1,15 @@
 {
+  "constants": {
+    "SOME_CONSTANT": "value",
+    "ANOTHER_CONSTANT": "value",
+    "MODEL_PATH_KEY": "model_path",
+    "TESSERACT_CMD_KEY": "tesseract_cmd",
+    "TESSDATA_DIR_KEY": "tessdata_dir",
+    "MANAGERS_KEY": "managers",
+    "AI_MODEL_KEY": "ai_model",
+    "KWARGS_KEY": "kwargs",
+    "WORKER_PROCESS_KEY": "worker_process"
+  },
   "managers": {
     "database": {
       "class": "DatabaseManager",
@@ -6,17 +17,13 @@
       "kwargs": {
         "db_path": "DATABASE_PATH",
         "backup_path": "DATABASE_BACKUP_PATH"
-      },
-      "init_queries": [
-        "CREATE TABLE IF NOT EXISTS documents (file_name TEXT PRIMARY KEY, type TEXT, date TEXT, supplier TEXT)",
-        "CREATE TABLE IF NOT EXISTS feedback (file_path TEXT PRIMARY KEY, doc_type TEXT, timestamp TEXT)"
-      ]
+      }
     },
     "temp_file": {
       "class": "TempFileManager",
       "module": "kocrd.managers.temp_file_manager",
       "dependencies": [],
-      "inject_settings": "true"
+      "inject_settings": true
     },
     "ocr": {
       "class": "OCRManager",
@@ -26,13 +33,14 @@
         "tesseract_cmd": "TESSERACT_CMD",
         "tessdata_dir": "TESSDATA_DIR"
       },
-      "inject_settings": "true",
-      "inject_main_window": "true"
+      "inject_settings": true,
+      "inject_main_window": true
     },
     "menubar": {
       "class": "MenubarManager",
       "module": "kocrd.managers.menubar_manager",
-      "dependencies": []
+      "dependencies": [],
+      "inject_system_manager": true
     },
     "ai_model": {
       "class": "AIModelManager",
@@ -40,7 +48,7 @@
       "kwargs": {
         "model_path": "MODELS_PATH",
         "model_type": "gpt2",
-        "inject_settings": "true"
+        "inject_settings": true
       }
     },
     "ai_data": {
@@ -52,31 +60,31 @@
       "class": "AIPredictionManager",
       "module": "kocrd.managers.ai_managers.ai_prediction_manager",
       "dependencies": ["ai_model", "ai_data", "database"],
-      "inject_settings": "true"
+      "inject_settings": true
+    },
+    "monitoring": {
+      "class": "MonitoringManager",
+      "module": "kocrd.managers.monitoring_manager",
+      "dependencies": ["document", "ocr", "ai_prediction"]
     },
     "message_queue": {
-      "class": "SystemManager",
-      "module": "kocrd.managers.system_manager",
-      "dependencies": [],
-      "kwargs": {
-        "host": "RABBITMQ_HOST",
-        "port": "RABBITMQ_PORT",
-        "username": "RABBITMQ_USERNAME",
-        "password": "RABBITMQ_PASSWORD"
-      }
+      "class": "RabbitMQManager",
+      "module": "kocrd.managers.rabbitmq_manager",
+      "dependencies": []
     },
     "document": {
       "class": "DocumentManager",
       "module": "kocrd.managers.document.document_manager",
       "dependencies": ["ocr", "database", "message_queue"],
-      "inject_main_window": "true"
+      "inject_main_window": true,
+      "inject_system_manager": true
     },
     "ai_trainer": {
       "class": "AITrainer",
       "module": "kocrd.managers.ai_managers.ai_training_manager",
       "dependencies": ["ai_model", "ai_data", "message_queue", "database", "settings_manager"],
       "kwargs": {},
-      "inject_settings": "true"
+      "inject_settings": true
     },
     "settings_manager": {
       "class": "SettingsManager",
@@ -92,28 +100,26 @@
     "analysis_manager": {
       "class": "AnalysisManager",
       "module": "kocrd.managers.analysis_manager"
-    },
-    "monitoring": {
-      "class": "MainWindow",
-      "module": "kocrd.window.main_window",
-      "dependencies": ["document", "ocr", "ai_prediction"]
     }
   },
   "uis": {
     "menubar": {
       "class": "MenubarUI",
       "module": "kocrd.ui.menubar_ui",
-      "dependencies": []
+      "dependencies": [],
+      "inject_system_manager": true
     },
     "document": {
       "class": "DocumentUI",
       "module": "kocrd.ui.document_ui",
-      "dependencies": []
+      "dependencies": [],
+      "inject_system_manager": true
     },
     "monitoring": {
       "class": "MonitoringUI",
       "module": "kocrd.ui.monitoring_ui",
-      "dependencies": []
+      "dependencies": [],
+      "inject_system_manager": true
     }
   },
   "settings": {
@@ -122,18 +128,7 @@
     "VALID_FILE_EXTENSIONS": [".txt", ".pdf", ".png", ".jpg"],
     "MAX_FILE_SIZE": 10485760,
     "document_types_path": "path/to/document_types.json",
-    "ai_model_path": "path/to/your/ai_model",
-    "constants": {
-      "SOME_CONSTANT": "value",
-      "ANOTHER_CONSTANT": "value",
-      "MODEL_PATH_KEY": "model_path",
-      "TESSERACT_CMD_KEY": "tesseract_cmd",
-      "TESSDATA_DIR_KEY": "tessdata_dir",
-      "MANAGERS_KEY": "managers",
-      "AI_MODEL_KEY": "ai_model",
-      "KWARGS_KEY": "kwargs",
-      "WORKER_PROCESS_KEY": "worker_process"
-    }
+    "ai_model_path": "path/to/your/ai_model"
   },
   "queues": {
     "prediction_requests": "prediction_requests",

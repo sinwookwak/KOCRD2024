@@ -9,15 +9,15 @@
   "buttons": [
     {
       "label": "문서 처리 시작",
-      "callback": "01"
+      "callback": "601"
     },
     {
       "label": "데이터베이스 패키징",
-      "callback": "02"
+      "callback": "602"
     },
     {
       "label": "AI 모델 학습 시작",
-      "callback": "03"
+      "callback": "603"
     }
   ],
   "monitoring_ui": {
@@ -58,15 +58,15 @@
       "actions": [
         {
           "name": "열기",
-          "callback": "04"
+          "callback": "701"
         },
         {
           "name": "저장",
-          "callback": "05"
+          "callback": "702"
         },
         {
           "name": "종료",
-          "callback": "06"
+          "callback": "703"
         }
       ]
     },
@@ -75,7 +75,7 @@
       "actions": [
         {
           "name": "설정 열기",
-          "callback": "07"
+          "callback": "704"
         }
       ]
     },
@@ -84,96 +84,96 @@
       "actions": [
         {
           "name": "정보",
-          "callback": "08"
+          "callback": "705"
         }
       ]
     }
   ],
   "messages": {
-    "01": "파일 테이블의 모든 데이터를 삭제하시겠습니까?",
-    "02": "파일 테이블이 초기화되었습니다.",
-    "03": "문서를 필터링 하는 중 오류가 발생했습니다.",
-    "04": "Documents filtered successfully.",
-    "05": "문서 유형을 업데이트 하는 중 오류가 발생했습니다:",
-    "06": "Document type updated successfully.",
-    "07": "문서 '{file_name}'을(를) 삭제하시겠습니까?",
-    "08": "문서 '{file_name}'이(가) 삭제되었습니다.",
-    "09": "문서를 삭제하는 중 오류가 발생했습니다:",
-    "10": "수정할 문서를 선택하세요.",
-    "11": "검색 키워드가 비어 있습니다. 모든 행을 표시합니다.",
-    "12": {
+    "801": "파일 테이블의 모든 데이터를 삭제하시겠습니까?",
+    "802": "파일 테이블이 초기화되었습니다.",
+    "803": "문서를 필터링 하는 중 오류가 발생했습니다.",
+    "804": "Documents filtered successfully.",
+    "805": "문서 유형을 업데이트 하는 중 오류가 발생했습니다:",
+    "806": "Document type updated successfully.",
+    "807": "문서 '{file_name}'을(를) 삭제하시겠습니까?",
+    "808": "문서 '{file_name}'이(가) 삭제되었습니다.",
+    "809": "문서를 삭제하는 중 오류가 발생했습니다:",
+    "810": "수정할 문서를 선택하세요.",
+    "811": "검색 키워드가 비어 있습니다. 모든 행을 표시합니다.",
+    "812": {
       "ko": "딥러닝 학습 시작",
       "en": "Start Deep Learning"
     },
-    "13": {
+    "813": {
       "ko": "딥러닝이 시작되었습니다.",
       "en": "Deep learning has started."
     },
-    "14": {
+    "814": {
       "ko": "선택된 파일로 학습이 시작됩니다:\n{file_path}",
       "en": "Training started with selected file:\n{file_path}"
     },
-    "15": {
+    "815": {
       "ko": "학습 데이터 파일이 선택되지 않았습니다.",
       "en": "Training data file was not selected."
     },
-    "16": {
+    "816": {
       "ko": "프로그램을 종료하시겠습니까?",
       "en": "Do you want to exit the program?"
     },
-    "17": {
+    "817": {
       "ko": "프로그램 종료",
       "en": "Exit Program"
     },
-    "18": "사용자 설정 불러오기",
-    "19": "사용자 ID를 입력하세요:",
-    "20": "성공",
-    "21": "사용자 설정이 불러와졌습니다.",
-    "22": "실패",
-    "23": "사용자 ID를 입력하세요.",
-    "24": "정리 완료",
-    "25": "임시 파일이 정리되었습니다.",
-    "26": "작업 완료",
-    "27": "OCR 작업이 수행되었습니다.",
-    "28": "취소",
-    "29": "변경 사항이 취소되었습니다.",
+    "818": "사용자 설정 불러오기",
+    "819": "사용자 ID를 입력하세요:",
+    "820": "성공",
+    "821": "사용자 설정이 불러와졌습니다.",
+    "822": "실패",
+    "823": "사용자 ID를 입력하세요.",
+    "824": "정리 완료",
+    "825": "임시 파일이 정리되었습니다.",
+    "826": "작업 완료",
+    "827": "OCR 작업이 수행되었습니다.",
+    "828": "취소",
+    "829": "변경 사항이 취소되었습니다.",
     "log": {
-      "01": "Documents filtered successfully.",
-      "02": "Document search completed for keyword: {keyword}",
-      "03": "{file_path}의 문서 처리 결과: {document_result}",
-      "04": "Page {page_num} saved as image: {temp_image_path}",
-      "05": "Temporary files cleaned up.",
-      "06": "Starting document processing for {file_path}",
-      "07": "Extracting text from {file_path}",
-      "08": "Performing OCR on document",
-      "09": "Document processing completed: {file_path}",
-      "10": "Document saved successfully: {file_path}",
-      "16": "OCR settings saved.",
-      "ocr_settings_saved_to_db": "OCR settings saved to database."
+      "851": "Documents filtered successfully.",
+      "852": "Document search completed for keyword: {keyword}",
+      "853": "{file_path}의 문서 처리 결과: {document_result}",
+      "854": "Page {page_num} saved as image: {temp_image_path}",
+      "855": "Temporary files cleaned up.",
+      "856": "Starting document processing for {file_path}",
+      "857": "Extracting text from {file_path}",
+      "858": "Performing OCR on document",
+      "859": "Document processing completed: {file_path}",
+      "860": "Document saved successfully: {file_path}",
+      "861": "OCR settings saved.",
+      "862": "OCR settings saved to database."
     },
     "error": {
-      "01": "문서를 필터링 하는 중 오류가 발생했습니다.",
-      "02": "Error handling command: {error}",
-      "03": "OCR 처리 중 오류가 발생했습니다: {error}",
-      "04": "Monitoring event 처리 중 오류가 발생했습니다: {error}",
-      "05": "AI 응답 처리 중 오류가 발생했습니다.",
-      "06": "Error displaying content: {error}",
-      "07": "Error: {e}",
-      "08": "Page {page_num} 이미지 변환 실패",
-      "09": "PDF 처리 중 오류 발생: {e}",
-      "10": "지원하지 않는 파일 형식: {file_path}",
-      "11": "텍스트 추출 중 오류 발생: {e}",
-      "12": "Error saving page {page_num} as image: {e}",
-      "13": "Error cleaning temporary files: {e}",
-      "14": "Error during document processing for {file_path}: {e}",
-      "15": "monitoring_window에 system_manager가 없습니다.",
-      "16": "monitoring_window에 progress_bar가 없습니다.",
-      "17": "RabbitMQ 연결 오류: {e}",
-      "18": "JSON 파싱 오류: {e}. 메시지 내용: {body.decode()}",
-      "19": "문서 메시지 처리 중 오류 발생: {e}. 메시지 내용: {body.decode()}",
-      "20": "system_manager가 초기화되지 않았습니다.",
-      "21": "monitoring_window가 초기화되지 않았습니다.",
-      "22": "DatabaseManager not found."
+      "901": "문서를 필터링 하는 중 오류가 발생했습니다.",
+      "902": "Error handling command: {error}",
+      "903": "OCR 처리 중 오류가 발생했습니다: {error}",
+      "904": "Monitoring event 처리 중 오류가 발생했습니다: {error}",
+      "905": "AI 응답 처리 중 오류가 발생했습니다.",
+      "906": "Error displaying content: {error}",
+      "907": "Error: {e}",
+      "908": "Page {page_num} 이미지 변환 실패",
+      "909": "PDF 처리 중 오류 발생: {e}",
+      "910": "지원하지 않는 파일 형식: {file_path}",
+      "911": "텍스트 추출 중 오류 발생: {e}",
+      "912": "Error saving page {page_num} as image: {e}",
+      "913": "Error cleaning temporary files: {e}",
+      "914": "Error during document processing for {file_path}: {e}",
+      "915": "monitoring_window에 system_manager가 없습니다.",
+      "916": "monitoring_window에 progress_bar가 없습니다.",
+      "917": "RabbitMQ 연결 오류: {e}",
+      "918": "JSON 파싱 오류: {e}. 메시지 내용: {body.decode()}",
+      "919": "문서 메시지 처리 중 오류 발생: {e}. 메시지 내용: {body.decode()}",
+      "920": "system_manager가 초기화되지 않았습니다.",
+      "921": "monitoring_window가 초기화되지 않았습니다.",
+      "922": "DatabaseManager not found."
     }
   },
   "about_text": "Date Extractor AI\n© 2024"
