@@ -23,50 +23,33 @@ class MenubarManager:
 
     def setup_menus(self):
         """메뉴 항목 설정."""
-        self.init_file_menu()
-        self.init_settings_menu()
+        for menu_config in self.config["menus"]:
+            menu = self.menu_bar.addMenu(menu_config["name"])
+            for action_config in menu_config["actions"]:
+                action = QAction(action_config["name"], self.main_window)
+                action.triggered.connect(getattr(self, f"callback_{action_config['callback']}"))
+                menu.addAction(action)
         logging.info("MenubarManager initialized.")
 
-    def init_file_menu(self):
-        """파일 메뉴를 초기화."""
-        file_menu = self.menu_bar.addMenu("파일")
+    def callback_04(self):
+        """열기 콜백."""
+        self.system_manager.open_file_dialog()
 
-        # 문서 가져오기
-        if self.system_manager.document_manager is not None:
-            import_action = QAction("문서 가져오기", self.main_window)
-            import_action.triggered.connect(self.system_manager.document_manager.batch_import_documents)
-            file_menu.addAction(import_action)
-        else:
-            logging.error("DocumentManager is not initialized. '문서 가져오기' 기능 비활성화.")
+    def callback_05(self):
+        """저장 콜백."""
+        self.system_manager.save_file()
 
-        # 문서 내보내기
-        if self.system_manager.document_manager is not None:
-            export_action = QAction("문서 내보내기 (Excel)", self.main_window)
-            export_action.triggered.connect(self.system_manager.document_manager.save_to_excel)
-            file_menu.addAction(export_action)
-        else:
-            logging.error("DocumentManager is not initialized. '문서 내보내기' 기능 비활성화.")
+    def callback_06(self):
+        """종료 콜백."""
+        self.main_window.close()
 
-        # 종료
-        exit_action = QAction("종료", self.main_window)
-        exit_action.triggered.connect(self.main_window.close)
-        file_menu.addAction(exit_action)
+    def callback_07(self):
+        """설정 열기 콜백."""
+        self.open_settings_dialog()
 
-        logging.info("File menu initialized.")
-
-    def init_settings_menu(self):
-        """설정 메뉴"""
-        settings_menu = self.menu_bar.addMenu("설정")
-
-        # 환경설정
-        settings_action = QAction("환경설정", self.main_window)
-        settings_action.triggered.connect(self.open_settings_dialog)
-        settings_menu.addAction(settings_action)
-
-        # 딥러닝 학습 시작
-        deep_learning_action = QAction("딥러닝 학습 시작", self.main_window)
-        deep_learning_action.triggered.connect(self.open_deep_learning_dialog)
-        settings_menu.addAction(deep_learning_action)
+    def callback_08(self):
+        """정보 콜백."""
+        self.show_about_dialog()
 
     def open_deep_learning_dialog(self):
         """딥러닝 학습 경로를 선택하도록 대화창을 엽니다."""

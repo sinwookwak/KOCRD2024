@@ -9,15 +9,15 @@
   "buttons": [
     {
       "label": "문서 처리 시작",
-      "callback": "start_document_processing"
+      "callback": "01"
     },
     {
       "label": "데이터베이스 패키징",
-      "callback": "database_packaging"
+      "callback": "02"
     },
     {
       "label": "AI 모델 학습 시작",
-      "callback": "start_ai_training"
+      "callback": "03"
     }
   ],
   "monitoring_ui": {
@@ -58,15 +58,15 @@
       "actions": [
         {
           "name": "열기",
-          "callback": "open_file_dialog"
+          "callback": "04"
         },
         {
           "name": "저장",
-          "callback": "save_file"
+          "callback": "05"
         },
         {
           "name": "종료",
-          "callback": "close_application"
+          "callback": "06"
         }
       ]
     },
@@ -75,7 +75,7 @@
       "actions": [
         {
           "name": "설정 열기",
-          "callback": "open_settings_dialog"
+          "callback": "07"
         }
       ]
     },
@@ -84,7 +84,7 @@
       "actions": [
         {
           "name": "정보",
-          "callback": "show_about_dialog"
+          "callback": "08"
         }
       ]
     }

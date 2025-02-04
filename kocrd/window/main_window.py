@@ -1,8 +1,7 @@
-# file_name: main_window.py
 import logging
 import os
 import json
-from PyQt5.QtWidgets import QMainWindow, QWidget, QSplitter, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox, QProgressBar, QTextEdit
+from PyQt5.QtWidgets import QMainWindow, QWidget, QSplitter, QVBoxLayout, QMessageBox, QProgressBar
 from PyQt5.QtCore import pyqtSignal
 from window.document_ui_system import DocumentUISystem
 from window.monitoring_ui_system import MonitoringUISystem
@@ -60,7 +59,6 @@ class MainWindow(QMainWindow):
         else:
             event.ignore()
 
-    # 다른 UI 이벤트 핸들러들...
     def trigger_process(self, process_type, data=None):
         self.system_manager.trigger_process(process_type, data) # SystemManager에 위임
 

@@ -55,7 +55,7 @@ class MonitoringUISystem(QWidget):
 
         for button_config in self.config["buttons"]:
             button = QPushButton(button_config["label"])
-            button.clicked.connect(getattr(self.main_window.system_manager, button_config["callback"]))
+            button.clicked.connect(getattr(self.main_window.system_manager, f"callback_{button_config['callback']}"))
             button_section.addWidget(button)
 
         return button_section
