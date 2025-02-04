@@ -1,13 +1,13 @@
 {
   "constants": {
-    "SOME_CONSTANT": "value",
-    "ANOTHER_CONSTANT": "value",
     "MODEL_PATH_KEY": "model_path",
     "TESSERACT_CMD_KEY": "tesseract_cmd",
     "TESSDATA_DIR_KEY": "tessdata_dir",
     "MANAGERS_KEY": "managers",
     "AI_MODEL_KEY": "ai_model",
     "KWARGS_KEY": "kwargs",
+    "SOME_CONSTANT": "value",
+    "ANOTHER_CONSTANT": "value",
     "WORKER_PROCESS_KEY": "worker_process"
   },
   "managers": {
@@ -123,12 +123,12 @@
     }
   },
   "settings": {
+    "document_types_path": "path/to/document_types.json",
+    "ai_model_path": "path/to/your/ai_model",
     "DEFAULT_REPORT_FILENAME": "report.txt",
     "DEFAULT_EXCEL_FILENAME": "report.xlsx",
     "VALID_FILE_EXTENSIONS": [".txt", ".pdf", ".png", ".jpg"],
-    "MAX_FILE_SIZE": 10485760,
-    "document_types_path": "path/to/document_types.json",
-    "ai_model_path": "path/to/your/ai_model"
+    "MAX_FILE_SIZE": 10485760
   },
   "queues": {
     "prediction_requests": "prediction_requests",
@@ -270,5 +270,30 @@
       "21": "monitoring_window가 초기화되지 않았습니다.",
       "22": "DatabaseManager not found."
     }
+  },
+  "id_mapping": {
+    // Window Config IDs
+    "601": "Document Processing Start Button Callback",
+    "602": "Database Packaging Button Callback",
+    "603": "AI Model Training Start Button Callback",
+    "701": "File Open Menu Action Callback",
+    "702": "File Save Menu Action Callback",
+    "703": "File Exit Menu Action Callback",
+    "704": "Settings Open Menu Action Callback",
+    "705": "Help About Menu Action Callback",
+    "801": "Confirm Delete All Data Message",
+    "802": "File Table Initialized Message",
+    // ... all other window_config messages (803-922)
+
+    // OCR/AI Config IDs
+    "101": "Perform OCR Message Type",
+    "102": "OCR Result Message Type",
+    "201": "OCR Queue Name",
+    "202": "Events Queue Name",
+    "301": "Document Filtering Error Message",
+    "311": "Documents Filtered Successfully Log Message",
+    // ... all other ocr/ai_config messages (312-515)
+
+    // ... IDs from other config files (if any)
   }
 }
