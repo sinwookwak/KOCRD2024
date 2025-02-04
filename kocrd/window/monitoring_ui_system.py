@@ -10,6 +10,8 @@ class MonitoringUISystem(QWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
+        self.config = self.load_config()
+
         self.log_display = QTextEdit()
         self.log_display.setReadOnly(True)
         self.progress_bar = QProgressBar()
@@ -51,11 +53,7 @@ class MonitoringUISystem(QWidget):
         """버튼 섹션 생성."""
         button_section = QHBoxLayout()
 
-        config_path = os.path.join(os.path.dirname(__file__), 'window_config.json')
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-
-        for button_config in config["buttons"]:
+        for button_config in self.config["buttons"]:
             button = QPushButton(button_config["label"])
             button.clicked.connect(getattr(self.main_window.system_manager, button_config["callback"]))
             button_section.addWidget(button)
@@ -131,3 +129,8 @@ class MonitoringUISystem(QWidget):
 
         splitter.setSizes([1000, 200])
         logging.info("MonitoringUISystem UI initialized.")
+
+    def load_config(self):
+        config_path = os.path.join(os.path.dirname(__file__), 'window_config.json')
+        with open(config_path, 'r') as f:
+            return json.load(f)

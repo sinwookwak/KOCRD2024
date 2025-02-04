@@ -1,32 +1,94 @@
 {
+  "main_window": {
+    "title": "KOCRD 2024",
+    "size": {
+      "width": 1200,
+      "height": 800
+    }
+  },
   "buttons": [
     {
-      "label": "버튼1",
-      "callback": "callback_method1"
+      "label": "문서 처리 시작",
+      "callback": "start_document_processing"
     },
     {
-      "label": "버튼2",
-      "callback": "callback_method2"
+      "label": "데이터베이스 패키징",
+      "callback": "database_packaging"
     },
     {
-      "label": "버튼3",
-      "callback": "callback_method3"
+      "label": "AI 모델 학습 시작",
+      "callback": "start_ai_training"
     }
   ],
   "monitoring_ui": {
     "widgets": [
       {
-        "name": "widget1"
+        "name": "progress_bar",
+        "type": "QProgressBar"
       },
       {
-        "name": "widget2"
+        "name": "log_display",
+        "type": "QTextEdit",
+        "readonly": true
       },
       {
-        "name": "widget3"
+        "name": "chat_output",
+        "type": "QTextEdit",
+        "readonly": true
+      },
+      {
+        "name": "chat_input",
+        "type": "QLineEdit"
+      },
+      {
+        "name": "file_list_widget",
+        "type": "QListWidget"
       }
     ]
   },
-  "table_columns": ["파일명", "유형", "날짜", "공급자", "상태"],
+  "table_columns": [
+    "파일 이름",
+    "문서 유형",
+    "생성 날짜",
+    "수정 날짜"
+  ],
+  "menus": [
+    {
+      "name": "파일",
+      "actions": [
+        {
+          "name": "열기",
+          "callback": "open_file_dialog"
+        },
+        {
+          "name": "저장",
+          "callback": "save_file"
+        },
+        {
+          "name": "종료",
+          "callback": "close_application"
+        }
+      ]
+    },
+    {
+      "name": "설정",
+      "actions": [
+        {
+          "name": "설정 열기",
+          "callback": "open_settings_dialog"
+        }
+      ]
+    },
+    {
+      "name": "도움말",
+      "actions": [
+        {
+          "name": "정보",
+          "callback": "show_about_dialog"
+        }
+      ]
+    }
+  ],
   "messages": {
     "01": "파일 테이블의 모든 데이터를 삭제하시겠습니까?",
     "02": "파일 테이블이 초기화되었습니다.",
@@ -62,18 +124,57 @@
     "17": {
       "ko": "프로그램 종료",
       "en": "Exit Program"
+    },
+    "18": "사용자 설정 불러오기",
+    "19": "사용자 ID를 입력하세요:",
+    "20": "성공",
+    "21": "사용자 설정이 불러와졌습니다.",
+    "22": "실패",
+    "23": "사용자 ID를 입력하세요.",
+    "24": "정리 완료",
+    "25": "임시 파일이 정리되었습니다.",
+    "26": "작업 완료",
+    "27": "OCR 작업이 수행되었습니다.",
+    "28": "취소",
+    "29": "변경 사항이 취소되었습니다.",
+    "log": {
+      "01": "Documents filtered successfully.",
+      "02": "Document search completed for keyword: {keyword}",
+      "03": "{file_path}의 문서 처리 결과: {document_result}",
+      "04": "Page {page_num} saved as image: {temp_image_path}",
+      "05": "Temporary files cleaned up.",
+      "06": "Starting document processing for {file_path}",
+      "07": "Extracting text from {file_path}",
+      "08": "Performing OCR on document",
+      "09": "Document processing completed: {file_path}",
+      "10": "Document saved successfully: {file_path}",
+      "16": "OCR settings saved.",
+      "ocr_settings_saved_to_db": "OCR settings saved to database."
+    },
+    "error": {
+      "01": "문서를 필터링 하는 중 오류가 발생했습니다.",
+      "02": "Error handling command: {error}",
+      "03": "OCR 처리 중 오류가 발생했습니다: {error}",
+      "04": "Monitoring event 처리 중 오류가 발생했습니다: {error}",
+      "05": "AI 응답 처리 중 오류가 발생했습니다.",
+      "06": "Error displaying content: {error}",
+      "07": "Error: {e}",
+      "08": "Page {page_num} 이미지 변환 실패",
+      "09": "PDF 처리 중 오류 발생: {e}",
+      "10": "지원하지 않는 파일 형식: {file_path}",
+      "11": "텍스트 추출 중 오류 발생: {e}",
+      "12": "Error saving page {page_num} as image: {e}",
+      "13": "Error cleaning temporary files: {e}",
+      "14": "Error during document processing for {file_path}: {e}",
+      "15": "monitoring_window에 system_manager가 없습니다.",
+      "16": "monitoring_window에 progress_bar가 없습니다.",
+      "17": "RabbitMQ 연결 오류: {e}",
+      "18": "JSON 파싱 오류: {e}. 메시지 내용: {body.decode()}",
+      "19": "문서 메시지 처리 중 오류 발생: {e}. 메시지 내용: {body.decode()}",
+      "20": "system_manager가 초기화되지 않았습니다.",
+      "21": "monitoring_window가 초기화되지 않았습니다.",
+      "22": "DatabaseManager not found."
     }
   },
-  "log_messages": {
-    "01": "Documents filtered successfully.",
-    "02": "Document search completed for keyword: {keyword}"
-  },
-  "error_messages": {
-    "01": "문서를 필터링 하는 중 오류가 발생했습니다.",
-    "02": "Error handling command: {error}",
-    "03": "OCR 처리 중 오류가 발생했습니다: {error}",
-    "04": "Monitoring event 처리 중 오류가 발생했습니다: {error}",
-    "05": "AI 응답 처리 중 오류가 발생했습니다.",
-    "06": "Error displaying content: {error}"
-  }
+  "about_text": "Date Extractor AI\n© 2024"
 }
