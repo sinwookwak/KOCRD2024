@@ -1,10 +1,12 @@
-import json 
+import json
 import logging
 from datetime import datetime
 
+# managers_config.json 파일 로드
+with open('managers/managers_config.json', 'r', encoding='utf-8') as f:
+    config = json.load(f)
+
 def get_message(category, code):
-    with open("ai_config.json", "r", encoding="utf-8") as file:
-        config = json.load(file)
     return config["messages"][category][code]
 
 def handle_error(system_manager, category, code, exception, error_type):
@@ -16,10 +18,10 @@ def handle_error(system_manager, category, code, exception, error_type):
 def send_message_to_queue(system_manager, queue_name, message):
     """메시지를 지정된 큐에 전송."""
     try:
-        queue_config = get_message("queues", queue_name)
+        queue_config = config["queues"][queue_name]
         # 메시지를 큐에 전송하는 로직 추가
     except Exception as e:
-        handle_error(system_manager, "error", "11", e, "RabbitMQ 오류")
+        handle_error(system_manager, "error", "511", e, "RabbitMQ 오류")
         raise
 
 def handle_message(ai_event_manager, ch, method, properties, body):
@@ -27,18 +29,17 @@ def handle_message(ai_event_manager, ch, method, properties, body):
     try:
         message = json.loads(body)
         message_type = message.get("type")
-        data = message.get("data")
 
-        if message_type == "perform_ocr":
-            perform_ocr(ai_event_manager, data)
-        elif message_type == "ocr_result":
-            process_ocr_result(ai_event_manager, data)
+        if message_type == config["message_types"]["101"]:
+            perform_ocr(ai_event_manager, message["data"])
+        elif message_type == config["message_types"]["102"]:
+            process_ocr_result(ai_event_manager, message["data"])
         else:
             logging.warning(f"알 수 없는 메시지 타입: {message_type}")
     except json.JSONDecodeError as e:
-        handle_error(ai_event_manager.system_manager, "error", "12", e, "JSON 파싱 오류")
+        handle_error(ai_event_manager.system_manager, "error", "512", e, "JSON 파싱 오류")
     except Exception as e:
-        handle_error(ai_event_manager.system_manager, "error", "13", e, "OCR 메시지 처리 중 오류")
+        handle_error(ai_event_manager.system_manager, "error", "513", e, "OCR 메시지 처리 중 오류")
 
 def perform_ocr(ai_event_manager, data):
     """OCR 작업 수행."""
@@ -76,7 +77,7 @@ def handle_training_event(ai_event_manager, model_path=None, training_metrics=No
         try:
             ai_event_manager.model_manager.apply_trained_model(model_path)
         except Exception as e:
-            handle_error(ai_event_manager.system_manager, "error", "05", e, "모델 적용 오류")
+            handle_error(ai_event_manager.system_manager, "error", "505", e, "모델 적용 오류")
 
     ai_event_manager.system_manager.start_document_analysis()
     logging.info("AI training event successfully handled.")
