@@ -1,6 +1,93 @@
+import json
+import logging
+from typing import Dict, Any
+from sympy import true
+
+# 설정 파일 로드
+with open('config/development.json', 'r', encoding='utf-8') as f:
+    config = json.load(f)
+
+# ID 맵핑
+id_mapping = config["id_mapping"]
+
+# 전략 패턴을 위한 인터페이스 정의
+class OCREngine:
+    def perform_ocr(self, image: Any) -> str:
+        raise NotImplementedError
+
+class TesseractOCR(OCREngine):
+    def perform_ocr(self, image: Any) -> str:
+        import pytesseract
+        return pytesseract.image_to_string(image)
+
+class CloudVisionOCR(OCREngine):
+    def perform_ocr(self, image: Any) -> str:
+        # Cloud Vision API 호출 로직
+        pass
+
+class AIModel:
+    def predict(self, data: Any) -> Any:
+        raise NotImplementedError
+
+class ClassificationModel(AIModel):
+    def predict(self, data: Any) -> Any:
+        # 분류 모델 예측 로직
+        pass
+
+class ObjectDetectionModel(AIModel):
+    def predict(self, data: Any) -> Any:
+        # 객체 탐지 모델 예측 로직
+        pass
+
+# 팩토리 패턴을 위한 팩토리 클래스 정의
+class OCREngineFactory:
+    @staticmethod
+    def create_engine(engine_type: str) -> OCREngine:
+        if engine_type == "tesseract":
+            return TesseractOCR()
+        elif engine_type == "cloud_vision":
+            return CloudVisionOCR()
+        else:
+            raise ValueError(f"Unknown OCR engine type: {engine_type}")
+
+class AIModelFactory:
+    @staticmethod
+    def create_model(model_type: str) -> AIModel:
+        if model_type == "classification":
+            return ClassificationModel()
+        elif model_type == "object_detection":
+            return ObjectDetectionModel()
+        else:
+            raise ValueError(f"Unknown AI model type: {model_type}")
+
+# 설정 파일에서 전략 선택
+ocr_engine_type = config["settings"].get("ocr_engine", "tesseract")
+ai_model_type = config["settings"].get("ai_model", "classification")
+
+# 팩토리를 사용하여 객체 생성
+ocr_engine = OCREngineFactory.create_engine(ocr_engine_type)
+ai_model = AIModelFactory.create_model(ai_model_type)
+
+# 예제 사용
+def process_image(image_path: str):
+    from PIL import Image
+    image = Image.open(image_path)
+    ocr_result = ocr_engine.perform_ocr(image)
+    logging.info(f"OCR Result: {ocr_result}")
+    prediction = ai_model.predict(ocr_result)
+    logging.info(f"AI Prediction: {prediction}")
+
+# ID 맵핑 예제
+def get_message_by_id(message_id: str) -> str:
+    return id_mapping.get(message_id, "Unknown ID")
+
+# 예제 실행
+if __name__ == "__main__":
+    process_image("path/to/image.png")
+    print(get_message_by_id("601"))
+
 # config/development.py
 # 개발 환경 설정 파일
-from sympy import true
 {
   "constants": {
     "MODEL_PATH_KEY": "model_path",
