@@ -12,18 +12,15 @@ class MenubarManager:
         self.system_manager = system_manager
         self.menu_bar = QMenuBar(system_manager.parent)
         self.main_window = system_manager.parent
-        self.config_path = "config/window_config.json"
+        self.config_path = "config/ui.json"  # ui.json 파일 경로 변경
         logging.info("MenubarManager initialized with main_window.")
 
-        self.messages = messages["messages"]
-        self.log_messages = messages["log"]
-        self.error_messages = messages["error"]
-
+        self.config = self.load_config()  # 설정 로드
         self.setup_menus()
 
     def setup_menus(self):
         """메뉴 항목 설정."""
-        for menu_config in self.messages["menus"]:
+        for menu_config in self.config["components"]["menus"]:  # components.menus에서 메뉴 정보 가져옴
             menu = self.menu_bar.addMenu(menu_config["name"])
             for action_config in menu_config["actions"]:
                 action = QAction(action_config["name"], self.main_window)
@@ -87,16 +84,15 @@ class MenubarManager:
     def load_config(self):
         """설정 파일을 로드하거나 기본 설정을 생성합니다."""
         config_path = self.config_path
-        if os.path.exists(config_path):
+        try:
             with open(config_path, "r", encoding="utf-8") as file:
                 return json.load(file)
-        else:
-            default_config = {
-                "about_text": "Date Extractor AI\n© 2024"
-            }
-            with open(config_path, "w", encoding="utf-8") as file:
-                json.dump(default_config, file, indent=4)
-            return default_config
+        except FileNotFoundError:
+            logging.error(f"Config file not found: {config_path}")
+            return {}  # 빈 설정 반환
+        except json.JSONDecodeError as e:
+            logging.error(f"Error decoding config file: {e}")
+            return {}  # 빈 설정 반환
 
     def get_message(self, key):
         """메시지 키를 통해 메시지를 가져옵니다."""

@@ -1,0 +1,103 @@
+{
+  "main_window": {
+    "title": "KOCRD 2024",
+    "size": {
+      "width": 1200,
+      "height": 800
+    }
+  },
+  "components": {
+    "buttons": [
+      {
+        "label": "문서 처리 시작",
+        "callback": "601"
+      },
+      {
+        "label": "데이터베이스 패키징",
+        "callback": "602"
+      },
+      {
+        "label": "AI 모델 학습 시작",
+        "callback": "603"
+      }
+    ],
+    "monitoring": {
+      "widgets": [
+        {
+          "name": "progress_bar",
+          "type": "QProgressBar"
+        },
+        {
+          "name": "log_display",
+          "type": "QTextEdit",
+          "readonly": true
+        },
+        {
+          "name": "chat_output",
+          "type": "QTextEdit",
+          "readonly": true
+        },
+        {
+          "name": "chat_input",
+          "type": "QLineEdit"
+        },
+        {
+          "name": "file_list_widget",
+          "type": "QListWidget"
+        }
+      ]
+    },
+    "table_columns": [
+      {
+        "name": "파일 이름"
+      },
+      {
+        "name": "문서 유형"
+      },
+      {
+        "name": "생성 날짜"
+      },
+      {
+        "name": "수정 날짜"
+      }
+    ],
+    "menus": [
+      {
+        "name": "파일",
+        "actions": [
+          {
+            "name": "열기",
+            "callback": "701"
+          },
+          {
+            "name": "저장",
+            "callback": "702"
+          },
+          {
+            "name": "종료",
+            "callback": "703"
+          }
+        ]
+      },
+      {
+        "name": "설정",
+        "actions": [
+          {
+            "name": "설정 열기",
+            "callback": "704"
+          }
+        ]
+      },
+      {
+        "name": "도움말",
+        "actions": [
+          {
+            "name": "정보",
+            "callback": "705"
+          }
+        ]
+      }
+    ]
+  },
+  "about_text": "Date Extractor AI\n© 2024"
+}
