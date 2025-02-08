@@ -5,61 +5,63 @@ from typing import Dict, Any
 import os
 
 # RabbitMQ 설정
-RABBITMQ_HOST = "localhost"  # RabbitMQ 서버 주소
-RABBITMQ_PORT = 5672       # RabbitMQ 서버 포트
-RABBITMQ_USER = "guest"     # RabbitMQ 사용자 이름
-RABBITMQ_PASSWORD = "guest" # RabbitMQ 비밀번호
-RABBITMQ_VIRTUAL_HOST = "/" # RabbitMQ Virtual Host (기본값 "/")
+RABBITMQ_CONFIG = {
+    "host": "localhost",
+    "port": 5672,
+    "user": "guest",
+    "password": "guest",
+    "virtual_host": "/"
+}
 
 # RabbitMQ 큐 이름
-OCR_REQUESTS_QUEUE = "dev_ocr_requests"        # OCR 요청 큐
-OCR_RESULTS_QUEUE = "dev_ocr_results"          # OCR 결과 큐
-PREDICTION_REQUESTS_QUEUE = "dev_prediction_requests" # 예측 요청 큐
-PREDICTION_RESULTS_QUEUE = "dev_prediction_results" # 예측 결과 큐
-EVENTS_QUEUE = "dev_events"                  # 이벤트 큐
-UI_FEEDBACK_REQUESTS_QUEUE = "dev_ui_feedback_requests" # UI 피드백 요청 큐
+QUEUE_NAMES = {
+    "ocr_requests": "dev_ocr_requests",
+    "ocr_results": "dev_ocr_results",
+    "prediction_requests": "dev_prediction_requests",
+    "prediction_results": "dev_prediction_results",
+    "events": "dev_events",
+    "ui_feedback_requests": "dev_ui_feedback_requests"
+}
 
-# 파일 경로
-MODELS_PATH = "F:/AI-M2/models/dev_models"              # 모델 저장 경로
-DOCUMENT_EMBEDDING_PATH = "F:/AI-M2/model/dev_document_embedding.json" # 문서 임베딩 파일 경로
-DOCUMENT_TYPES_PATH = "F:/AI-M2/model/dev_document_types.json"     # 문서 타입 정의 파일 경로
-TEMP_FILES_DIR = "F:/AI-M2/temp/dev_temp_files"          # 임시 파일 저장 경로
+# 파일 경로 설정
+FILE_PATHS = {
+    "models": "F:/AI-M2/models/dev_models",
+    "document_embedding": "F:/AI-M2/model/dev_document_embedding.json",
+    "document_types": "F:/AI-M2/model/dev_document_types.json",
+    "temp_files": "F:/AI-M2/temp/dev_temp_files"
+}
 
 # 데이터베이스 연결
-DATABASE_URL = "dev_database_url"  # 개발용 데이터베이스 URL
+DATABASE_URL = "dev_database_url"
 
 # 파일 처리 설정
-DEFAULT_REPORT_FILENAME = "report.txt"      # 기본 보고서 파일 이름
-DEFAULT_EXCEL_FILENAME = "documents.xlsx"  # 기본 엑셀 파일 이름
-VALID_FILE_EXTENSIONS = {'.pdf', '.docx', '.xlsx', '.txt', '.csv', '.png', '.jpg', '.jpeg'} # 허용된 파일 확장자
-MAX_FILE_SIZE = 10 * 1024 * 1024          # 최대 파일 크기 (10MB)
+FILE_SETTINGS = {
+    "default_report_filename": "report.txt",
+    "default_excel_filename": "documents.xlsx",
+    "valid_file_extensions": {'.pdf', '.docx', '.xlsx', '.txt', '.csv', '.png', '.jpg', '.jpeg'},
+    "max_file_size": 10 * 1024 * 1024  # 10MB
+}
 
 # 언어팩 디렉토리 경로
 LANG_DIR = "config/language"
-
-# 언어팩 정보 저장 딕셔너리
 lang_packs = {}
 
-# 언어팩 디렉토리 순회
+# 언어팩 로드
 for filename in os.listdir(LANG_DIR):
     if filename.endswith(".json"):
         lang_code = filename[:-5]  # 확장자 제거
         lang_path = os.path.join(LANG_DIR, filename)
-
         try:
-            with open(lang_path, "r", encoding="utf-8") as f:  # 파일 인코딩 지정
+            with open(lang_path, "r", encoding="utf-8") as f:
                 lang_pack = json.load(f)
-
-                # 언어팩 내부 language 속성 확인
                 if "language" not in lang_pack:
                     raise ValueError(f"Language pack '{filename}' must have 'language' attribute.")
-
                 lang_packs[lang_code] = lang_pack
         except (FileNotFoundError, json.JSONDecodeError, ValueError) as e:
             print(f"Error loading language pack '{filename}': {e}")
 
-# 기본 언어팩 (한국어) 로드
-def load_language_pack(lang_code):
+# 기본 언어팩 로드
+def load_language_pack(lang_code: str) -> Dict[str, Any]:
     lang_path = os.path.join(LANG_DIR, f"{lang_code}.json")
     try:
         with open(lang_path, "r", encoding="utf-8") as f:
@@ -71,48 +73,27 @@ def load_language_pack(lang_code):
 default_lang_pack = load_language_pack("ko")
 
 # 설정 파일 로드
-with open("config/development.json", "r", encoding="utf-8") as f:
-    config = json.load(f)
+def load_config(file_path: str) -> Dict[str, Any]:
+    with open(file_path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
-# messages.json 파일 로드
-with open("config/messages.json", "r", encoding="utf-8") as f:
-    messages_config = json.load(f)
-
-# queues.json 파일 로드
-with open("config/queues.json", "r", encoding="utf-8") as f:
-    queues_config = json.load(f)
-
-# managers.json 파일 로드
-with open("config/managers.json", "r", encoding="utf-8") as f:
-    managers_config = json.load(f)
+config = load_config("config/development.json")
+messages_config = load_config("config/messages.json")
+queues_config = load_config("config/queues.json")
+managers_config = load_config("config/managers.json")
 
 # 언어 설정
-language = config.get("language", "ko")  # 기본값 한국어
+language = config.get("language", "ko")
+selected_lang_pack = lang_packs.get(language, default_lang_pack)
 
-# 언어팩 선택
-if language in lang_packs:
-    selected_lang_pack = lang_packs[language]
-else:
-    print(f"Warning: Language pack '{language}' not found. Using default language 'ko'.")
-    selected_lang_pack = default_lang_pack
-
-# 메시지 출력 함수 (예외 처리 및 한국어 출력 기능 추가)
-def get_message(lang_pack, message_id, default_lang_pack=None):
-    """메시지 텍스트 반환 (누락 시 한국어 출력)"""
-    message = lang_pack.get(message_id)
-    if message:
-        return message
-    elif default_lang_pack and message_id in default_lang_pack:
-        return default_lang_pack[message_id]
-    else:
-        return f"Unknown message ID: {message_id}"
+# 메시지 출력 함수
+def get_message(lang_pack: Dict[str, str], message_id: str, default_lang_pack: Dict[str, str] = None) -> str:
+    message = lang_pack.get(message_id) or default_lang_pack.get(message_id, f"Unknown message ID: {message_id}")
+    return message
 
 # 메시지 사용 예시
-message = get_message(selected_lang_pack, "MSG_001", default_lang_pack)  # 한국어 메시지
-print(message)
-
-message = get_message(selected_lang_pack, "MSG_999", default_lang_pack)  # 존재하지 않는 메시지 ID
-print(message)  # 한국어 메시지 또는 "Unknown message ID" 출력
+print(get_message(selected_lang_pack, "MSG_001", default_lang_pack))
+print(get_message(selected_lang_pack, "MSG_999", default_lang_pack))
 
 # ID 맵핑
 id_mapping = config["id_mapping"]
@@ -194,8 +175,7 @@ if __name__ == "__main__":
     print(get_message_by_id("601"))
 
 # managers_config.json 파일 로드
-with open('managers/managers_config.json', 'r', encoding='utf-8') as f:
-    managers_config = json.load(f)
+managers_config = load_config('managers/managers_config.json')
 
 def get_message(category, code):
     return managers_config["messages"][category][code]
@@ -275,7 +255,11 @@ def handle_training_event(ai_event_manager, model_path=None, training_metrics=No
 
 def handle_save_feedback(ai_event_manager, file_path, doc_type):
     """사용자 피드백 저장."""
-    ai_event_manager.ai_data_manager.save_feedback({"file_path": file_path, "doc_type": doc_type, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+    ai_event_manager.ai_data_manager.save_feedback({
+        "file_path": file_path,
+        "doc_type": doc_type,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
 
 def handle_request_user_feedback(ai_event_manager, file_path):
     """사용자 피드백 요청 이벤트 처리."""
@@ -308,13 +292,9 @@ def request_feedback(ai_event_manager, original_message: Any, error_reason: str)
     send_message_to_queue(ai_event_manager.system_manager, "feedback_queue", feedback_message)
     logging.info(f"피드백 요청 메시지 전송: {feedback_message}")
 
-import os
-import json
-
 # ...existing code...
 
 # constants
-MODEL_PATH_KEY = "model_path"
 TESSERACT_CMD_KEY = "tesseract_cmd"
 TESSDATA_DIR_KEY = "tessdata_dir"
 MANAGERS_KEY = "managers"
@@ -332,8 +312,8 @@ settings = {
     "DEFAULT_EXCEL_FILENAME": "report.xlsx",
     "VALID_FILE_EXTENSIONS": [".txt", ".pdf", ".png", ".jpg"],
     "MAX_FILE_SIZE": 10485760,
-    "ocr_engine": "tesseract",
-    "ai_model": "classification"
+    "ocr_engine_type": "tesseract",
+    "ai_model_type": "classification"
 }
 
 # uis

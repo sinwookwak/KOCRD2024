@@ -11,13 +11,11 @@
     "temp_file": {
       "class": "TempFileManager",
       "module": "kocrd.managers.temp_file_manager",
-      "dependencies": [],
       "inject_settings": true
     },
     "ocr": {
       "class": "OCRManager",
       "module": "kocrd.managers.ocr.ocr_manager",
-      "dependencies": [],
       "kwargs": {
         "tesseract_cmd": "TESSERACT_CMD",
         "tessdata_dir": "TESSDATA_DIR"
@@ -28,7 +26,6 @@
     "menubar": {
       "class": "MenubarManager",
       "module": "kocrd.managers.menubar_manager",
-      "dependencies": [],
       "inject_system_manager": true
     },
     "ai_model": {
@@ -58,8 +55,7 @@
     },
     "message_queue": {
       "class": "RabbitMQManager",
-      "module": "kocrd.managers.rabbitmq_manager",
-      "dependencies": []
+      "module": "kocrd.managers.rabbitmq_manager"
     },
     "document": {
       "class": "DocumentManager",
@@ -72,7 +68,6 @@
       "class": "AITrainer",
       "module": "kocrd.managers.ai_managers.ai_training_manager",
       "dependencies": ["ai_model", "ai_data", "message_queue", "database", "settings_manager"],
-      "kwargs": {},
       "inject_settings": true
     },
     "settings_manager": {

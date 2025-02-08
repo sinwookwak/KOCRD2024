@@ -1,8 +1,29 @@
 {
   "queues": {
-    "151": "ocr_queue",
-    "152": "events_queue",
-    "153": "document_queue",
+    "ocr_queue": {
+      "name": "ocr_queue",
+      "type": "rabbitmq",
+      "host": "localhost",
+      "port": 5672,
+      "durable": true,
+      "auto_delete": false
+    },
+    "events_queue": {
+      "name": "events_queue",
+      "type": "rabbitmq",
+      "host": "localhost",
+      "port": 5672,
+      "durable": true,
+      "auto_delete": false
+    },
+    "document_processing": {
+      "name": "document_processing",
+      "type": "rabbitmq",
+      "host": "localhost",
+      "port": 5672,
+      "durable": true,
+      "auto_delete": false
+    },
     "prediction_requests": {
       "name": "prediction_requests",
       "type": "rabbitmq",
@@ -26,109 +47,11 @@
       "port": 5672,
       "durable": true,
       "auto_delete": false
-    },
-    "events": {
-      "name": "events",
-      "type": "rabbitmq",
-      "host": "localhost",
-      "port": 5672,
-      "durable": true,
-      "auto_delete": false
-    },
-    "document_processing": {
-      "name": "document_processing",
-      "type": "rabbitmq",
-      "host": "localhost",
-      "port": 5672,
-      "durable": true,
-      "auto_delete": false
-    },
-    "database_packaging": {
-      "name": "database_packaging",
-      "type": "rabbitmq",
-      "host": "localhost",
-      "port": 5672,
-      "durable": true,
-      "auto_delete": false
-    },
-    "result": {
-      "name": "result",
-      "type": "rabbitmq",
-      "host": "localhost",
-      "port": 5672,
-      "durable": true,
-      "auto_delete": false
-    },
-    "ai_training_queue": {
-      "name": "ai_training_queue",
-      "type": "rabbitmq",
-      "host": "localhost",
-      "port": 5672,
-      "durable": true,
-      "auto_delete": false
-    },
-    "temp_file_queue": {
-      "name": "temp_file_queue",
-      "type": "rabbitmq",
-      "host": "localhost",
-      "port": 5672,
-      "durable": true,
-      "auto_delete": false
-    },
-    "prediction_requests_queue": {
-      "name": "prediction_requests_queue",
-      "type": "rabbitmq",
-      "host": "localhost",
-      "port": 5672,
-      "durable": true,
-      "auto_delete": false
-    },
-    "events_queue": {
-      "name": "events_queue",
-      "type": "rabbitmq",
-      "host": "localhost",
-      "port": 5672,
-      "durable": true,
-      "auto_delete": false
-    },
-    "ocr_results": {
-      "name": "ocr_results",
-      "type": "rabbitmq",
-      "host": "localhost",
-      "port": 5672,
-      "durable": true,
-      "auto_delete": false
-    },
-    "ocr_requests": {
-      "name": "ocr_requests",
-      "type": "rabbitmq",
-      "host": "localhost",
-      "port": 5672,
-      "durable": true,
-      "auto_delete": false
-    },
-    "ai_result_handling": {
-      "name": "ai_result_handling",
-      "type": "rabbitmq",
-      "host": "localhost",
-      "port": 5672,
-      "durable": true,
-      "auto_delete": false
-    },
-    "feedback_queue": {
-      "name": "feedback_queue",
-      "type": "rabbitmq",
-      "host": "localhost",
-      "port": 5672,
-      "durable": true,
-      "auto_delete": false
-    },
-    "ocr_queue": "OCR Queue",
-    "events_queue": "Events Queue"
+    }
   },
   "MESSAGE_QUEUE": {
-    "301": "document_queue",
-    "302": "localhost",
-    "303": 5672
+    "document_queue": "301",
+    "localhost": "302",
+    "port": "303"
   }
 }
