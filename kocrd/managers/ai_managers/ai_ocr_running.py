@@ -7,7 +7,7 @@ import time
 from typing import Callable, Dict, Any
 import pika.exceptions
 from ai_model_manager import AIModelManager
-from ai_config import get_message, handle_error, send_message_to_queue, handle_message
+from config.development import get_message, handle_error, send_message_to_queue, handle_message
 
 
 class OCRResultHandler:
