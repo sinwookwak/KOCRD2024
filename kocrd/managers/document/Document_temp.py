@@ -9,7 +9,7 @@ from typing import List, Optional
 from kocrd.config.development import settings
 import json
 
-config_path = os.path.join(os.path.dirname(__file__), 'Document_config.json')
+config_path = os.path.join(os.path.dirname(__file__), '..', 'managers_config.json')
 with open(config_path, 'r', encoding='utf-8') as f:
     config = json.load(f)
 
@@ -31,7 +31,7 @@ class DocumentTempManager:
             logging.info(f"Temporary file created: {temp_file.name}")
             return temp_file.name
         except Exception as e:
-            logging.error(config["messages"]["error"]["07"].format(e=e))
+            logging.error(config["messages"]["error"]["507"].format(e=e))
             return None
 
     def read_temp_file(self, file_path):
@@ -42,7 +42,7 @@ class DocumentTempManager:
             logging.info(f"Temporary file read: {file_path}")
             return content
         except Exception as e:
-            logging.error(config["messages"]["error"]["07"].format(e=e))
+            logging.error(config["messages"]["error"]["507"].format(e=e))
             return None
 
     def delete_temp_file(self, file_path):
@@ -52,7 +52,7 @@ class DocumentTempManager:
             self.temp_files.remove(file_path)
             logging.info(f"Temporary file deleted: {file_path}")
         except Exception as e:
-            logging.error(config["messages"]["error"]["07"].format(e=e))
+            logging.error(config["messages"]["error"]["507"].format(e=e))
 
     def cleanup(self):
         """모든 임시 파일을 삭제합니다."""
@@ -70,7 +70,7 @@ class DocumentTempManager:
                     shutil.copy(file_path, self.backup_dir)
             logging.info("Temporary files backed up.")
         except Exception as e:
-            logging.error(config["messages"]["error"]["07"].format(e=e))
+            logging.error(config["messages"]["error"]["507"].format(e=e))
 
     def restore_temp_files(self):
         """백업된 임시파일을 복원합니다."""
@@ -81,7 +81,7 @@ class DocumentTempManager:
                     shutil.copy(file_path, self.temp_dir)
             logging.info("Temporary files restored.")
         except Exception as e:
-            logging.error(config["messages"]["error"]["07"].format(e=e))
+            logging.error(config["messages"]["error"]["507"].format(e=e))
 
     def cleanup_all_temp_files(self, retention_time: int = 3600):
         """임시 디렉토리의 모든 파일 정리 (보관 기간 적용)."""
@@ -97,9 +97,9 @@ class DocumentTempManager:
                         logging.info(f"Expired temporary file removed: {file_path}")
             logging.info(f"Temporary directory cleaned.")
         except FileNotFoundError:
-            logging.warning(config["messages"]["warning"]["01"].format(temp_dir=self.temp_dir))
+            logging.warning(config["messages"]["warning"]["401"].format(temp_dir=self.temp_dir))
         except Exception as e:
-            logging.error(config["messages"]["error"]["07"].format(e=e))
+            logging.error(config["messages"]["error"]["507"].format(e=e))
 
     def cleanup_specific_files(self, files: Optional[List[str]]):
         """특정 파일들을 정리합니다."""
@@ -109,8 +109,8 @@ class DocumentTempManager:
                     os.remove(file_path)
                     logging.info(f"File removed: {file_path}")
                 except FileNotFoundError:
-                    logging.warning(config["messages"]["warning"]["01"].format(file_path=file_path))
+                    logging.warning(config["messages"]["warning"]["401"].format(file_path=file_path))
                 except Exception as e:
-                    logging.error(config["messages"]["error"]["07"].format(e=e))
+                    logging.error(config["messages"]["error"]["507"].format(e=e))
         else:
             self.cleanup_all_temp_files()

@@ -69,7 +69,7 @@ class DocumentManager(QWidget):
             self.message_queue_manager.send_message(queue_name, message)
             logging.info(f"Message sent to queue '{queue_name}': {message}")
         except Exception as e:
-            logging.error(config["messages"]["error"]["20"].format(error=e))
+            logging.error(config["messages"]["error"]["520"].format(error=e))
 
     def get_ui(self):
         return self.document_controller.get_ui()

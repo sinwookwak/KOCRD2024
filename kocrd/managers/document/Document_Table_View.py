@@ -4,7 +4,7 @@ import logging
 import json
 import os
 
-config_path = os.path.join(os.path.dirname(__file__), 'Document_config.json')
+config_path = os.path.join(os.path.dirname(__file__), '..', 'managers_config.json')
 with open(config_path, 'r', encoding='utf-8') as f:
     config = json.load(f)
 
@@ -38,7 +38,7 @@ class DocumentTableView(QWidget):
     def get_selected_file_names(self):
         selected_items = self.table_widget.selectedItems()
         if not selected_items:
-            QMessageBox.warning(self.parent, "선택 오류", config["messages"]["error"]["21"])
+            QMessageBox.warning(self.parent, "선택 오류", config["messages"]["error"]["921"])
             return None
 
         selected_file_names = []
