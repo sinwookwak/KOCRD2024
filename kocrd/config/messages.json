@@ -40,7 +40,8 @@
       "330": "Window size set: {width}x{height}",
       "331": "Window position set: x:{x}, y:{y}",
       "332": "Window configuration saved successfully",
-      "333": "Failed to save window configuration: {e}"
+      "333": "Failed to save window configuration: {e}",
+      "334": "Feedback saved successfully: {data}"
     },
     "warning": {
       "401": "PyMuPDF is not installed. Performing OCR after image conversion.",
@@ -74,7 +75,8 @@
       "519": "Error occurred while processing monitoring event: {error}",
       "520": "An error occurred while processing AI response.",
       "521": "Error occurred while displaying content: {error}",
-      "522": "DatabaseManager not found."
+      "522": "DatabaseManager not found.",
+      "523": "Error occurred while saving feedback: {e}"
     }
   },
   "id_mapping": {
@@ -128,6 +130,8 @@
     "1047": "pageImageConversionFailed",
     "1048": "pdfProcessingError",
     "1049": "unsupportedFileType",
-    "1050": "textExtractionError"
+    "1050": "textExtractionError",
+    "1051": "feedbackSaved",
+    "1052": "feedbackSaveError"
   }
 }
