@@ -35,16 +35,16 @@ VALID_FILE_EXTENSIONS = {'.pdf', '.docx', '.xlsx', '.txt', '.csv', '.png', '.jpg
 MAX_FILE_SIZE = 10 * 1024 * 1024          # 최대 파일 크기 (10MB)
 
 # 언어팩 디렉토리 경로
-lang_dir = "config/language"
+LANG_DIR = "config/language"
 
 # 언어팩 정보 저장 딕셔너리
 lang_packs = {}
 
 # 언어팩 디렉토리 순회
-for filename in os.listdir(lang_dir):
+for filename in os.listdir(LANG_DIR):
     if filename.endswith(".json"):
         lang_code = filename[:-5]  # 확장자 제거
-        lang_path = os.path.join(lang_dir, filename)
+        lang_path = os.path.join(LANG_DIR, filename)
 
         try:
             with open(lang_path, "r", encoding="utf-8") as f:  # 파일 인코딩 지정
@@ -60,7 +60,7 @@ for filename in os.listdir(lang_dir):
 
 # 기본 언어팩 (한국어) 로드
 def load_language_pack(lang_code):
-    lang_path = os.path.join(lang_dir, f"{lang_code}.json")
+    lang_path = os.path.join(LANG_DIR, f"{lang_code}.json")
     try:
         with open(lang_path, "r", encoding="utf-8") as f:
             return json.load(f)
