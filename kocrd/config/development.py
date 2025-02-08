@@ -74,10 +74,6 @@ default_lang_pack = load_language_pack("ko")
 with open("config/development.json", "r", encoding="utf-8") as f:
     config = json.load(f)
 
-# managers.json 파일 로드
-with open("config/managers.json", "r", encoding="utf-8") as f:
-    managers_config = json.load(f)
-
 # messages.json 파일 로드
 with open("config/messages.json", "r", encoding="utf-8") as f:
     messages_config = json.load(f)
@@ -86,11 +82,15 @@ with open("config/messages.json", "r", encoding="utf-8") as f:
 with open("config/queues.json", "r", encoding="utf-8") as f:
     queues_config = json.load(f)
 
+# managers.json 파일 로드
+with open("config/managers.json", "r", encoding="utf-8") as f:
+    managers_config = json.load(f)
+
 # 언어 설정
 language = config.get("language", "ko")  # 기본값 한국어
 
 # 언어팩 선택
-if (language in lang_packs):
+if language in lang_packs:
     selected_lang_pack = lang_packs[language]
 else:
     print(f"Warning: Language pack '{language}' not found. Using default language 'ko'.")
@@ -193,8 +193,12 @@ if __name__ == "__main__":
     process_image("path/to/image.png")
     print(get_message_by_id("601"))
 
+# managers_config.json 파일 로드
+with open('managers/managers_config.json', 'r', encoding='utf-8') as f:
+    managers_config = json.load(f)
+
 def get_message(category, code):
-    return messages_config["messages"][category][code]
+    return managers_config["messages"][category][code]
 
 def handle_error(system_manager, category, code, exception, error_type):
     """에러 처리 및 로깅."""
@@ -205,7 +209,7 @@ def handle_error(system_manager, category, code, exception, error_type):
 def send_message_to_queue(system_manager, queue_name, message):
     """메시지를 지정된 큐에 전송."""
     try:
-        queue_config = queues_config["queues"][queue_name]
+        queue_config = managers_config["queues"][queue_name]
         # 메시지를 큐에 전송하는 로직 추가
     except Exception as e:
         handle_error(system_manager, "error", "511", e, "RabbitMQ 오류")
