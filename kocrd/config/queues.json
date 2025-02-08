@@ -122,7 +122,9 @@
       "port": 5672,
       "durable": true,
       "auto_delete": false
-    }
+    },
+    "ocr_queue": "OCR Queue",
+    "events_queue": "Events Queue"
   },
   "MESSAGE_QUEUE": {
     "301": "document_queue",
