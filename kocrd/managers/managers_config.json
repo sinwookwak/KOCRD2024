@@ -90,18 +90,18 @@
       "class": "AnalysisManager",
       "module": "kocrd.managers.analysis_manager"
     }
-              },
+  },
   "message_types": {
     "101": "perform_ocr",
     "102": "ocr_result",
-    "01": "process_document",
-    "02": "document_result"
+    "201": "process_document",
+    "202": "document_result"
   },
   "queues": {
     "201": "ocr_queue",
     "202": "events_queue",
-    "01": "document_queue",
-    "02": "events_queue"
+    "301": "document_queue",
+    "302": "events_queue"
   },
   "messages": {
     "301": "문서를 필터링 하는 중 오류가 발생했습니다.",
@@ -136,15 +136,7 @@
       "405": "추출된 텍스트가 유효하지 않습니다 (비어 있음).",
       "406": "텍스트 추출 실패",
       "407": "OCR 결과 추출 실패",
-      "408": "monitoring_window가 None입니다.",
-      "01": "PyMuPDF가 설치되어 있지 않습니다. 이미지 변환 후 OCR을 수행합니다.",
-      "02": "처리할 파일 경로가 제공되지 않았습니다.",
-      "03": "파일 경로가 제공되지 않았습니다.",
-      "04": "알 수 없는 메시지 타입: {message_type}",
-      "05": "추출된 텍스트가 유효하지 않습니다 (비어 있음).",
-      "06": "텍스트 추출 실패",
-      "07": "문서 처리 결과 추출 실패",
-      "08": "monitoring_window가 None입니다."
+      "408": "monitoring_window가 None입니다."
     },
     "error": {
       "501": "Error: {e}",
@@ -169,8 +161,8 @@
   "VALID_FILE_EXTENSIONS": [".txt", ".pdf", ".png", ".jpg"],
   "MAX_FILE_SIZE": 10485760,
   "MESSAGE_QUEUE": {
-    "01": "document_queue",
-    "02": "localhost",
-    "03": 5672
+    "301": "document_queue",
+    "302": "localhost",
+    "303": 5672
   }
 }

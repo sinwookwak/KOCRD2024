@@ -22,10 +22,10 @@ class AITrainingManager:
             y = data[label]
             return train_test_split(X, y, test_size=0.2)
         except KeyError as e:
-            handle_error(self.system_manager, "error", "01", e, "데이터 오류")
+            handle_error(self.system_manager, "error", "501", e, "데이터 오류")
             return None, None, None, None
         except Exception as e:
-            handle_error(self.system_manager, "error", "05", e, "데이터 오류")
+            handle_error(self.system_manager, "error", "505", e, "데이터 오류")
             return None, None, None, None
 
     def train_model(self, data, features, label):
@@ -76,8 +76,8 @@ class AITrainingManager:
             logging.info("Model training completed with provided parameters.")
             QMessageBox.information(None, "학습 완료", "모델 학습이 성공적으로 완료되었습니다.")
         except json.JSONDecodeError as e:
-            handle_error(self.system_manager, "error", "12", e, "파일 오류")
+            handle_error(self.system_manager, "error", "512", e, "파일 오류")
         except FileNotFoundError as e:
-            handle_error(self.system_manager, "error", "05", e, "파일 오류")
+            handle_error(self.system_manager, "error", "505", e, "파일 오류")
         except Exception as e:
-            handle_error(self.system_manager, "error", "05", e, "학습 오류")
+            handle_error(self.system_manager, "error", "505", e, "학습 오류")

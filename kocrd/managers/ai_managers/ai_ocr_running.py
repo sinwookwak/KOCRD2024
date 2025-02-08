@@ -9,7 +9,6 @@ import pika.exceptions
 from ai_model_manager import AIModelManager
 from config.development import get_message, handle_error, send_message_to_queue, handle_message
 
-
 class OCRResultHandler:
     """OCR 결과 메시지 처리 담당."""
     def __init__(self, system_manager, ai_data_manager):
@@ -50,7 +49,7 @@ class MessageConsumer:
             print('프로그램을 종료합니다.')
             self.rabbitmq_manager.close_connection()
         except Exception as e:
-            handle_error(self.system_manager, "error", "05", e, "메시지 소비 중 오류")
+            handle_error(self.system_manager, "error", "505", e, "메시지 소비 중 오류")
             self.rabbitmq_manager.close_connection()
 
 class AIOCRRunning:

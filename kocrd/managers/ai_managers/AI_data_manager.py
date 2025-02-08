@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QInputDialog
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from ai_model_manager import AIModelManager
-from ai_config import get_message, handle_error, send_message_to_queue
+from config.development import get_message, handle_error, send_message_to_queue
 from utils.embedding_utils import generate_document_type_embeddings
 
 class AIDataManager:
@@ -34,7 +34,7 @@ class AIDataManager:
             logging.info(f"피드백 저장 완료: {data}")
             send_message_to_queue(self.system_manager, "feedback_queue", data)
         except Exception as e:
-            handle_error(self.system_manager, "error", "05", e, "피드백 저장 오류")
+            handle_error(self.system_manager, "error", "505", e, "피드백 저장 오류")
 
     def request_user_feedback(self, file_path):
         """사용자 피드백 요청."""
@@ -64,7 +64,7 @@ class AIDataManager:
             self.ko_e5_model = SentenceTransformer("nlpai-lab/KoE5")
             logging.info("KoE5 모델 로드 완료.")
         except Exception as e:
-            handle_error(self.system_manager, "error", "05", e, "모델 로드 오류")
+            handle_error(self.system_manager, "error", "505", e, "모델 로드 오류")
             self.ko_e5_model = None
 
     def set_use_ml_model(self, use_ml_model):
@@ -83,7 +83,7 @@ class AIDataManager:
                     document_type = self.postprocess_prediction(model_input)
                     is_rule_based = False
             except Exception as e:
-                handle_error(self.system_manager, "error", "05", e, "모델 예측 오류")
+                handle_error(self.system_manager, "error", "505", e, "모델 예측 오류")
         else:
             if "invoice" in text.lower():
                 document_type = "Invoice"
@@ -104,7 +104,7 @@ class AIDataManager:
             embeddings = self.ko_e5_model.encode([text])
             return embeddings
         except Exception as e:
-            handle_error(self.system_manager, "error", "05", e, "임베딩 생성 오류")
+            handle_error(self.system_manager, "error", "505", e, "임베딩 생성 오류")
             return None
 
     def postprocess_prediction(self, prediction):
@@ -134,12 +134,12 @@ class AIDataManager:
                         self.document_type_embeddings[doc_type] = np.array(embedding)
                     logging.info("문서 유형 임베딩 로드 완료.")
             except (json.JSONDecodeError, FileNotFoundError) as e:
-                handle_error(self.system_manager, "error", "05", e, "임베딩 파일 오류")
+                handle_error(self.system_manager, "error", "505", e, "임베딩 파일 오류")
                 embeddings = generate_document_type_embeddings(self.document_types_path)
                 if embeddings:
                     self.load_document_type_embeddings()
             except Exception as e:
-                handle_error(self.system_manager, "error", "05", e, "임베딩 로드 오류")
+                handle_error(self.system_manager, "error", "505", e, "임베딩 로드 오류")
         else:
             logging.info(f"문서 유형 임베딩 파일({embedding_file_path})을 찾을 수 없습니다. 재생성합니다.")
             embeddings = generate_document_type_embeddings(self.document_types_path)

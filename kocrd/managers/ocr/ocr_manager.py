@@ -220,7 +220,7 @@ class OCRManager:
                     if is_valid:
                         ocr_result = OCRHelper.extract_cell_and_kclb(extracted_text)
                         if ocr_result:
-                            self.log("info", "OCR 결과: {ocr_result}", ocr_result=ocr_result)
+                            self.log("info", "313", ocr_result=ocr_result)
                         else:
                             self.log("warning", "407")
                     else:
