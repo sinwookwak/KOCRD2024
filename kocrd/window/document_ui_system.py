@@ -21,11 +21,7 @@ class DocumentUISystem:
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
 
-        config_path = os.path.join(os.path.dirname(__file__), 'window_config.json')
-        with open(config_path, 'r') as f:
-            self.config = json.load(f)
-
-        self.messages = self.config.get("messages", {})
+        self.messages = messages["messages"]
 
     def _execute_action(self, action, confirmation_key=None, success_key=None, error_key=None, **kwargs):
         if confirmation_key:
@@ -85,8 +81,8 @@ class DocumentUISystem:
         """문서 테이블 생성."""
         self.table_widget = QTableWidget()
 
-        self.table_widget.setColumnCount(len(self.config["table_columns"]))
-        self.table_widget.setHorizontalHeaderLabels(self.config["table_columns"])
+        self.table_widget.setColumnCount(len(self.messages["table_columns"]))
+        self.table_widget.setHorizontalHeaderLabels(self.messages["table_columns"])
 
         # 헤더 조정
         header = self.table_widget.horizontalHeader()

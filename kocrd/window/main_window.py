@@ -20,8 +20,8 @@ class MainWindow(QMainWindow):
         self.event_manager = event_manager
 
         self.config = self.load_config()
-        self.setWindowTitle(self.config["main_window"]["title"])
-        self.setGeometry(100, 100, self.config["main_window"]["size"]["width"], self.config["main_window"]["size"]["height"])
+        self.setWindowTitle(self.messages["main_window"]["title"])
+        self.setGeometry(100, 100, self.messages["main_window"]["size"]["width"], self.messages["main_window"]["size"]["height"])
 
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setRange(0, 100)
@@ -32,8 +32,8 @@ class MainWindow(QMainWindow):
         self.menubar_manager = MenubarManager(system_manager)  # MenubarManager 인스턴스 생성
         self.setMenuBar(self.menubar_manager.get_ui())  # Menubar UI 설정
 
-        self.messages = self.config.get("messages", {})
-        self.error_messages = self.config.get("error", {})
+        self.messages = messages["messages"]
+        self.error_messages = messages["error"]
 
         self.init_ui()
         logging.info("MainWindow initialized.")
@@ -120,18 +120,8 @@ class MainWindow(QMainWindow):
 
     def load_config(self):
         """설정 파일을 로드하거나 기본 설정을 생성합니다."""
-        config_path = "window_config.json"
-        if os.path.exists(config_path):
-            with open(config_path, "r", encoding="utf-8") as file:
-                print(messages["601"])  # Window configuration loaded successfully.
-                return json.load(file)
-        else:
-            default_config = {
-                "about_text": "Date Extractor AI\n© 2024"
-            }
-            with open(config_path, "w", encoding="utf-8") as file:
-                json.dump(default_config, file, indent=4)
-            return default_config
+        print(messages["601"])  # Window configuration loaded successfully.
+        return messages
 
     def get_message(self, key):
         """메시지 키를 통해 메시지를 가져옵니다."""

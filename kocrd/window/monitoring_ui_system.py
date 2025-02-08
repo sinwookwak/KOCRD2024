@@ -11,7 +11,7 @@ class MonitoringUISystem(QWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
-        self.config = self.load_config()
+        self.config = messages
 
         self.log_display = QTextEdit()
         self.log_display.setReadOnly(True)
@@ -117,11 +117,7 @@ class MonitoringUISystem(QWidget):
             log_display.setReadOnly(True)
             monitoring_layout.addWidget(log_display)
 
-            config_path = os.path.join(os.path.dirname(__file__), 'window_config.json')
-            with open(config_path, 'r') as f:
-                config = json.load(f)
-
-            for widget_config in config["monitoring_ui"]["widgets"]:
+            for widget_config in self.config["monitoring_ui"]["widgets"]:
                 widget = getattr(self.main_window, widget_config["name"])
                 monitoring_layout.addWidget(widget)
 
