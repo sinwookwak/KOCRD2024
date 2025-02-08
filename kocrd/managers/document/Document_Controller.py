@@ -85,8 +85,8 @@ class DocumentController(QWidget):
             logging.info(f"Report saved to {output_path}")
             QMessageBox.information(self.parent, "저장 완료", f"보고서가 저장되었습니다: {output_path}")
         except Exception as e:
-            logging.error(config["messages"]["error"]["20"].format(error=e))
-            QMessageBox.critical(self.parent, "저장 오류", config["messages"]["error"]["20"].format(error=e))
+            logging.error(config["messages"]["error"]["520"].format(error=e))
+            QMessageBox.critical(self.parent, "저장 오류", config["messages"]["error"]["520"].format(error=e))
     def export_to_pdf(self, filename="output.pdf"):
         # DocumentTableView의 데이터를 가져와 PDF 생성
         data = []
@@ -134,14 +134,14 @@ class DocumentController(QWidget):
             logging.info(f"Data saved to Excel: {file_path}")
             QMessageBox.information(self.parent, "저장 완료", f"Excel 파일로 문서 정보가 저장되었습니다: {file_path}")
         except PermissionError as e:
-            logging.error(config["messages"]["error"]["20"].format(error=e))
-            QMessageBox.critical(self.parent, "저장 오류", config["messages"]["error"]["20"].format(error=e))
+            logging.error(config["messages"]["error"]["520"].format(error=e))
+            QMessageBox.critical(self.parent, "저장 오류", config["messages"]["error"]["520"].format(error=e))
         except IOError as e:
-            logging.error(config["messages"]["error"]["20"].format(error=e))
-            QMessageBox.critical(self.parent, "저장 오류", config["messages"]["error"]["20"].format(error=e))
+            logging.error(config["messages"]["error"]["520"].format(error=e))
+            QMessageBox.critical(self.parent, "저장 오류", config["messages"]["error"]["520"].format(error=e))
         except Exception as e:
-            logging.error(config["messages"]["error"]["20"].format(error=e))
-            QMessageBox.critical(self.parent, "저장 오류", config["messages"]["error"]["20"].format(error=e))
+            logging.error(config["messages"]["error"]["520"].format(error=e))
+            QMessageBox.critical(self.parent, "저장 오류", config["messages"]["error"]["520"].format(error=e))
     def clear_table(self):
         self.document_table_view.clear_table()
     def filter_documents(self, criteria):
@@ -189,15 +189,15 @@ class DocumentController(QWidget):
 
             logging.info(f"Document search completed for keyword: {keyword}")
         except Exception as e:
-            logging.error(config["messages"]["error"]["20"].format(error=e))
-            QMessageBox.critical(self.parent, "검색 오류", config["messages"]["error"]["20"].format(error=e))
+            logging.error(config["messages"]["error"]["520"].format(error=e))
+            QMessageBox.critical(self.parent, "검색 오류", config["messages"]["error"]["520"].format(error=e))
 
     def start_consuming(self):
         """메시지 큐에서 메시지를 소비."""
         try:
             self.message_queue_manager.start_consuming()
         except Exception as e:
-            logging.error(config["messages"]["error"]["20"].format(error=e))
+            logging.error(config["messages"]["error"]["520"].format(error=e))
 
     def send_message(self, message):
         """메시지를 큐에 전송."""
@@ -206,4 +206,4 @@ class DocumentController(QWidget):
             self.document_processor.send_message(queue_name, message)
             logging.info(f"Message sent to queue '{queue_name}': {message}")
         except Exception as e:
-            logging.error(config["messages"]["error"]["20"].format(error=e))
+            logging.error(config["messages"]["error"]["520"].format(error=e))
