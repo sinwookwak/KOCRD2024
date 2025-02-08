@@ -38,7 +38,7 @@ class DocumentTableView(QWidget):
     def get_selected_file_names(self):
         selected_items = self.table_widget.selectedItems()
         if not selected_items:
-            QMessageBox.warning(self.parent, "선택 오류", config["messages"]["error"]["21"])
+            QMessageBox.warning(self.parent, "선택 오류", config["messages"]["error"]["921"])
             return None
 
         selected_file_names = []
