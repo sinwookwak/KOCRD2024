@@ -1,0 +1,9 @@
+{
+  "language": "English",
+  "MSG_001": "Do you want to delete all data in the file table?",
+  "MSG_002": "The file table has been initialized.",
+  "MSG_003": "An error occurred while filtering the document.",
+  "MSG_101": "OCR task completed.",
+  "MSG_501": "An error occurred: {e}"
+  // ... (other messages)
+}
