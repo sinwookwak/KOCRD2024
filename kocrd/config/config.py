@@ -171,15 +171,12 @@ if __name__ == "__main__":
     process_image("path/to/image.png")
     print(get_message_by_id("601"))
 
-# managers_config.json 파일 로드
-managers_config = load_config('managers/managers_config.json')
-
 def get_message(category, code):
     return managers_config["messages"][category][code]
 
 def handle_error(system_manager, category, code, exception, error_type):
     """에러 처리 및 로깅."""
-    error_message = get_message("error", code).format(e=exception)
+    error_message = get_message(category, code).format(e=exception)
     system_manager.handle_error(error_message, error_type)
     logging.exception(error_message)
 
@@ -192,18 +189,22 @@ def send_message_to_queue(system_manager, queue_name, message):
         handle_error(system_manager, "error", "511", e, "RabbitMQ 오류")
         raise
 
+def process_message(ai_event_manager, message):
+    """메시지 처리 로직."""
+    message_type = message.get("type")
+
+    if message_type == managers_config["message_types"]["101"]:
+        perform_ocr(ai_event_manager, message["data"])
+    elif message_type == managers_config["message_types"]["102"]:
+        process_ocr_result(ai_event_manager, message["data"])
+    else:
+        logging.warning(f"알 수 없는 메시지 타입: {message_type}")
+
 def handle_message(ai_event_manager, ch, method, properties, body):
     """AIEventManager의 handle_message 메서드 호출."""
     try:
         message = json.loads(body)
-        message_type = message.get("type")
-
-        if message_type == managers_config["message_types"]["101"]:
-            perform_ocr(ai_event_manager, message["data"])
-        elif message_type == managers_config["message_types"]["102"]:
-            process_ocr_result(ai_event_manager, message["data"])
-        else:
-            logging.warning(f"알 수 없는 메시지 타입: {message_type}")
+        process_message(ai_event_manager, message)
     except json.JSONDecodeError as e:
         handle_error(ai_event_manager.system_manager, "error", "512", e, "JSON 파싱 오류")
     except Exception as e:

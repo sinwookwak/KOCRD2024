@@ -1,4 +1,3 @@
-# file: system.py
 import json
 import logging
 import os
@@ -14,6 +13,8 @@ from managers.document.document_manager import DocumentManager
 from managers.temp_file_manager import TempFileManager
 from kocrd.window.menubar_manager import MenubarManager
 from utils.embedding_utils import EmbeddingUtils
+from kocrd.config.config import get_message
+from kocrd.managers.system_manager import SystemManager  # SystemManager에서 RabbitMQManager 통합
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -24,53 +25,58 @@ def process_message(process_func):
             process_func(channel, method, properties, body, manager)
             channel.basic_ack(delivery_tag=method.delivery_tag)
         except json.JSONDecodeError as e:
-            logging.error(f"JSON 파싱 오류: {e}")
+            logging.error(get_message("error", "512").format(e=e, body=body))
             channel.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
         except Exception as e:
-            logging.error(f"메시지 처리 중 오류 발생: {e}")
+            logging.error(get_message("error", "513").format(e=e, body=body))
             channel.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
     return wrapper
 
-def process_document(channel, method, properties, body, document_manager):
-    """문서 처리 함수"""
+def handle_process(channel, method, properties, body, manager, process_func):
+    """공통 메시지 처리 함수"""
     message = json.loads(body.decode())
+    process_func(manager, message)
+    logging.info(get_message("log", "333").format(message=message))
+
+def process_document(manager, message):
+    """문서 처리 함수"""
     file_paths = message.get("file_paths", [])
     if not file_paths:
-        logging.warning(f"파일 경로 없음. 메시지 내용: {body.decode()}")
+        logging.warning(get_message("warning", "403").format(message=message))
         return
     for file_path in file_paths:
-        document_manager.load_document(file_path)
-    logging.info(f"문서 처리 완료: {file_paths}")
+        manager.load_document(file_path)
+    logging.info(get_message("log", "324").format(file_paths=file_paths))
 
-def process_database_packaging(channel, method, properties, body, database_manager):
+def process_database_packaging(manager, message):
     """데이터베이스 패키징 함수"""
-    database_manager.package_database()
-    logging.info("데이터베이스 패키징 완료")
+    manager.package_database()
+    logging.info(get_message("log", "330"))
 
-def process_ai_training(channel, method, properties, body, ai_manager):
+def process_ai_training(manager, message):
     """AI 학습 처리 함수"""
-    ai_manager.train_ai()
-    logging.info("AI 학습 완료")
+    manager.train_ai()
+    logging.info(get_message("log", "331"))
 
-def process_temp_file_manager(channel, method, properties, body, temp_file_manager):
+def process_temp_file_manager(manager, message):
     """임시 파일 관리"""
-    temp_file_manager.handle_message(channel, method, properties, body)
-    logging.info("임시 파일 관리 작업 완료")
+    manager.handle_message(message)
+    logging.info(get_message("log", "315"))
 
-def process_ai_prediction(channel, method, properties, body, ai_prediction_manager):
+def process_ai_prediction(manager, message):
     """AI 예측 수행"""
-    ai_prediction_manager.handle_message(channel, method, properties, body)
-    logging.info("AI 예측 작업 완료")
+    manager.handle_message(message)
+    logging.info(get_message("log", "332"))
 
-def process_ai_event(channel, method, properties, body, ai_event_manager):
+def process_ai_event(manager, message):
     """AI 이벤트 핸들링"""
-    ai_event_manager.handle_message(channel, method, properties, body)
-    logging.info("AI 이벤트 작업 완료")
+    manager.handle_message(message)
+    logging.info(get_message("log", "333"))
 
-def process_ai_ocr_running(channel, method, properties, body, ai_ocr_running):
+def process_ai_ocr_running(manager, message):
     """AI OCR 실행"""
-    ai_ocr_running.handle_ocr_result(channel, method, properties, body)
-    logging.info("AI OCR 실행 작업 완료")
+    manager.handle_ocr_result(message)
+    logging.info(get_message("log", "334"))
 
 def create_manager(manager_config, settings_manager):
     """설정 파일에서 매니저 인스턴스를 생성합니다."""
@@ -117,12 +123,13 @@ class SystemManager:
         return TempFileManager(self.settings_manager)
 
     def create_rabbitmq_manager(self):
-        return RabbitMQManager(self.settings_manager)
+        return self  # SystemManager에서 RabbitMQManager 통합
 
     def create_database_manager(self):
         return DatabaseManager(self.settings_manager.get_setting("db_path"), self.settings_manager.get_setting("backup_path"))
 
     def create_ai_model_manager(self):
+        from kocrd.managers.ai_managers.ai_model_manager import AIModelManager
         return AIModelManager(self.settings_manager)  # AIModelManager 생성
 
     def get_temp_file_manager(self):
@@ -147,9 +154,9 @@ class SystemManager:
         pytesseract.pytesseract.tesseract_cmd = self.tesseract_cmd
         if self.tessdata_dir:
             pytesseract.pytesseract.tessdata_dir = self.tessdata_dir
-            logging.info(f"🟢 Tessdata 설정 완료: {self.tessdata_dir}")
-        logging.info(f"🟢 Tesseract 설정 완료: {self.tesseract_cmd}")
-        logging.info("🟢 SystemManager 초기화 완료.")
+            logging.info(get_message("log", "320").format(tessdata_dir=self.tessdata_dir))
+        logging.info(get_message("log", "319").format(tesseract_cmd=self.tesseract_cmd))
+        logging.info(get_message("log", "333"))
 
     def _init_components(self, settings: Dict[str, Any]) -> None:
         """설정 파일을 기반으로 매니저 및 UI 초기화"""
@@ -160,9 +167,9 @@ class SystemManager:
                     dependencies = [self.managers[dep] for dep in component_settings.get("dependencies", [])]
                     kwargs = component_settings.get("kwargs", {})
                     component_dict[component_name] = class_(*dependencies, **kwargs)
-                    logging.info(f"🟢 {component_type.capitalize()} '{component_name}' 초기화 완료.")
+                    logging.info(get_message("log", "328").format(component_type=component_type.capitalize(), component_name=component_name))
                 except Exception as e:
-                    logging.error(f"🔴 {component_type.capitalize()} '{component_name}' 초기화 실패: {e}")
+                    logging.error(get_message("error", "333").format(component_type=component_type.capitalize(), component_name=component_name, e=e))
                     sys.exit(1)
 
     def database_packaging(self):
@@ -181,10 +188,10 @@ class SystemManager:
             if ai_manager:
                 return ai_manager.generate_text(data.get("command", ""))
             else:
-                logging.error("AIManager가 초기화되지 않았습니다.")
+                logging.error(get_message("error", "514"))
         else:
-            logging.warning(f"🔴 알 수 없는 프로세스 유형: {process_type}")
-            QMessageBox.warning(self.main_window, "오류", "알 수 없는 작업 유형입니다.")
+            logging.warning(get_message("warning", "404").format(process_type=process_type))
+            QMessageBox.warning(self.main_window, "오류", get_message("warning", "404").format(process_type=process_type))
 
     def handle_error(self, message, error_code=None):
         if error_code:
@@ -223,7 +230,7 @@ def main():
     
     connection, channel = settings_manager.connect_to_rabbitmq()
     if connection is None:
-        logging.error("RabbitMQ 연결 실패. 종료합니다.")
+        logging.error(get_message("error", "511"))
         return
 
     try:
@@ -234,15 +241,19 @@ def main():
         for queue in queues:
             channel.queue_declare(queue=queue, durable=True)
 
-        channel.basic_consume(queue=config["queues"]["document_processing"], on_message_callback=process_message(process_document), auto_ack=False)
-        channel.basic_consume(queue=config["queues"]["database_packaging"], on_message_callback=process_message(process_database_packaging), auto_ack=False)
-        channel.basic_consume(queue=config["queues"]["ai_training_queue"], on_message_callback=process_message(process_ai_training), auto_ack=False)
+        document_manager = settings_manager.get_manager("document")
+        database_manager = settings_manager.get_manager("database")
+        ai_manager = settings_manager.get_manager("ai_training")
 
-        logging.info("메시지 대기 중... 종료하려면 CTRL+C를 누르세요.")
+        channel.basic_consume(queue=config["queues"]["document_processing"], on_message_callback=process_message(lambda ch, method, props, body: handle_process(ch, method, props, body, document_manager, process_document)), auto_ack=False)
+        channel.basic_consume(queue=config["queues"]["database_packaging"], on_message_callback=process_message(lambda ch, method, props, body: handle_process(ch, method, props, body, database_manager, process_database_packaging)), auto_ack=False)
+        channel.basic_consume(queue=config["queues"]["ai_training_queue"], on_message_callback=process_message(lambda ch, method, props, body: handle_process(ch, method, props, body, ai_manager, process_ai_training)), auto_ack=False)
+
+        logging.info(get_message("log", "333"))
         channel.start_consuming()
 
     except KeyboardInterrupt:
-        logging.info("작업 중지됨. RabbitMQ 연결 종료.")
+        logging.info(get_message("log", "333"))
         if connection and connection.is_open:
             connection.close()
 
