@@ -16,6 +16,7 @@ class MenubarManager:
         logging.info("MenubarManager initialized with main_window.")
 
         self.config = self.load_config()  # 설정 로드
+        self.id_mapping = self.load_id_mapping()  # ID 매핑 로드
         self.setup_menus()
 
     def setup_menus(self):
@@ -24,7 +25,7 @@ class MenubarManager:
             menu = self.menu_bar.addMenu(menu_config["name"])
             for action_config in menu_config["actions"]:
                 action = QAction(action_config["name"], self.main_window)
-                action.triggered.connect(getattr(self, f"callback_{action_config['callback']}"))
+                action.triggered.connect(getattr(self, f"callback_{self.id_mapping[action_config['callback']]}"))
                 menu.addAction(action)
         logging.info("MenubarManager initialized.")
 
@@ -93,6 +94,19 @@ class MenubarManager:
         except json.JSONDecodeError as e:
             logging.error(f"Error decoding config file: {e}")
             return {}  # 빈 설정 반환
+
+    def load_id_mapping(self):
+        """ID 매핑 파일을 로드합니다."""
+        id_mapping_path = "config/messages.json"
+        try:
+            with open(id_mapping_path, "r", encoding="utf-8") as file:
+                return json.load(file)["id_mapping"]
+        except FileNotFoundError:
+            logging.error(f"ID mapping file not found: {id_mapping_path}")
+            return {}  # 빈 매핑 반환
+        except json.JSONDecodeError as e:
+            logging.error(f"Error decoding ID mapping file: {e}")
+            return {}  # 빈 매핑 반환
 
     def get_message(self, key):
         """메시지 키를 통해 메시지를 가져옵니다."""
