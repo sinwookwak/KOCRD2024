@@ -132,23 +132,6 @@
     "ocr_engine": "tesseract",
     "ai_model": "classification"
   },
-  "queues": {
-    "prediction_requests": "prediction_requests",
-    "prediction_results": "prediction_results",
-    "ui_feedback_requests": "ui_feedback_requests",
-    "events": "events",
-    "document_processing": "document_processing",
-    "database_packaging": "database_packaging",
-    "result": "result",
-    "ai_training_queue": "ai_training_queue",
-    "temp_file_queue": "temp_file_queue",
-    "prediction_requests_queue": "prediction_requests_queue",
-    "events_queue": "events_queue",
-    "ocr_results": "ocr_results",
-    "ocr_requests": "ocr_requests",
-    "ai_result_handling": "ai_result_handling",
-    "feedback_queue": "feedback_queue"
-  },
   "settings_tabs": [
     {
       "name": "일반 설정",

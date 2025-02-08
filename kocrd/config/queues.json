@@ -1,5 +1,8 @@
 {
   "queues": {
+    "151": "ocr_queue",
+    "152": "events_queue",
+    "153": "document_queue",
     "prediction_requests": {
       "name": "prediction_requests",
       "type": "rabbitmq",
@@ -120,5 +123,10 @@
       "durable": true,
       "auto_delete": false
     }
+  },
+  "MESSAGE_QUEUE": {
+    "301": "document_queue",
+    "302": "localhost",
+    "303": 5672
   }
 }
