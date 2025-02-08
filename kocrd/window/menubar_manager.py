@@ -4,6 +4,7 @@ import json
 import logging
 from PyQt5.QtWidgets import QMenuBar, QAction, QMessageBox, QFileDialog, QApplication, QDialog
 from kocrd.Settings.SettingsDialogUI.SettingsDialogUI import SettingsDialogUI
+from kocrd.config.messages import messages
 
 class MenubarManager:
     """메뉴바 이벤트 및 UI 관리 클래스."""
@@ -14,16 +15,15 @@ class MenubarManager:
         self.config_path = "config/window_config.json"
         logging.info("MenubarManager initialized with main_window.")
 
-        self.config = self.load_config()
-        self.messages = self.config.get("messages", {})
-        self.log_messages = self.config.get("log_messages", {})
-        self.error_messages = self.config.get("error_messages", {})
+        self.messages = messages["messages"]
+        self.log_messages = messages["log"]
+        self.error_messages = messages["error"]
 
         self.setup_menus()
 
     def setup_menus(self):
         """메뉴 항목 설정."""
-        for menu_config in self.config["menus"]:
+        for menu_config in self.messages["menus"]:
             menu = self.menu_bar.addMenu(menu_config["name"])
             for action_config in menu_config["actions"]:
                 action = QAction(action_config["name"], self.main_window)
@@ -33,14 +33,17 @@ class MenubarManager:
 
     def callback_04(self):
         """열기 콜백."""
+        print(messages["701"])  # 열기
         self.system_manager.open_file_dialog()
 
     def callback_05(self):
         """저장 콜백."""
+        print(messages["702"])  # 저장
         self.system_manager.save_file()
 
     def callback_06(self):
         """종료 콜백."""
+        print(messages["703"])  # 종료
         self.main_window.close()
 
     def callback_07(self):

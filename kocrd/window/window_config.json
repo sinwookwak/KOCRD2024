@@ -176,5 +176,15 @@
       "922": "DatabaseManager not found."
     }
   },
-  "about_text": "Date Extractor AI\n© 2024"
+  "about_text": "Date Extractor AI\n© 2024",
+  "window_config": {
+    "messages": {
+      "load_success": "601",
+      "load_error": "602",
+      "size_set": "603",
+      "position_set": "604",
+      "save_success": "605",
+      "save_error": "606"
+    }
+  }
 }

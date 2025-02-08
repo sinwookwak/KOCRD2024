@@ -4,6 +4,7 @@ import logging
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSplitter, QTextEdit, QProgressBar, QLineEdit, QPushButton, QHBoxLayout, QListWidget
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 import os
+from kocrd.config.messages import messages
 
 class MonitoringUISystem(QWidget):
     """모니터링 UI 시스템 클래스."""
@@ -134,3 +135,10 @@ class MonitoringUISystem(QWidget):
         config_path = os.path.join(os.path.dirname(__file__), 'window_config.json')
         with open(config_path, 'r') as f:
             return json.load(f)
+
+def setup_monitoring_ui():
+    # ...existing code...
+    print(messages["851"])  # Documents filtered successfully.
+    # ...existing code...
+    print(messages["852"])  # Document search completed for keyword: {keyword}
+    # ...existing code...

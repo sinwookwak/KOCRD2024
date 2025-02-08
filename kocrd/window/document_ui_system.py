@@ -10,6 +10,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from window.monitoring_ui_system import MonitoringUISystem
+from kocrd.config.messages import messages
 
 class DocumentUISystem:
     def __init__(self, main_window):
@@ -109,6 +110,7 @@ class DocumentUISystem:
             "04",
             "03"
         )
+        print(messages["201"])  # 문서를 필터링 하는 중 오류가 발생했습니다.
 
     def update_document_info(self, database_manager):
         """선택된 문서의 정보를 업데이트합니다."""
@@ -176,6 +178,7 @@ class DocumentUISystem:
             success_key="08",
             file_name=file_name
         )
+        print(messages["202"])  # 파일 테이블의 모든 데이터를 삭제하시겠습니까?
 
     def _delete_document_action(self, database_manager, file_name, selected_row):
         self.table_widget.removeRow(selected_row)

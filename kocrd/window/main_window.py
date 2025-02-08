@@ -6,6 +6,7 @@ from PyQt5.QtCore import pyqtSignal
 from window.document_ui_system import DocumentUISystem
 from window.monitoring_ui_system import MonitoringUISystem
 from kocrd.window.menubar_manager import MenubarManager
+from kocrd.config.messages import messages
 
 class MainWindow(QMainWindow):
     command_processed = pyqtSignal(str, str)  # (Command Text, AI Response) 신호
@@ -122,6 +123,7 @@ class MainWindow(QMainWindow):
         config_path = "window_config.json"
         if os.path.exists(config_path):
             with open(config_path, "r", encoding="utf-8") as file:
+                print(messages["601"])  # Window configuration loaded successfully.
                 return json.load(file)
         else:
             default_config = {

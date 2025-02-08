@@ -50,6 +50,14 @@
       "513": "OCR 메시지 처리 중 오류 발생: {e}. 메시지 내용: {body.decode()}",
       "514": "system_manager가 초기화되지 않았습니다.",
       "515": "monitoring_window가 초기화되지 않았습니다."
+    },
+    "window": {
+      "601": "Window configuration loaded successfully.",
+      "602": "Error loading window configuration: {e}",
+      "603": "Window size set to width: {width}, height: {height}",
+      "604": "Window position set to x: {x}, y: {y}",
+      "605": "Window configuration saved successfully.",
+      "606": "Error saving window configuration: {e}"
     }
   }
 }
