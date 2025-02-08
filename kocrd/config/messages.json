@@ -55,43 +55,28 @@
       "408": "monitoring_window가 None입니다."
     },
     "error": {
-      "501": "Error: {e}",
-      "502": "Page {page_num} 이미지 변환 실패",
-      "503": "PDF 처리 중 오류 발생: {e}",
-      "504": "지원하지 않는 파일 형식: {file_path}",
-      "505": "텍스트 추출 중 오류 발생: {e}",
-      "506": "Error saving page {page_num} as image: {e}",
-      "507": "Error cleaning temporary files: {e}",
-      "508": "Error during OCR scan for {file_path}: {e}",
-      "509": "monitoring_window에 system_manager가 없습니다.",
-      "510": "monitoring_window에 progress_bar가 없습니다.",
-      "511": "RabbitMQ 연결 오류: {e}",
-      "512": "JSON 파싱 오류: {e}. 메시지 내용: {body.decode()}",
-      "513": "OCR 메시지 처리 중 오류 발생: {e}. 메시지 내용: {body.decode()}",
-      "514": "system_manager가 초기화되지 않았습니다.",
-      "515": "monitoring_window가 초기화되지 않았습니다.",
-      "516": "문서를 필터링 하는 중 오류가 발생했습니다.",
-      "517": "Error handling command: {error}",
-      "518": "OCR 처리 중 오류가 발생했습니다: {error}",
-      "519": "Monitoring event 처리 중 오류가 발생했습니다: {error}",
-      "520": "AI 응답 처리 중 오류가 발생했습니다.",
-      "521": "Error displaying content: {error}",
-      "522": "Error: {e}",
-      "523": "Page {page_num} 이미지 변환 실패",
-      "524": "PDF 처리 중 오류 발생: {e}",
-      "525": "지원하지 않는 파일 형식: {file_path}",
-      "526": "텍스트 추출 중 오류 발생: {e}",
-      "527": "Error saving page {page_num} as image: {e}",
-      "528": "Error cleaning temporary files: {e}",
-      "529": "Error during document processing for {file_path}: {e}",
-      "530": "monitoring_window에 system_manager가 없습니다.",
-      "531": "monitoring_window에 progress_bar가 없습니다.",
-      "532": "RabbitMQ 연결 오류: {e}",
-      "533": "JSON 파싱 오류: {e}. 메시지 내용: {body.decode()}",
-      "534": "문서 메시지 처리 중 오류 발생: {e}. 메시지 내용: {body.decode()}",
-      "535": "system_manager가 초기화되지 않았습니다.",
-      "536": "monitoring_window가 초기화되지 않았습니다.",
-      "537": "DatabaseManager not found."
+      "501": "Error: {e}", // 일반적인 오류
+      "502": "Page {page_num} 이미지 변환 실패", // 이미지 변환 실패
+      "503": "PDF 처리 중 오류 발생: {e}", // PDF 처리 오류
+      "504": "지원하지 않는 파일 형식: {file_path}", // 파일 형식 오류
+      "505": "텍스트 추출 중 오류 발생: {e}", // 텍스트 추출 오류
+      "506": "Error saving page {page_num} as image: {e}", // 이미지 저장 오류
+      "507": "Error cleaning temporary files: {e}", // 임시 파일 정리 오류
+      "508": "Error during document processing for {file_path}: {e}", // 문서 처리 오류
+      "509": "monitoring_window에 system_manager가 없습니다.", // UI 관련 오류
+      "510": "monitoring_window에 progress_bar가 없습니다.", // UI 관련 오류
+      "511": "RabbitMQ 연결 오류: {e}", // RabbitMQ 연결 오류
+      "512": "JSON 파싱 오류: {e}. 메시 내용: {body}", // JSON 파싱 오류
+      "513": "문서 메시지 처리 중 오류 발생: {e}. 메시지 내용: {body}", // 메시지 처리 오류
+      "514": "system_manager가 초기화되지 않았습니다.", // 시스템 초기화 오류
+      "515": "monitoring_window가 초기화되지 않았습니다.", // UI 초기화 오류
+      "516": "문서를 필터링 하는 중 오류가 발생했습니다.", // 문서 필터링 오류
+      "517": "Error handling command: {error}", // 명령어 처리 오류
+      "518": "OCR 처리 중 오류가 발생했습니다: {error}", // OCR 처리 오류
+      "519": "Monitoring event 처리 중 오류가 발생했습니다: {error}", // 모니터링 이벤트 처리 오류
+      "520": "AI 응답 처리 중 오류가 발생했습니다.", // AI 응답 처리 오류
+      "521": "Error displaying content: {error}", // 콘텐츠 표시 오류
+      "532": "DatabaseManager not found." // DatabaseManager 오류
     },
     "window": {
       "601": "Window configuration loaded successfully.",
