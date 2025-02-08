@@ -15,9 +15,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 from managers.ocr.ocr_utils import OCRHelper
 from Settings.settings_manager import SettingsManager
 
-# ocr_config.json 파일 로드
-with open(os.path.join(os.path.dirname(__file__), 'ocr_config.json'), 'r') as f:
-    ocr_config = json.load(f)
+# managers_config.json 파일 로드
+with open(os.path.join(os.path.dirname(__file__), '../managers_config.json'), 'r') as f:
+    managers_config = json.load(f)
 
 class OCRManager:
     """OCR 작업을 처리하는 클래스."""
@@ -48,12 +48,12 @@ class OCRManager:
 
     def log(self, level: str, code: str, **kwargs) -> None:
         """간략화된 로깅."""
-        message = ocr_config["messages"][level].get(code, "").format(**kwargs)
+        message = managers_config["messages"][level].get(code, "").format(**kwargs)
         getattr(logging, level)(message)
 
     def show_message(self, level: str, code: str) -> None:
         """간략화된 메시지 박스."""
-        message = ocr_config["messages"].get(code, "")
+        message = managers_config["messages"].get(code, "")
         if level == "warning":
             QMessageBox.warning(self.monitoring_window, "오류", message)
 
@@ -196,7 +196,7 @@ class OCRManager:
     def _send_ocr_result(self, file_path: str, extracted_text: Optional[str]) -> None:
         """OCR 결과를 메시지로 전송."""
         if self.monitoring_window:
-            self.monitoring_window.system_manager.send_message(ocr_config["message_types"]["102"], {"type": ocr_config["message_types"]["102"], "file_path": file_path, "extracted_text": extracted_text, "reply_to": ocr_config["queues"]["202"]})
+            self.monitoring_window.system_manager.send_message(managers_config["message_types"]["102"], {"type": managers_config["message_types"]["102"], "file_path": file_path, "extracted_text": extracted_text, "reply_to": managers_config["queues"]["202"]})
         else:
             self.log("error", "514")
 
@@ -206,7 +206,7 @@ class OCRManager:
             message: Dict = json.loads(body.decode())
             message_type = message.get("type")
 
-            if message_type == ocr_config["message_types"]["101"]:
+            if message_type == managers_config["message_types"]["101"]:
                 file_path = message.get("file_path")
                 if not file_path:
                     self.log("warning", "403")
@@ -246,8 +246,8 @@ class OCRManager:
         try:
             connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
             channel = connection.channel()
-            channel.queue_declare(queue=ocr_config["queues"]["201"])
-            channel.basic_consume(queue=ocr_config["queues"]["201"], on_message_callback=self.handle_message, auto_ack=False)
+            channel.queue_declare(queue=managers_config["queues"]["201"])
+            channel.basic_consume(queue=managers_config["queues"]["201"], on_message_callback=self.handle_message, auto_ack=False)
             print('Waiting for messages. To exit press CTRL+C')
             channel.start_consuming()
         except pika.exceptions.AMQPConnectionError as e:
