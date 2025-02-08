@@ -92,10 +92,6 @@ def get_message(lang_pack: Dict[str, str], message_id: str, default_lang_pack: D
     message = lang_pack.get(message_id) or default_lang_pack.get(message_id, f"Unknown message ID: {message_id}")
     return message
 
-# 메시지 사용 예시
-print(get_message(selected_lang_pack, "MSG_001", default_lang_pack))
-print(get_message(selected_lang_pack, "MSG_999", default_lang_pack))
-
 # ID 맵핑
 id_mapping = config["id_mapping"]
 
