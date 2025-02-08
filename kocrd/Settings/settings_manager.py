@@ -10,31 +10,21 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 from PyQt5.QtWidgets import QDialog, QMessageBox, QFileDialog
 from typing import Union, List, Tuple, Callable, Dict, Optional
 from pika.exceptions import AMQPConnectionError
-from Settings.Settings_temp import SettingsTempManager
+from kocrd.config.config import load_config, get_message, handle_error, send_message_to_queue
 
 class SettingsManager:
     """설정 관리 클래스."""
     def __init__(self, config_file="config/development.json"):
         self.config_file = os.path.abspath(config_file)
-        self.config = self.load_config()
+        self.config = load_config(self.config_file)
         self.settings: Dict[str, Union[str, int, list, dict]] = {}
         self.load_config()
         self.load_from_env()
         self.connection: Optional[pika.BlockingConnection] = None
         self.channel: Optional[pika.channel.Channel] = None  # 채널 타입 명시
-        self.temp_manager = SettingsTempManager(self)
-        self.messages_config = self.load_json_config("config/messages.json", "messages") # messages.json 로드
-        self.queues_config = self.load_json_config("config/queues.json", "queues") # queues.json 로드
-        self.managers_config = self.load_json_config("config/managers.json", "managers")
-
-    def load_json_config(self, config_path, config_type):
-        """JSON 설정 파일을 로드하고, 없는 경우 기본값 반환"""
-        try:
-            with open(config_path, "r", encoding="utf-8") as f:
-                return json.load(f).get(config_type, {})  # config_type에 따라 messages, queues, managers 반환
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            logging.error(f"{config_path} 로드 오류: {e}")
-            return {}  # 파일이 없거나 JSON 형식이 잘못된 경우 빈 딕셔너리 반환
+        self.messages_config = load_config("config/messages.json")  # messages.json 로드
+        self.queues_config = load_config("config/queues.json")  # queues.json 로드
+        self.managers_config = load_config("config/managers.json")  # managers.json 로드
 
     def load_config(self):
         """JSON 설정 파일을 로드합니다."""
@@ -216,25 +206,25 @@ class SettingsManager:
 
         queue_config = self.queues_config.get(queue_name)  # 큐 설정 가져오기
         if not queue_config:
-            logging.error(self.messages_config["error"].get("516", f"Queue '{queue_name}' configuration not found.")) # 516 에러코드 추가
+            logging.error(get_message(self.messages_config, "516", f"Queue '{queue_name}' configuration not found."))  # 516 에러코드 추가
             return
 
         connection, channel = self.connect_to_rabbitmq()
         if channel is None:
-            logging.error(self.messages_config["error"].get("511", "RabbitMQ 연결 실패. 메시지 전송 불가"))
+            logging.error(get_message(self.messages_config, "511", "RabbitMQ 연결 실패. 메시지 전송 불가"))
             return
 
         try:
-            channel.queue_declare(queue=queue_name, durable=queue_config.get("durable", False)) # durable 설정 추가
+            channel.queue_declare(queue=queue_name, durable=queue_config.get("durable", False))  # durable 설정 추가
             channel.basic_publish(exchange='', routing_key=queue_name, body=message)
-            logging.info(self.messages_config["log"].get("312", f"Sent message to {queue_name}: {message}"))
+            logging.info(get_message(self.messages_config, "312", f"Sent message to {queue_name}: {message}"))
         except pika.exceptions.AMQPConnectionError as e:
-            logging.error(self.messages_config["error"].get("511", f"Failed to send message: {e}"))
+            logging.error(get_message(self.messages_config, "511", f"Failed to send message: {e}"))
             raise
         finally:
-            if connection and connection.is_open: # connection 확인 추가
+            if connection and connection.is_open:  # connection 확인 추가
                 connection.close()
-                logging.info(self.messages_config["log"].get("312", "RabbitMQ connection closed."))
+                logging.info(get_message(self.messages_config, "312", "RabbitMQ connection closed."))
 
     def send_exchange_message(self, message: str):
         """메시지를 지정된 RabbitMQ 교환기에 보냅니다."""
@@ -261,9 +251,8 @@ class SettingsManager:
         """지정된 RabbitMQ 큐에서 메시지를 소비합니다."""
         queue_config = self.queues_config.get(queue_name)  # 큐 설정 가져오기
         if not queue_config:
-            logging.error(self.messages_config["error"].get("516", f"Queue '{queue_name}' configuration not found.")) # 516 에러코드 추가
+            logging.error(get_message(self.messages_config, "516", f"Queue '{queue_name}' configuration not found."))  # 516 에러코드 추가
             return
-
 
         connection, channel = self.connect_to_rabbitmq()
         if channel is None:
@@ -271,7 +260,7 @@ class SettingsManager:
             return
 
         try:
-            channel.queue_declare(queue=queue_name, durable=queue_config.get("durable", False)) # durable 설정 추가
+            channel.queue_declare(queue=queue_name, durable=queue_config.get("durable", False))  # durable 설정 추가
             channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
             logging.info(f"Start Consuming from RabbitMQ: {queue_name}")
             channel.start_consuming()
@@ -279,7 +268,7 @@ class SettingsManager:
             logging.error(f"Failed to consume messages: {e}")
             raise
         finally:
-             if connection and connection.is_open: # connection 확인 추가
+            if connection and connection.is_open:  # connection 확인 추가
                 connection.close()
                 logging.info("RabbitMQ connection closed.")
 

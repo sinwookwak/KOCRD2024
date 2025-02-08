@@ -8,16 +8,14 @@ import pytesseract
 from typing import Dict, Any, Optional
 from PyQt5.QtWidgets import QMessageBox, QApplication
 
-from ocr.ocr_manager import OCRManager
-from managers.temp_file_manager import TempFileManager
-from managers.database_manager import DatabaseManager
+from kocrd.config.config import load_config, load_language_pack, get_message, handle_error, send_message_to_queue
+from kocrd.managers.ocr.ocr_manager import OCRManager
+from kocrd.managers.temp_file_manager import TempFileManager
+from kocrd.managers.database_manager import DatabaseManager
 from kocrd.window.menubar_manager import MenubarManager
-from managers.document.document_manager import DocumentManager
-from Settings.settings_manager import SettingsManager
-
-from kocrd.config import development
-from utils.embedding_utils import generate_document_type_embeddings, run_embedding_generation
-from utils.embedding_utils import EmbeddingUtils
+from kocrd.managers.document.document_manager import DocumentManager
+from kocrd.Settings.settings_manager import SettingsManager
+from kocrd.utils.embedding_utils import generate_document_type_embeddings, run_embedding_generation, EmbeddingUtils
 
 class SystemManager:
     def __init__(self, settings_manager: SettingsManager, main_window=None, tesseract_cmd=None, tessdata_dir=None):

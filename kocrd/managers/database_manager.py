@@ -1,4 +1,3 @@
-# file_name: DatabaseManager
 import os
 import logging
 from sqlalchemy import create_engine, text
@@ -9,6 +8,8 @@ from datetime import datetime
 from sqlalchemy.orm import declarative_base
 import pika
 import json
+
+from kocrd.config.config import load_config, send_message_to_queue
 
 class DatabaseManager:
     def __init__(self, db_path, backup_path=None):
@@ -27,6 +28,7 @@ class DatabaseManager:
         # 데이터베이스 초기화
         self.initialize_database()
         logging.info(f"DatabaseManager initialized with database path: {db_path}")
+
     def set_package_path(self, new_path):
         """데이터베이스 경로를 업데이트하고 엔진을 재초기화."""
         self.db_path = new_path
@@ -34,12 +36,11 @@ class DatabaseManager:
         self.engine = create_engine(f'sqlite:///{self.db_file}', pool_size=10, max_overflow=20)
         self.initialize_database()
         logging.info(f"Database path updated to: {new_path}")
+
     def initialize_database(self):
         """SQLAlchemy를 사용하여 데이터베이스 테이블 생성."""
         try:
-            config_path = os.path.join(os.path.dirname(__file__), '../config/development.json')
-            with open(config_path, 'r') as f:
-                config = json.load(f)
+            config = load_config('config/development.json')
             queries = [text(query) for query in config["database"]["init_queries"]]
             with self.engine.connect() as conn:
                 for query in queries:
@@ -48,6 +49,7 @@ class DatabaseManager:
         except (SQLAlchemyError, IOError, KeyError) as e:
             logging.error(f"Error initializing database: {e}")
             raise RuntimeError("Database initialization failed.") from e
+
     def execute_query(self, query, params=None, fetch=False):
         """데이터베이스 쿼리를 실행하는 공통 메서드."""
         try:
@@ -59,33 +61,25 @@ class DatabaseManager:
         except SQLAlchemyError as e:
             logging.error(f"Database query error: {e}")
             raise
+
     def update_document_info(self, document_info):
-        """
-        문서 정보를 업데이트합니다.
-        """
+        """문서 정보를 업데이트합니다."""
         query = '''
         UPDATE documents
         SET type = :type, date = :date, supplier = :supplier
         WHERE file_name = :file_name
         '''
-        try:
-            self.execute_query(query, document_info)
-            logging.info(f"Document info updated: {document_info}")
-        except SQLAlchemyError as e:
-            logging.error(f"Error updating document info: {e}")
-            raise
+        self._execute_and_log(query, document_info, "Document info updated")
+
     def update_document_type(self, file_name, new_type):
         """문서의 유형을 업데이트합니다."""
-        try:
-            with self.engine.connect() as conn:
-                conn.execute(
-                    text("UPDATE documents SET type = :new_type WHERE file_name = :file_name"),
-                    {"new_type": new_type, "file_name": file_name}
-                )
-                logging.info(f"Document {file_name} updated to type: {new_type}")
-        except Exception as e:
-            logging.error(f"Error updating document type for {file_name}: {e}")
-            raise
+        query = '''
+        UPDATE documents
+        SET type = :new_type
+        WHERE file_name = :file_name
+        '''
+        self._execute_and_log(query, {"new_type": new_type, "file_name": file_name}, f"Document {file_name} updated to type: {new_type}")
+
     def package_database(self):
         """데이터베이스를 패키징하여 백업."""
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -100,6 +94,7 @@ class DatabaseManager:
         except Exception as e:
             logging.error(f"Error during packaging database: {e}")
             raise
+
     def save_document_info(self, document_info):
         """문서 정보를 데이터베이스에 저장하거나 업데이트."""
         query = '''
@@ -110,29 +105,18 @@ class DatabaseManager:
         date = excluded.date,
         supplier = excluded.supplier;
         '''
-        try:
-            self.execute_query(query, document_info)
-            logging.info(f"Document info saved or updated: {document_info}")
-        except SQLAlchemyError as e:
-            logging.error(f"Error saving document info: {e}")
-            raise
+        self._execute_and_log(query, document_info, "Document info saved or updated")
+
     def load_documents(self):
         """저장된 문서 정보를 로드."""
         query = 'SELECT file_name, type, date, supplier FROM documents'
-        try:
-            return self.execute_query(query, fetch=True)
-        except SQLAlchemyError as e:
-            logging.error(f"Error loading documents: {e}")
-            return []
+        return self._execute_and_fetch(query, "Error loading documents")
+
     def delete_document(self, file_name):
         """데이터베이스에서 문서를 삭제."""
         query = 'DELETE FROM documents WHERE file_name = :file_name'
-        try:
-            self.execute_query(query, {'file_name': file_name})
-            logging.info(f"Document deleted: {file_name}")
-        except SQLAlchemyError as e:
-            logging.error(f"Error deleting document: {e}")
-            raise
+        self._execute_and_log(query, {'file_name': file_name}, f"Document deleted: {file_name}")
+
     def save_feedback(self, feedback_data):
         """피드백 데이터를 저장."""
         query = '''
@@ -142,12 +126,8 @@ class DatabaseManager:
         doc_type = excluded.doc_type,
         timestamp = excluded.timestamp
         '''
-        try:
-            self.execute_query(query, feedback_data)
-            logging.info(f"Feedback saved: {feedback_data}")
-        except SQLAlchemyError as e:
-            logging.error(f"Error saving feedback: {e}")
-            raise
+        self._execute_and_log(query, feedback_data, "Feedback saved")
+
     def save_text(self, file_name, text):
         """텍스트를 파일로 저장."""
         text_file_path = os.path.join(self.db_path, "text", f"{file_name}.txt")
@@ -158,6 +138,7 @@ class DatabaseManager:
         except IOError as e:
             logging.error(f"Error saving text file {text_file_path}: {e}")
             raise
+
     def save_image(self, file_name, image):
         """이미지를 파일로 저장."""
         image_file_path = os.path.join(self.db_path, "image", file_name)
@@ -169,29 +150,40 @@ class DatabaseManager:
         except (IOError, ValueError) as e:
             logging.error(f"Error saving image {image_file_path}: {e}")
             raise
+
     def get_document(self, file_name):
         """파일명을 기준으로 문서 정보를 조회."""
-        query = text('SELECT * FROM documents WHERE file_name = :file_name')
-        try:
-            result = self.execute_query(query, {'file_name': file_name}, fetch=True)
-            if result:
-                return result[0]
-            logging.warning(f"Document not found: {file_name}")
-            return None
-        except SQLAlchemyError as e:
-            logging.error(f"Error fetching document: {e}")
-            raise
+        query = 'SELECT * FROM documents WHERE file_name = :file_name'
+        result = self._execute_and_fetch(query, "Error fetching document", {'file_name': file_name})
+        if result:
+            return result[0]
+        logging.warning(f"Document not found: {file_name}")
+        return None
+
     def send_message(self, queue_name, message):
         """지정된 큐에 메시지를 전송합니다."""
         try:
-            connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-            channel = connection.channel()
-            channel.queue_declare(queue=queue_name)
-            channel.basic_publish(exchange='', routing_key=queue_name, body=json.dumps(message))
-            connection.close()
+            send_message_to_queue(self, queue_name, message)
             logging.info(f"Message sent to queue '{queue_name}': {message}")
         except pika.exceptions.AMQPConnectionError as e:
             logging.error(f"RabbitMQ 연결 오류: {e}")
             raise
+
+    def _execute_and_log(self, query, params, success_message):
+        """쿼리를 실행하고 성공 메시지를 로깅합니다."""
+        try:
+            self.execute_query(query, params)
+            logging.info(success_message)
+        except SQLAlchemyError as e:
+            logging.error(f"Error executing query: {e}")
+            raise
+
+    def _execute_and_fetch(self, query, error_message, params=None):
+        """쿼리를 실행하고 결과를 반환합니다."""
+        try:
+            return self.execute_query(query, params, fetch=True)
+        except SQLAlchemyError as e:
+            logging.error(f"{error_message}: {e}")
+            return []
 
 Base = declarative_base()

@@ -1,79 +1,75 @@
 # filename: monitoring_ui_system.py
 import json
 import logging
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSplitter, QTextEdit, QProgressBar, QLineEdit, QPushButton, QHBoxLayout, QListWidget
-from transformers import GPT2Tokenizer, GPT2LMHeadModel
-import os
-from kocrd.config.messages import messages
+from PyQt5.QtWidgets import QProgressBar, QTextEdit, QLineEdit, QListWidget, QVBoxLayout, QWidget
+
+from kocrd.config.config import load_config, get_message
 
 class MonitoringUISystem(QWidget):
-    """모니터링 UI 시스템 클래스."""
-    def __init__(self, main_window):
-        super().__init__()
-        self.main_window = main_window
-        self.config = messages
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.config = load_config("config/ui.json")
+        self.messages_config = load_config("config/messages.json")
+        self.init_ui()
 
-        self.log_display = QTextEdit()
-        self.log_display.setReadOnly(True)
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setMaximum(100)
-        self.chat_input = QLineEdit()
-        self.chat_input.setPlaceholderText("메시지를 입력하세요...")
-        self.chat_output = QTextEdit()
-        self.chat_output.setReadOnly(True)
-        self.file_list_widget = QListWidget()
-        self.tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-        self.gpt_model = GPT2LMHeadModel.from_pretrained("gpt2")
-        if self.tokenizer.eos_token_id is None:
-            self.tokenizer.eos_token_id = self.tokenizer.pad_token_id or 50256
+    def init_ui(self):
+        layout = QVBoxLayout()
 
-        self.setup_ui()
-
-    def setup_ui(self):
-        """UI 구성."""
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.log_display)
+        # Progress Bar
+        self.progress_bar = QProgressBar(self)
         layout.addWidget(self.progress_bar)
+
+        # Log Display
+        self.log_display = QTextEdit(self)
+        self.log_display.setReadOnly(True)
+        layout.addWidget(self.log_display)
+
+        # Chat Output
+        self.chat_output = QTextEdit(self)
+        self.chat_output.setReadOnly(True)
         layout.addWidget(self.chat_output)
+
+        # Chat Input
+        self.chat_input = QLineEdit(self)
         layout.addWidget(self.chat_input)
 
-        send_button = QPushButton("전송")
-        layout.addWidget(send_button)
-        self.send_button = send_button
-
-        button_section = self.create_button_section()
-        layout.addLayout(button_section)
+        # File List Widget
+        self.file_list_widget = QListWidget(self)
+        layout.addWidget(self.file_list_widget)
 
         self.setLayout(layout)
+        self.load_ui_config()
 
-    def set_send_callback(self, callback):
-        """전송 버튼 콜백 설정."""
-        self.send_button.clicked.connect(lambda: callback(self.chat_input.text().strip()))
+    def load_ui_config(self):
+        """UI 설정을 로드하고 적용합니다."""
+        try:
+            components = self.config["components"]["monitoring"]["widgets"]
+            for component in components:
+                if component["name"] == "progress_bar":
+                    self.progress_bar.setValue(0)
+                elif component["name"] == "log_display":
+                    self.log_display.setPlainText("")
+                elif component["name"] == "chat_output":
+                    self.chat_output.setPlainText("")
+                elif component["name"] == "chat_input":
+                    self.chat_input.setText("")
+                elif component["name"] == "file_list_widget":
+                    self.file_list_widget.clear()
+            logging.info(get_message(self.messages_config, "328"))
+        except KeyError as e:
+            logging.error(f"Error loading UI configuration: {e}")
 
-    def create_button_section(self):
-        """버튼 섹션 생성."""
-        button_section = QHBoxLayout()
-
-        for button_config in self.config["buttons"]:
-            button = QPushButton(button_config["label"])
-            button.clicked.connect(getattr(self.main_window.system_manager, f"callback_{button_config['callback']}"))
-            button_section.addWidget(button)
-
-        return button_section
-
-    def update_progress(self, value, total):
-        """진행 상태를 업데이트."""
-        self.progress_bar.setMaximum(total)
+    def update_progress(self, value):
+        """진행률을 업데이트합니다."""
         self.progress_bar.setValue(value)
 
-    def display_log(self, message):
-        """로그 영역에 메시지 출력."""
+    def append_log(self, message):
+        """로그 메시지를 추가합니다."""
         self.log_display.append(message)
 
-    def display_chat_message(self, message, response):
-        """채팅 메시지 표시."""
-        self.chat_output.append(f"사용자: {message}")
-        self.chat_output.append(f"AI: {response}")
+    def append_chat_output(self, message):
+        """채팅 출력을 추가합니다."""
+        self.chat_output.append(message)
 
     def generate_ai_response(self, message):
         """AI 응답 생성."""
@@ -88,7 +84,7 @@ class MonitoringUISystem(QWidget):
             return self.tokenizer.decode(output[0], skip_special_tokens=True)
         except Exception as e:
             logging.error(f"Error generating AI response: {e}")
-            return "AI 응답 생성 중 오류가 발생했습니다."
+            return get_message(self.messages_config, "520")
 
     def update_file_list(self, documents):
         """가져온 파일 목록을 업데이트."""
@@ -125,7 +121,7 @@ class MonitoringUISystem(QWidget):
             logging.error("Monitoring UI is not a QWidget. Cannot add progress bar.")
 
         splitter.setSizes([1000, 200])
-        logging.info("MonitoringUISystem UI initialized.")
+        logging.info(get_message(self.messages_config, "328"))
 
     def load_config(self):
         config_path = os.path.join(os.path.dirname(__file__), 'window_config.json')
@@ -134,7 +130,7 @@ class MonitoringUISystem(QWidget):
 
 def setup_monitoring_ui():
     # ...existing code...
-    print(messages["351"])  # Documents filtered successfully.
+    print(get_message(self.messages_config, "351"))  # Documents filtered successfully.
     # ...existing code...
-    print(messages["352"])  # Document search completed for keyword: {keyword}
+    print(get_message(self.messages_config, "352"))  # Document search completed for keyword: {keyword}
     # ...existing code...

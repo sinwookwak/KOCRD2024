@@ -3,8 +3,9 @@ import os
 import json
 import logging
 from PyQt5.QtWidgets import QMenuBar, QAction, QMessageBox, QFileDialog, QApplication, QDialog
-from kocrd.Settings.SettingsDialogUI.SettingsDialogUI import SettingsDialogUI
-from kocrd.config.messages import messages
+
+from kocrd.config.config import load_config, get_message
+from kocrd.Settings.settings_manager import SettingsManager
 
 class MenubarManager:
     """메뉴바 이벤트 및 UI 관리 클래스."""
@@ -15,8 +16,9 @@ class MenubarManager:
         self.config_path = "config/ui.json"  # ui.json 파일 경로 변경
         logging.info("MenubarManager initialized with main_window.")
 
-        self.config = self.load_config()  # 설정 로드
-        self.id_mapping = self.load_id_mapping()  # ID 매핑 로드
+        self.config = load_config(self.config_path)  # 설정 로드
+        self.messages_config = load_config("config/messages.json")  # messages.json 로드
+        self.id_mapping = self.messages_config["id_mapping"]  # ID 매핑 로드
         self.setup_menus()
 
     def setup_menus(self):
@@ -29,26 +31,26 @@ class MenubarManager:
                 menu.addAction(action)
         logging.info("MenubarManager initialized.")
 
-    def callback_04(self):
+    def callback_701(self):
         """열기 콜백."""
-        print(messages["701"])  # 열기
+        print(get_message(self.messages_config, "701"))  # 열기
         self.system_manager.open_file_dialog()
 
-    def callback_05(self):
+    def callback_702(self):
         """저장 콜백."""
-        print(messages["702"])  # 저장
+        print(get_message(self.messages_config, "702"))  # 저장
         self.system_manager.save_file()
 
-    def callback_06(self):
+    def callback_703(self):
         """종료 콜백."""
-        print(messages["703"])  # 종료
+        print(get_message(self.messages_config, "703"))  # 종료
         self.main_window.close()
 
-    def callback_07(self):
+    def callback_704(self):
         """설정 열기 콜백."""
         self.open_settings_dialog()
 
-    def callback_08(self):
+    def callback_705(self):
         """정보 콜백."""
         self.show_about_dialog()
 
@@ -110,7 +112,7 @@ class MenubarManager:
 
     def get_message(self, key):
         """메시지 키를 통해 메시지를 가져옵니다."""
-        return self.messages.get(key, "메시지를 찾을 수 없습니다.")
+        return get_message(self.messages_config, key)
 
     def get_ui(self):
         """MenuBar UI 반환."""

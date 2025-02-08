@@ -9,7 +9,7 @@ import tensorflow as tf
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from system import DatabaseManager, SettingsManager
 from typing import Dict, Any, Optional
-from config.development import get_message, handle_error, send_message_to_queue
+from config.config import get_message, handle_error, send_message_to_queue
 
 class AIModelManager:
     _instance = None

@@ -9,8 +9,8 @@ import os
 # 프로젝트 루트 디렉토리를 sys.path에 추가
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from window.monitoring_ui_system import MonitoringUISystem
-from kocrd.config.messages import messages
+from kocrd.window.monitoring_ui_system import MonitoringUISystem
+from kocrd.config.config import load_config, get_message
 
 class DocumentUISystem:
     def __init__(self, main_window):
@@ -21,13 +21,14 @@ class DocumentUISystem:
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
 
-        self.messages = messages["messages"]
+        self.messages_config = load_config("config/messages.json")
+        self.messages = self.messages_config["messages"]
 
     def _execute_action(self, action, confirmation_key=None, success_key=None, error_key=None, **kwargs):
         if confirmation_key:
             reply = QMessageBox.question(
                 self.main_window, "확인",
-                self.messages.get(confirmation_key, "확인 메시지를 찾을 수 없습니다.").format(**kwargs),
+                get_message(self.messages, confirmation_key).format(**kwargs),
                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No
             )
             if reply == QMessageBox.No:
@@ -36,12 +37,12 @@ class DocumentUISystem:
         try:
             result = action() if callable(action) else None  # Execute the action and store the result
             if success_key:
-                QMessageBox.information(self.main_window, "완료", self.messages.get(success_key, "성공 메시지를 찾을 수 없습니다.").format(**kwargs))
+                QMessageBox.information(self.main_window, "완료", get_message(self.messages, success_key).format(**kwargs))
             return result # Return the result of the action
         except Exception as e:
             logging.error(f"Error: {e}")
             if error_key:
-                QMessageBox.warning(self.main_window, "오류", self.messages.get(error_key, "오류 메시지를 찾을 수 없습니다."))
+                QMessageBox.warning(self.main_window, "오류", get_message(self.messages, error_key))
 
     def init_ui(self):
         central_widget = QWidget(self.main_window)
@@ -93,26 +94,25 @@ class DocumentUISystem:
 
     def clear_table(self):
         """파일 테이블을 초기화합니다."""
-        self._execute_action(self._clear_table_action, "01", "02")
+        self._execute_action(self._clear_table_action, "201", "203")
 
     def _clear_table_action(self):
         self.table_widget.setRowCount(0)  # 모든 행 삭제
-        logging.info(self.messages.get("02", "Table cleared."))
+        logging.info(get_message(self.messages, "203"))
 
     def filter_documents(self, criteria):
         """UIManager를 통해 문서 필터링."""
         self._execute_with_logging(
             lambda: self.main_window.system_manager.ui_control_manager.document_ui.filter_table(criteria),
-            "04",
-            "03"
+            "311",
+            "201"
         )
-        print(messages["201"])  # 문서를 필터링 하는 중 오류가 발생했습니다.
 
     def update_document_info(self, database_manager):
         """선택된 문서의 정보를 업데이트합니다."""
         selected_items = self.table_widget.selectedItems()
         if not selected_items:
-            self._show_message_box("10")
+            self._show_message_box("208")
             return
 
         selected_row = selected_items[0].row()
@@ -121,8 +121,8 @@ class DocumentUISystem:
         if ok and new_type:
             self._execute_action(
                 lambda: self._update_document_type(database_manager, current_file_name, new_type, selected_row),
-                success_key="06",
-                error_key="05"
+                success_key="204",
+                error_key="205"
             )
 
     def _update_document_type(self, database_manager, current_file_name, new_type, selected_row):
@@ -135,7 +135,7 @@ class DocumentUISystem:
         if not keyword.strip():
             for row in range(self.table_widget.rowCount()):
                 self.table_widget.showRow(row)
-            logging.info(self.messages.get("11", "검색어가 비어있습니다."))
+            logging.info(get_message(self.messages, "209"))
             return
 
         for row in range(self.table_widget.rowCount()):
@@ -163,39 +163,38 @@ class DocumentUISystem:
         """문서를 삭제합니다."""
         selected_items = self.table_widget.selectedItems()
         if not selected_items:
-            self._show_message_box("10")
+            self._show_message_box("208")
             return
 
         selected_row = selected_items[0].row()
         file_name = self.table_widget.item(selected_row, 0).text()
         self._execute_action(
             lambda: self._delete_document_action(database_manager, file_name, selected_row),
-            confirmation_key="07",
-            success_key="08",
+            confirmation_key="205",
+            success_key="206",
             file_name=file_name
         )
-        print(messages["202"])  # 파일 테이블의 모든 데이터를 삭제하시겠습니까?
 
     def _delete_document_action(self, database_manager, file_name, selected_row):
         self.table_widget.removeRow(selected_row)
         database_manager.delete_document(file_name)
-        logging.info(self.messages.get("08", "{file_name}이(가) 삭제되었습니다.").format(file_name=file_name))
+        logging.info(get_message(self.messages, "206").format(file_name=file_name))
 
     def _show_message_box(self, confirmation_key, success_key=None, action=None, **kwargs):
         reply = QMessageBox.question(
             self.main_window, "확인",
-            self.messages.get(confirmation_key, "확인 메시지를 찾을 수 없습니다.").format(**kwargs),
+            get_message(self.messages, confirmation_key).format(**kwargs),
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No
         )
         if reply == QMessageBox.Yes and action:
             action()
             if success_key:
-                QMessageBox.information(self.main_window, "완료", self.messages.get(success_key, "성공 메시지를 찾을 수 없습니다.").format(**kwargs))
+                QMessageBox.information(self.main_window, "완료", get_message(self.messages, success_key).format(**kwargs))
 
     def _execute_with_logging(self, action, success_key, error_key):
         try:
             action()
-            logging.info(self.messages.get(success_key, "성공 메시지를 찾을 수 없습니다."))
+            logging.info(get_message(self.messages, success_key))
         except Exception as e:
             logging.error(f"Error: {e}")
-            QMessageBox.warning(self.main_window, "오류", self.messages.get(error_key, "오류 메시지를 찾을 수 없습니다."))
+            QMessageBox.warning(self.main_window, "오류", get_message(self.messages, error_key))
