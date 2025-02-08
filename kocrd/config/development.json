@@ -193,5 +193,147 @@
     // ... all other ocr/ai_config messages (312-515)
 
     // ... IDs from other config files (if any)
+  },
+  "main_window": {
+    "title": {
+      "ko": "KOCRD 2024",
+      "en": "KOCRD 2024"
+    },
+    "size": {
+      "width": 1200,
+      "height": 800
+    }
+  },
+  "buttons": [
+    {
+      "label": {
+        "ko": "문서 처리 시작",
+        "en": "Start Document Processing"
+      },
+      "callback": "601"
+    },
+    {
+      "label": {
+        "ko": "데이터베이스 패키징",
+        "en": "Database Packaging"
+      },
+      "callback": "602"
+    },
+    {
+      "label": {
+        "ko": "AI 모델 학습 시작",
+        "en": "Start AI Model Training"
+      },
+      "callback": "603"
+    }
+  ],
+  "monitoring_ui": {
+    "widgets": [
+      {
+        "name": "progress_bar",
+        "type": "QProgressBar"
+      },
+      {
+        "name": "log_display",
+        "type": "QTextEdit",
+        "readonly": true
+      },
+      {
+        "name": "chat_output",
+        "type": "QTextEdit",
+        "readonly": true
+      },
+      {
+        "name": "chat_input",
+        "type": "QLineEdit"
+      },
+      {
+        "name": "file_list_widget",
+        "type": "QListWidget"
+      }
+    ]
+  },
+  "table_columns": [
+    {
+      "ko": "파일 이름",
+      "en": "File Name"
+    },
+    {
+      "ko": "문서 유형",
+      "en": "Document Type"
+    },
+    {
+      "ko": "생성 날짜",
+      "en": "Creation Date"
+    },
+    {
+      "ko": "수정 날짜",
+      "en": "Modification Date"
+    }
+  ],
+  "menus": [
+    {
+      "name": {
+        "ko": "파일",
+        "en": "File"
+      },
+      "actions": [
+        {
+          "name": {
+            "ko": "열기",
+            "en": "Open"
+          },
+          "callback": "701"
+        },
+        {
+          "name": {
+            "ko": "저장",
+            "en": "Save"
+          },
+          "callback": "702"
+        },
+        {
+          "name": {
+            "ko": "종료",
+            "en": "Exit"
+          },
+          "callback": "703"
+        }
+      ]
+    },
+    {
+      "name": {
+        "ko": "설정",
+        "en": "Settings"
+      },
+      "actions": [
+        {
+          "name": {
+            "ko": "설정 열기",
+            "en": "Open Settings"
+          },
+          "callback": "704"
+        }
+      ]
+    },
+    {
+      "name": {
+        "ko": "도움말",
+        "en": "Help"
+      },
+      "actions": [
+        {
+          "name": {
+            "ko": "정보",
+            "en": "About"
+          },
+          "callback": "705"
+        }
+      ]
+    }
+  ],
+  "about_text": {
+    "ko": "Date Extractor AI\n© 2024",
+    "en": "Date Extractor AI\n© 2024"
   }
 }
