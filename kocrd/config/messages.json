@@ -1,17 +1,19 @@
 {
   "messages": {
-    "201": "문서를 필터링 하는 중 오류가 발생했습니다.",
-    "202": "파일 테이블의 모든 데이터를 삭제하시겠습니까?",
-    "203": "파일 테이블이 초기화되었습니다.",
-    "204": "문서를 필터링 하는 중 오류가 발생했습니다.",
-    "205": "Documents filtered successfully.",
-    "206": "문서 유형을 업데이트 하는 중 오류가 발생했습니다:",
-    "207": "Document type updated successfully.",
-    "208": "문서 '{file_name}'을(를) 삭제하시겠습니까?",
-    "209": "문서 '{file_name}'이(가) 삭제되었습니다.",
-    "210": "문서를 삭제하는 중 오류가 발생했습니다:",
-    "211": "수정할 문서를 선택하세요.",
-    "212": "검색 키워드가 비어 있습니다. 모든 행을 표시합니다.",
+    "general": {
+      "201": "문서를 필터링 하는 중 오류가 발생했습니다.",
+      "202": "파일 테이블의 모든 데이터를 삭제하시겠습니까?",
+      "203": "파일 테이블이 초기화되었습니다.",
+      "204": "문서를 필터링 하는 중 오류가 발생했습니다.",
+      "205": "Documents filtered successfully.",
+      "206": "문서 유형을 업데이트 하는 중 오류가 발생했습니다:",
+      "207": "Document type updated successfully.",
+      "208": "문서 '{file_name}'을(를) 삭제하시겠습니까?",
+      "209": "문서 '{file_name}'이(가) 삭제되었습니다.",
+      "210": "문서를 삭제하는 중 오류가 발생했습니다:",
+      "211": "수정할 문서를 선택하세요.",
+      "212": "검색 키워드가 비어 있습니다. 모든 행을 표시합니다."
+    },
     "log": {
       "311": "Documents filtered successfully",
       "312": "Document search completed for keyword: {keyword}",
@@ -22,7 +24,25 @@
       "317": "Extracting text from {file_path}",
       "318": "Performing OCR on image",
       "319": "Tesseract 설정 완료: {tesseract_cmd}",
-      "320": "Tessdata 설정 완료: {tessdata_dir}"
+      "320": "Tessdata 설정 완료: {tessdata_dir}",
+      "351": "Documents filtered successfully.",
+      "352": "Document search completed for keyword: {keyword}",
+      "353": "{file_path}의 문서 처리 결과: {document_result}",
+      "354": "Page {page_num} saved as image: {temp_image_path}",
+      "355": "Temporary files cleaned up.",
+      "356": "Starting document processing for {file_path}",
+      "357": "Extracting text from {file_path}",
+      "358": "Performing OCR on document",
+      "359": "Document processing completed: {file_path}",
+      "360": "Document saved successfully: {file_path}",
+      "361": "OCR settings saved.",
+      "362": "OCR settings saved to database.",
+      "363": "Window configuration loaded successfully.",
+      "364": "Error loading window configuration: {e}",
+      "365": "Window size set to width: {width}, height: {height}",
+      "366": "Window position set to x: {x}, y: {y}",
+      "367": "Window configuration saved successfully.",
+      "368": "Error saving window configuration: {e}"
     },
     "warning": {
       "401": "PyMuPDF가 설치되어 있지 않습니다. 이미지 변환 후 OCR을 수행합니다.",
@@ -49,78 +69,7 @@
       "512": "JSON 파싱 오류: {e}. 메시지 내용: {body.decode()}",
       "513": "OCR 메시지 처리 중 오류 발생: {e}. 메시지 내용: {body.decode()}",
       "514": "system_manager가 초기화되지 않았습니다.",
-      "515": "monitoring_window가 초기화되지 않았습니다."
-    },
-    "window": {
-      "601": "Window configuration loaded successfully.",
-      "602": "Error loading window configuration: {e}",
-      "603": "Window size set to width: {width}, height: {height}",
-      "604": "Window position set to x: {x}, y: {y}",
-      "605": "Window configuration saved successfully.",
-      "606": "Error saving window configuration: {e}"
-    },
-    "801": "파일 테이블의 모든 데이터를 삭제하시겠습니까?",
-    "802": "파일 테이블이 초기화되었습니다.",
-    "803": "문서를 필터링 하는 중 오류가 발생했습니다.",
-    "804": "Documents filtered successfully.",
-    "805": "문서 유형을 업데이트 하는 중 오류가 발생했습니다:",
-    "806": "Document type updated successfully.",
-    "807": "문서 '{file_name}'을(를) 삭제하시겠습니까?",
-    "808": "문서 '{file_name}'이(가) 삭제되었습니다.",
-    "809": "문서를 삭제하는 중 오류가 발생했습니다:",
-    "810": "수정할 문서를 선택하세요.",
-    "811": "검색 키워드가 비어 있습니다. 모든 행을 표시합니다.",
-    "812": {
-      "ko": "딥러닝 학습 시작",
-      "en": "Start Deep Learning"
-    },
-    "813": {
-      "ko": "딥러닝이 시작되었습니다.",
-      "en": "Deep learning has started."
-    },
-    "814": {
-      "ko": "선택된 파일로 학습이 시작됩니다:\n{file_path}",
-      "en": "Training started with selected file:\n{file_path}"
-    },
-    "815": {
-      "ko": "학습 데이터 파일이 선택되지 않았습니다.",
-      "en": "Training data file was not selected."
-    },
-    "816": {
-      "ko": "프로그램을 종료하시겠습니까?",
-      "en": "Do you want to exit the program?"
-    },
-    "817": {
-      "ko": "프로그램 종료",
-      "en": "Exit Program"
-    },
-    "818": "사용자 설정 불러오기",
-    "819": "사용자 ID를 입력하세요:",
-    "820": "성공",
-    "821": "사용자 설정이 불러와졌습니다.",
-    "822": "실패",
-    "823": "사용자 ID를 입력하세요.",
-    "824": "정리 완료",
-    "825": "임시 파일이 정리되었습니다.",
-    "826": "작업 완료",
-    "827": "OCR 작업이 수행되었습니다.",
-    "828": "취소",
-    "829": "변경 사항이 취소되었습니다.",
-    "log": {
-      "851": "Documents filtered successfully.",
-      "852": "Document search completed for keyword: {keyword}",
-      "853": "{file_path}의 문서 처리 결과: {document_result}",
-      "854": "Page {page_num} saved as image: {temp_image_path}",
-      "855": "Temporary files cleaned up.",
-      "856": "Starting document processing for {file_path}",
-      "857": "Extracting text from {file_path}",
-      "858": "Performing OCR on document",
-      "859": "Document processing completed: {file_path}",
-      "860": "Document saved successfully: {file_path}",
-      "861": "OCR settings saved.",
-      "862": "OCR settings saved to database."
-    },
-    "error": {
+      "515": "monitoring_window가 초기화되지 않았습니다.",
       "901": "문서를 필터링 하는 중 오류가 발생했습니다.",
       "902": "Error handling command: {error}",
       "903": "OCR 처리 중 오류가 발생했습니다: {error}",
@@ -143,6 +92,88 @@
       "920": "system_manager가 초기화되지 않았습니다.",
       "921": "monitoring_window가 초기화되지 않았습니다.",
       "922": "DatabaseManager not found."
+    },
+    "window": {
+      "601": "Window configuration loaded successfully.",
+      "602": "Error loading window configuration: {e}",
+      "603": "Window size set to width: {width}, height: {height}",
+      "604": "Window position set to x: {x}, y: {y}",
+      "605": "Window configuration saved successfully.",
+      "606": "Error saving window configuration: {e}"
+    },
+    "ui": {
+      "301": "파일 테이블의 모든 데이터를 삭제하시겠습니까?",
+      "302": "파일 테이블이 초기화되었습니다.",
+      "303": "문서를 필터링 하는 중 오류가 발생했습니다.",
+      "304": "Documents filtered successfully.",
+      "305": "문서 유형을 업데이트 하는 중 오류가 발생했습니다:",
+      "306": "Document type updated successfully.",
+      "307": "문서 '{file_name}'을(를) 삭제하시겠습니까?",
+      "308": "문서 '{file_name}'이(가) 삭제되었습니다.",
+      "309": "문서를 삭제하는 중 오류가 발생했습니다:",
+      "310": "수정할 문서를 선택하세요.",
+      "311": "검색 키워드가 비어 있습니다. 모든 행을 표시합니다.",
+      "312": {
+        "ko": "딥러닝 학습 시작",
+        "en": "Start Deep Learning"
+      },
+      "313": {
+        "ko": "딥러닝이 시작되었습니다.",
+        "en": "Deep learning has started."
+      },
+      "314": {
+        "ko": "선택된 파일로 학습이 시작됩니다:\n{file_path}",
+        "en": "Training started with selected file:\n{file_path}"
+      },
+      "315": {
+        "ko": "학습 데이터 파일이 선택되지 않았습니다.",
+        "en": "Training data file was not selected."
+      },
+      "316": {
+        "ko": "프로그램을 종료하시겠습니까?",
+        "en": "Do you want to exit the program?"
+      },
+      "317": {
+        "ko": "프로그램 종료",
+        "en": "Exit Program"
+      },
+      "318": "사용자 설정 불러오기",
+      "319": "사용자 ID를 입력하세요:",
+      "320": "성공",
+      "321": "사용자 설정이 불러와졌습니다.",
+      "322": "실패",
+      "323": "사용자 ID를 입력하세요.",
+      "324": "정리 완료",
+      "325": "임시 파일이 정리되었습니다.",
+      "326": "작업 완료",
+      "327": "OCR 작업이 수행되었습니다.",
+      "328": "취소",
+      "329": "변경 사항이 취소되었습니다."
     }
+  },
+  "id_mapping": {
+    // Window Config IDs
+    "601": "Document Processing Start Button Callback",
+    "602": "Database Packaging Button Callback",
+    "603": "AI Model Training Start Button Callback",
+    "701": "File Open Menu Action Callback",
+    "702": "File Save Menu Action Callback",
+    "703": "File Exit Menu Action Callback",
+    "704": "Settings Open Menu Action Callback",
+    "705": "Help About Menu Action Callback",
+    "801": "Confirm Delete All Data Message",
+    "802": "File Table Initialized Message",
+    // ... all other window_config messages (803-922)
+
+    // OCR/AI Config IDs
+    "101": "Perform OCR Message Type",
+    "102": "OCR Result Message Type",
+    "201": "OCR Queue Name",
+    "202": "Events Queue Name",
+    "301": "Document Filtering Error Message",
+    "311": "Documents Filtered Successfully Log Message",
+    // ... all other ocr/ai_config messages (312-515)
+
+    // ... IDs from other config files (if any)
   }
 }

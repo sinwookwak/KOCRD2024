@@ -134,7 +134,7 @@ class MonitoringUISystem(QWidget):
 
 def setup_monitoring_ui():
     # ...existing code...
-    print(messages["851"])  # Documents filtered successfully.
+    print(messages["351"])  # Documents filtered successfully.
     # ...existing code...
-    print(messages["852"])  # Document search completed for keyword: {keyword}
+    print(messages["352"])  # Document search completed for keyword: {keyword}
     # ...existing code...
