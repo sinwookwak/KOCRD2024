@@ -2,10 +2,75 @@ import json
 import logging
 from datetime import datetime
 from typing import Dict, Any
+import os
+
+# 언어팩 디렉토리 경로
+lang_dir = "config/language"
+
+# 언어팩 정보 저장 딕셔너리
+lang_packs = {}
+
+# 언어팩 디렉토리 순회
+for filename in os.listdir(lang_dir):
+    if filename.endswith(".json"):
+        lang_code = filename[:-5]  # 확장자 제거
+        lang_path = os.path.join(lang_dir, filename)
+
+        try:
+            with open(lang_path, "r", encoding="utf-8") as f:  # 파일 인코딩 지정
+                lang_pack = json.load(f)
+
+                # 언어팩 내부 language 속성 확인
+                if "language" not in lang_pack:
+                    raise ValueError(f"Language pack '{filename}' must have 'language' attribute.")
+
+                lang_packs[lang_code] = lang_pack
+        except (FileNotFoundError, json.JSONDecodeError, ValueError) as e:
+            print(f"Error loading language pack '{filename}': {e}")
+
+# 기본 언어팩 (영어) 로드
+def load_language_pack(lang_code):
+    lang_path = os.path.join(lang_dir, f"{lang_code}.json")
+    try:
+        with open(lang_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"Error loading default language pack '{lang_code}': {e}")
+        return {}
+
+default_lang_pack = load_language_pack("en")
 
 # 설정 파일 로드
-with open('config/development.json', 'r', encoding='utf-8') as f:
+with open("config/development.json", "r", encoding="utf-8") as f:
     config = json.load(f)
+
+# 언어 설정
+language = config.get("language", "en")  # 기본값 영어
+
+# 언어팩 선택
+if language in lang_packs:
+    selected_lang_pack = lang_packs[language]
+else:
+    print(f"Warning: Language pack '{language}' not found. Using default language 'en'.")
+    selected_lang_pack = default_lang_pack
+
+# 메시지 출력 함수 (예외 처리 및 영어 출력 기능 추가)
+def get_message(lang_pack, message_id, default_lang_pack=None):
+    """메시지 텍스트 반환 (누락 시 영어 출력)"""
+    message = lang_pack.get(message_id)
+    if message:
+        return message
+    elif default_lang_pack and message_id in default_lang_pack:
+        return default_lang_pack[message_id]
+    else:
+        return f"Unknown message ID: {message_id}"
+
+# 메시지 사용 예시
+message = get_message(selected_lang_pack, "MSG_001", default_lang_pack)  # 한국어 메시지
+print(message)
+
+message = get_message(selected_lang_pack, "MSG_999", default_lang_pack)  # 존재하지 않는 메시지 ID
+print(message)  # 영어 메시지 또는 "Unknown message ID" 출력
 
 # ID 맵핑
 id_mapping = config["id_mapping"]
