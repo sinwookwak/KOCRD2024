@@ -9,3 +9,4 @@ python-dotenv
 chardet
 pika
 pymupdf
+transformers
