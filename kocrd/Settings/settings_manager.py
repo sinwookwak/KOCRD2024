@@ -24,6 +24,14 @@ class SettingsManager:
         self.channel: Optional[pika.BlockingConnection] = None
         self.temp_manager = SettingsTempManager(self)
 
+        # messages.json 파일 로드
+        with open("config/messages.json", "r", encoding="utf-8") as f:
+            self.messages_config = json.load(f)
+
+        # queues.json 파일 로드
+        with open("config/queues.json", "r", encoding="utf-8") as f:
+            self.queues_config = json.load(f)
+
     def load_config(self):
         """JSON 설정 파일을 로드합니다."""
         try:
@@ -32,7 +40,7 @@ class SettingsManager:
                 self.settings.update(config.get("rabbitmq", {}))
                 return config
         except (FileNotFoundError, json.JSONDecodeError) as e:
-            logging.error(f"설정 파일 로드 오류: {e}")
+            logging.error(self.messages_config["error"].get("501", f"설정 파일 로드 오류: {e}"))
             sys.exit(1)
 
     def load_from_env(self):
@@ -121,9 +129,9 @@ class SettingsManager:
         try:
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.settings, f, ensure_ascii=False, indent=4)
-            logging.info(f"Settings saved to {self.config_file}")
+            logging.info(self.messages_config["log"].get("311", f"Settings saved to {self.config_file}"))
         except Exception as e:
-            logging.error(f"설정 파일 저장 오류: {e}")
+            logging.error(self.messages_config["error"].get("501", f"설정 파일 저장 오류: {e}"))
 
     def get_setting_path(self, setting_name: str) -> Union[str, None]:
         """경로 관련 설정을 반환합니다."""
@@ -203,19 +211,19 @@ class SettingsManager:
         """메시지를 지정된 RabbitMQ 큐에 보냅니다."""
         connection, channel = self.connect_to_rabbitmq()
         if channel is None:
-            logging.error("RabbitMQ 연결 실패. 메시지 전송 불가")
+            logging.error(self.messages_config["error"].get("511", "RabbitMQ 연결 실패. 메시지 전송 불가"))
             return
 
         try:
             channel.queue_declare(queue=queue_name)
             channel.basic_publish(exchange='', routing_key=queue_name, body=message)
-            logging.info(f"Sent message to {queue_name}: {message}")
+            logging.info(self.messages_config["log"].get("312", f"Sent message to {queue_name}: {message}"))
         except pika.exceptions.AMQPConnectionError as e:
-            logging.error(f"Failed to send message: {e}")
+            logging.error(self.messages_config["error"].get("511", f"Failed to send message: {e}"))
             raise
         finally:
             connection.close()
-            logging.info("RabbitMQ connection closed.")
+            logging.info(self.messages_config["log"].get("312", "RabbitMQ connection closed."))
 
     def send_exchange_message(self, message: str):
         """메시지를 지정된 RabbitMQ 교환기에 보냅니다."""
@@ -295,9 +303,9 @@ class SettingsManager:
         try:
             with open(feedback_file, "w", encoding="utf-8") as f:
                 json.dump(feedback_data, f, ensure_ascii=False, indent=4)
-            logging.info(f"Feedback saved to {feedback_file}")
+            logging.info(self.messages_config["log"].get("311", f"Feedback saved to {feedback_file}"))
         except Exception as e:
-            logging.error(f"피드백 저장 오류: {e}")
+            logging.error(self.messages_config["error"].get("501", f"피드백 저장 오류: {e}"))
 
     def get_message_exchange_settings(self) -> dict:
         """메시지 교환을 위한 설정값을 반환합니다."""

@@ -26,11 +26,11 @@ class SettingsTempManager:
                     if file_creation_time < cutoff_time:
                         os.remove(file_path)
                         logging.info(f"Expired temporary file removed: {file_path}")
-            logging.info(f"Temporary directory cleaned.")
+            logging.info(self.settings_manager.config["messages"].get("224", "Temporary directory cleaned."))
         except FileNotFoundError:
-            logging.warning(f"Temporary directory not found: {self.temp_dir}")
+            logging.warning(self.settings_manager.config["error"].get("502", f"Temporary directory not found: {self.temp_dir}"))
         except Exception as e:
-            logging.error(f"Error cleaning temporary directory: {e}")
+            logging.error(self.settings_manager.config["error"].get("503", f"Error cleaning temporary directory: {e}"))
 
     def cleanup_specific_files(self, files: Optional[List[str]]):
         """특정 파일들을 정리합니다."""
