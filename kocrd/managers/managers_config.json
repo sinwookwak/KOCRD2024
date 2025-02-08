@@ -94,28 +94,27 @@
   "message_types": {
     "101": "perform_ocr",
     "102": "ocr_result",
-    "201": "process_document",
-    "202": "document_result"
+    "103": "process_document",
+    "104": "document_result"
   },
   "queues": {
-    "201": "ocr_queue",
-    "202": "events_queue",
-    "301": "document_queue",
-    "302": "events_queue"
+    "151": "ocr_queue",
+    "152": "events_queue",
+    "153": "document_queue"
   },
   "messages": {
-    "301": "문서를 필터링 하는 중 오류가 발생했습니다.",
-    "302": "파일 테이블의 모든 데이터를 삭제하시겠습니까?",
-    "303": "파일 테이블이 초기화되었습니다.",
-    "304": "문서를 필터링 하는 중 오류가 발생했습니다.",
-    "305": "Documents filtered successfully.",
-    "306": "문서 유형을 업데이트 하는 중 오류가 발생했습니다:",
-    "307": "Document type updated successfully.",
-    "308": "문서 '{file_name}'을(를) 삭제하시겠습니까?",
-    "309": "문서 '{file_name}'이(가) 삭제되었습니다.",
-    "310": "문서를 삭제하는 중 오류가 발생했습니다:",
-    "311": "수정할 문서를 선택하세요.",
-    "312": "검색 키워드가 비어 있습니다. 모든 행을 표시합니다.",
+    "201": "문서를 필터링 하는 중 오류가 발생했습니다.",
+    "202": "파일 테이블의 모든 데이터를 삭제하시겠습니까?",
+    "203": "파일 테이블이 초기화되었습니다.",
+    "204": "문서를 필터링 하는 중 오류가 발생했습니다.",
+    "205": "Documents filtered successfully.",
+    "206": "문서 유형을 업데이트 하는 중 오류가 발생했습니다:",
+    "207": "Document type updated successfully.",
+    "208": "문서 '{file_name}'을(를) 삭제하시겠습니까?",
+    "209": "문서 '{file_name}'이(가) 삭제되었습니다.",
+    "210": "문서를 삭제하는 중 오류가 발생했습니다:",
+    "211": "수정할 문서를 선택하세요.",
+    "212": "검색 키워드가 비어 있습니다. 모든 행을 표시합니다.",
     "log": {
       "311": "Documents filtered successfully",
       "312": "Document search completed for keyword: {keyword}",

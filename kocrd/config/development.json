@@ -128,7 +128,9 @@
     "DEFAULT_REPORT_FILENAME": "report.txt",
     "DEFAULT_EXCEL_FILENAME": "report.xlsx",
     "VALID_FILE_EXTENSIONS": [".txt", ".pdf", ".png", ".jpg"],
-    "MAX_FILE_SIZE": 10485760
+    "MAX_FILE_SIZE": 10485760,
+    "ocr_engine": "tesseract",
+    "ai_model": "classification"
   },
   "queues": {
     "prediction_requests": "prediction_requests",

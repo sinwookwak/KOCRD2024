@@ -1,0 +1,7 @@
+{
+  "queues": {
+    "151": "ocr_queue",
+    "152": "events_queue",
+    "153": "document_queue"
+  }
+}
