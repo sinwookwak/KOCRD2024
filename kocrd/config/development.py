@@ -4,6 +4,36 @@ from datetime import datetime
 from typing import Dict, Any
 import os
 
+# RabbitMQ 설정
+RABBITMQ_HOST = "localhost"  # RabbitMQ 서버 주소
+RABBITMQ_PORT = 5672       # RabbitMQ 서버 포트
+RABBITMQ_USER = "guest"     # RabbitMQ 사용자 이름
+RABBITMQ_PASSWORD = "guest" # RabbitMQ 비밀번호
+RABBITMQ_VIRTUAL_HOST = "/" # RabbitMQ Virtual Host (기본값 "/")
+
+# RabbitMQ 큐 이름
+OCR_REQUESTS_QUEUE = "dev_ocr_requests"        # OCR 요청 큐
+OCR_RESULTS_QUEUE = "dev_ocr_results"          # OCR 결과 큐
+PREDICTION_REQUESTS_QUEUE = "dev_prediction_requests" # 예측 요청 큐
+PREDICTION_RESULTS_QUEUE = "dev_prediction_results" # 예측 결과 큐
+EVENTS_QUEUE = "dev_events"                  # 이벤트 큐
+UI_FEEDBACK_REQUESTS_QUEUE = "dev_ui_feedback_requests" # UI 피드백 요청 큐
+
+# 파일 경로
+MODELS_PATH = "F:/AI-M2/models/dev_models"              # 모델 저장 경로
+DOCUMENT_EMBEDDING_PATH = "F:/AI-M2/model/dev_document_embedding.json" # 문서 임베딩 파일 경로
+DOCUMENT_TYPES_PATH = "F:/AI-M2/model/dev_document_types.json"     # 문서 타입 정의 파일 경로
+TEMP_FILES_DIR = "F:/AI-M2/temp/dev_temp_files"          # 임시 파일 저장 경로
+
+# 데이터베이스 연결
+DATABASE_URL = "dev_database_url"  # 개발용 데이터베이스 URL
+
+# 파일 처리 설정
+DEFAULT_REPORT_FILENAME = "report.txt"      # 기본 보고서 파일 이름
+DEFAULT_EXCEL_FILENAME = "documents.xlsx"  # 기본 엑셀 파일 이름
+VALID_FILE_EXTENSIONS = {'.pdf', '.docx', '.xlsx', '.txt', '.csv', '.png', '.jpg', '.jpeg'} # 허용된 파일 확장자
+MAX_FILE_SIZE = 10 * 1024 * 1024          # 최대 파일 크기 (10MB)
+
 # 언어팩 디렉토리 경로
 lang_dir = "config/language"
 
@@ -28,7 +58,7 @@ for filename in os.listdir(lang_dir):
         except (FileNotFoundError, json.JSONDecodeError, ValueError) as e:
             print(f"Error loading language pack '{filename}': {e}")
 
-# 기본 언어팩 (영어) 로드
+# 기본 언어팩 (한국어) 로드
 def load_language_pack(lang_code):
     lang_path = os.path.join(lang_dir, f"{lang_code}.json")
     try:
@@ -38,25 +68,25 @@ def load_language_pack(lang_code):
         print(f"Error loading default language pack '{lang_code}': {e}")
         return {}
 
-default_lang_pack = load_language_pack("en")
+default_lang_pack = load_language_pack("ko")
 
 # 설정 파일 로드
 with open("config/development.json", "r", encoding="utf-8") as f:
     config = json.load(f)
 
 # 언어 설정
-language = config.get("language", "en")  # 기본값 영어
+language = config.get("language", "ko")  # 기본값 한국어
 
 # 언어팩 선택
 if language in lang_packs:
     selected_lang_pack = lang_packs[language]
 else:
-    print(f"Warning: Language pack '{language}' not found. Using default language 'en'.")
+    print(f"Warning: Language pack '{language}' not found. Using default language 'ko'.")
     selected_lang_pack = default_lang_pack
 
-# 메시지 출력 함수 (예외 처리 및 영어 출력 기능 추가)
+# 메시지 출력 함수 (예외 처리 및 한국어 출력 기능 추가)
 def get_message(lang_pack, message_id, default_lang_pack=None):
-    """메시지 텍스트 반환 (누락 시 영어 출력)"""
+    """메시지 텍스트 반환 (누락 시 한국어 출력)"""
     message = lang_pack.get(message_id)
     if message:
         return message
@@ -70,7 +100,7 @@ message = get_message(selected_lang_pack, "MSG_001", default_lang_pack)  # 한�
 print(message)
 
 message = get_message(selected_lang_pack, "MSG_999", default_lang_pack)  # 존재하지 않는 메시지 ID
-print(message)  # 영어 메시지 또는 "Unknown message ID" 출력
+print(message)  # 한국어 메시지 또는 "Unknown message ID" 출력
 
 # ID 맵핑
 id_mapping = config["id_mapping"]
