@@ -7,7 +7,7 @@ import time
 from typing import Callable, Dict, Any
 import pika.exceptions
 from ai_model_manager import AIModelManager
-from config.development import get_message, handle_error, send_message_to_queue, handle_message
+from config.config import get_message, handle_error, send_message_to_queue, handle_message
 
 class OCRResultHandler:
     """OCR 결과 메시지 처리 담당."""

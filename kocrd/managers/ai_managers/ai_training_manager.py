@@ -5,7 +5,7 @@ import json
 import os
 from sklearn.model_selection import train_test_split
 from PyQt5.QtWidgets import QMessageBox
-from config.development import get_message, handle_error, send_message_to_queue
+from config.config import get_message, handle_error, send_message_to_queue
 
 class AITrainingManager:
     def __init__(self, model_manager, settings_manager, system_manager, ai_data_manager):

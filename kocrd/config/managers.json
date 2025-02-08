@@ -4,8 +4,8 @@
       "class": "DatabaseManager",
       "module": "kocrd.managers.database_manager",
       "kwargs": {
-        "db_path": "DATABASE_PATH",
-        "backup_path": "DATABASE_BACKUP_PATH"
+        "db_path": "config/file_paths.json",
+        "backup_path": "config/file_paths.json"
       }
     },
     "temp_file": {
@@ -17,8 +17,8 @@
       "class": "OCRManager",
       "module": "kocrd.managers.ocr.ocr_manager",
       "kwargs": {
-        "tesseract_cmd": "TESSERACT_CMD",
-        "tessdata_dir": "TESSDATA_DIR"
+        "tesseract_cmd": "config/file_paths.json",
+        "tessdata_dir": "config/file_paths.json"
       },
       "inject_settings": true,
       "inject_main_window": true
@@ -32,7 +32,7 @@
       "class": "AIModelManager",
       "module": "kocrd.managers.ai_managers.ai_model_manager",
       "kwargs": {
-        "model_path": "MODELS_PATH",
+        "model_path": "config/file_paths.json",
         "model_type": "gpt2",
         "inject_settings": true
       }
@@ -84,16 +84,6 @@
     "analysis_manager": {
       "class": "AnalysisManager",
       "module": "kocrd.managers.analysis_manager"
-    }
-  },
-  "window_config": {
-    "messages": {
-      "load_success": "601",
-      "load_error": "602",
-      "size_set": "603",
-      "position_set": "604",
-      "save_success": "605",
-      "save_error": "606"
     }
   }
 }

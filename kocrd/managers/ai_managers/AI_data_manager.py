@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QInputDialog
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from ai_model_manager import AIModelManager
-from config.development import get_message, handle_error, send_message_to_queue
+from config.config import get_message, handle_error, send_message_to_queue
 from utils.embedding_utils import generate_document_type_embeddings
 
 class AIDataManager:

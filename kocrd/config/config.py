@@ -4,84 +4,70 @@ from datetime import datetime
 from typing import Dict, Any
 import os
 
-# RabbitMQ 설정
-RABBITMQ_CONFIG = {
-    "host": "localhost",
-    "port": 5672,
-    "user": "guest",
-    "password": "guest",
-    "virtual_host": "/"
-}
+class ConfigLoader:
+    @staticmethod
+    def load_config(file_path: str) -> Dict[str, Any]:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return json.load(f)
 
-# RabbitMQ 큐 이름
-QUEUE_NAMES = {
-    "ocr_requests": "dev_ocr_requests",
-    "ocr_results": "dev_ocr_results",
-    "prediction_requests": "dev_prediction_requests",
-    "prediction_results": "dev_prediction_results",
-    "events": "dev_events",
-    "ui_feedback_requests": "dev_ui_feedback_requests"
-}
+class RabbitMQConfig:
+    def __init__(self, config: Dict[str, Any]):
+        self.host = config["host"]
+        self.port = config["port"]
+        self.user = config["user"]
+        self.password = config["password"]
+        self.virtual_host = config["virtual_host"]
 
-# 파일 경로 설정
-FILE_PATHS = {
-    "models": "F:/AI-M2/models/dev_models",
-    "document_embedding": "F:/AI-M2/model/dev_document_embedding.json",
-    "document_types": "F:/AI-M2/model/dev_document_types.json",
-    "temp_files": "F:/AI-M2/temp/dev_temp_files"
-}
+class FilePathConfig:
+    def __init__(self, config: Dict[str, Any]):
+        self.models = config["models"]
+        self.document_embedding = config["document_embedding"]
+        self.document_types = config["document_types"]
+        self.temp_files = config["temp_files"]
 
-# 데이터베이스 연결
-DATABASE_URL = "dev_database_url"
+class LanguageConfig:
+    def __init__(self, lang_dir: str):
+        self.lang_packs = {}
+        for filename in os.listdir(lang_dir):
+            if filename.endswith(".json"):
+                lang_code = filename[:-5]
+                lang_path = os.path.join(lang_dir, filename)
+                try:
+                    with open(lang_path, "r", encoding="utf-8") as f:
+                        lang_pack = json.load(f)
+                        if "language" not in lang_pack:
+                            raise ValueError(f"Language pack '{filename}' must have 'language' attribute.")
+                        self.lang_packs[lang_code] = lang_pack
+                except (FileNotFoundError, json.JSONDecodeError, ValueError) as e:
+                    print(f"Error loading language pack '{filename}': {e}")
 
-# 파일 처리 설정
-FILE_SETTINGS = {
-    "default_report_filename": "report.txt",
-    "default_excel_filename": "documents.xlsx",
-    "valid_file_extensions": {'.pdf', '.docx', '.xlsx', '.txt', '.csv', '.png', '.jpg', '.jpeg'},
-    "max_file_size": 10 * 1024 * 1024  # 10MB
-}
+    def load_language_pack(self, lang_code: str) -> Dict[str, Any]:
+        lang_path = os.path.join(LANG_DIR, f"{lang_code}.json")
+        try:
+            with open(lang_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"Error loading default language pack '{lang_code}': {e}")
+            return {}
+
+class Config:
+    def __init__(self):
+        self.rabbitmq = RabbitMQConfig(ConfigLoader.load_config("config/rabbitmq.json"))
+        self.file_paths = FilePathConfig(ConfigLoader.load_config("config/file_paths.json"))
+        self.language = LanguageConfig("config/language")
+        self.messages = ConfigLoader.load_config("config/messages.json")
+        self.queues = ConfigLoader.load_config("config/queues.json")
+        self.managers = ConfigLoader.load_config("config/managers.json")
+        self.ui = ConfigLoader.load_config("config/ui.json")
+
+config = Config()
 
 # 언어팩 디렉토리 경로
 LANG_DIR = "config/language"
-lang_packs = {}
-
-# 언어팩 로드
-for filename in os.listdir(LANG_DIR):
-    if filename.endswith(".json"):
-        lang_code = filename[:-5]  # 확장자 제거
-        lang_path = os.path.join(LANG_DIR, filename)
-        try:
-            with open(lang_path, "r", encoding="utf-8") as f:
-                lang_pack = json.load(f)
-                if "language" not in lang_pack:
-                    raise ValueError(f"Language pack '{filename}' must have 'language' attribute.")
-                lang_packs[lang_code] = lang_pack
-        except (FileNotFoundError, json.JSONDecodeError, ValueError) as e:
-            print(f"Error loading language pack '{filename}': {e}")
+lang_packs = config.language.lang_packs
 
 # 기본 언어팩 로드
-def load_language_pack(lang_code: str) -> Dict[str, Any]:
-    lang_path = os.path.join(LANG_DIR, f"{lang_code}.json")
-    try:
-        with open(lang_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        print(f"Error loading default language pack '{lang_code}': {e}")
-        return {}
-
-default_lang_pack = load_language_pack("ko")
-
-# 설정 파일 로드
-def load_config(file_path: str) -> Dict[str, Any]:
-    with open(file_path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-config = load_config("config/development.json")
-messages_config = load_config("config/messages.json")
-queues_config = load_config("config/queues.json")
-managers_config = load_config("config/managers.json")
-ui_config = load_config("config/ui.json")
+default_lang_pack = config.language.load_language_pack("ko")
 
 # 언어 설정
 language = config.get("language", "ko")
@@ -172,7 +158,7 @@ if __name__ == "__main__":
     print(get_message_by_id("601"))
 
 def get_message(category, code):
-    return managers_config["messages"][category][code]
+    return config.managers["messages"][category][code]
 
 def handle_error(system_manager, category, code, exception, error_type):
     """에러 처리 및 로깅."""
@@ -183,7 +169,7 @@ def handle_error(system_manager, category, code, exception, error_type):
 def send_message_to_queue(system_manager, queue_name, message):
     """메시지를 지정된 큐에 전송."""
     try:
-        queue_config = managers_config["queues"][queue_name]
+        queue_config = config.managers["queues"][queue_name]
         # 메시지를 큐에 전송하는 로직 추가
     except Exception as e:
         handle_error(system_manager, "error", "511", e, "RabbitMQ 오류")
@@ -193,9 +179,9 @@ def process_message(ai_event_manager, message):
     """메시지 처리 로직."""
     message_type = message.get("type")
 
-    if message_type == managers_config["message_types"]["101"]:
+    if message_type == config.managers["message_types"]["101"]:
         perform_ocr(ai_event_manager, message["data"])
-    elif message_type == managers_config["message_types"]["102"]:
+    elif message_type == config.managers["message_types"]["102"]:
         process_ocr_result(ai_event_manager, message["data"])
     else:
         logging.warning(f"알 수 없는 메시지 타입: {message_type}")

@@ -16,6 +16,7 @@ from kocrd.window.menubar_manager import MenubarManager
 from kocrd.managers.document.document_manager import DocumentManager
 from kocrd.Settings.settings_manager import SettingsManager
 from kocrd.utils.embedding_utils import generate_document_type_embeddings, run_embedding_generation, EmbeddingUtils
+from kocrd.managers.ai_managers.ai_model_manager import AIModelManager
 
 class SystemManager:
     def __init__(self, settings_manager: SettingsManager, main_window=None, tesseract_cmd=None, tessdata_dir=None):
