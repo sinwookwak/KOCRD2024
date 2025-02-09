@@ -62,15 +62,35 @@ class Config:
 
 config = Config()
 
+# RabbitMQ 큐 이름
+QUEUE_NAMES = {
+    "ocr_requests": "dev_ocr_requests",
+    "ocr_results": "dev_ocr_results",
+    "prediction_requests": "dev_prediction_requests",
+    "prediction_results": "dev_prediction_results",
+    "events": "dev_events",
+    "ui_feedback_requests": "dev_ui_feedback_requests"
+}
+
+# 데이터베이스 연결
+DATABASE_URL = "dev_database_url"
+
+# 파일 처리 설정
+FILE_SETTINGS = {
+    "default_report_filename": "report.txt",
+    "default_excel_filename": "documents.xlsx",
+    "valid_file_extensions": {'.pdf', '.docx', '.xlsx', '.txt', '.csv', '.png', '.jpg', '.jpeg'},
+    "max_file_size": 10 * 1024 * 1024  # 10MB
+}
+
 # 언어팩 디렉토리 경로
 LANG_DIR = "config/language"
 lang_packs = config.language.lang_packs
 
-# 기본 언어팩 로드
 default_lang_pack = config.language.load_language_pack("ko")
 
 # 언어 설정
-language = config.get("language", "ko")
+language = config.ui.get("language", "ko")
 selected_lang_pack = lang_packs.get(language, default_lang_pack)
 
 # 메시지 출력 함수
@@ -79,7 +99,7 @@ def get_message(lang_pack: Dict[str, str], message_id: str, default_lang_pack: D
     return message
 
 # ID 맵핑
-id_mapping = config["id_mapping"]
+id_mapping = config.ui["id_mapping"]
 
 # 전략 패턴을 위한 인터페이스 정의
 class OCREngine:
@@ -132,8 +152,8 @@ class AIModelFactory:
             raise ValueError(f"Unknown AI model type: {model_type}")
 
 # 설정 파일에서 전략 선택
-ocr_engine_type = config["settings"].get("ocr_engine", "tesseract")
-ai_model_type = config["settings"].get("ai_model", "classification")
+ocr_engine_type = config.ui["settings"].get("ocr_engine", "tesseract")
+ai_model_type = config.ui["settings"].get("ai_model", "classification")
 
 # 팩토리를 사용하여 객체 생성
 ocr_engine = OCREngineFactory.create_engine(ocr_engine_type)
