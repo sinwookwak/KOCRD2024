@@ -30,12 +30,15 @@
 # │      ├── __init__.py
 # │      ├── ai_model_manager.py     # AI 모델 로드 및 관리
 # │      ├── ai_prediction_manager.py# AI 예측
-# │      ├── ai_event_manager.py    # AI 이벤트 처리
+# │      ├── ai_data_manager.py    # AI 이벤트 처리
 # │      └── ai_training_manager.py  # AI 모델 훈련
 # ├── utils/              # 라이브러리
 # │  ├── __init__.py
 # │  ├── embedding_utils.py  # 접근 유틸리티 함수들
 # │  └── file_utils.py     # 파일 유틸리티 함수들
+# ├── handlers/           # 이벤트 핸들러
+# │  ├── __init__.py
+# │  └── training_event_handler.py  # AI 이벤트 핸들러
 # └── config/             # 설정 파일
 #    ├── __init__.py
 #    ├── config.py

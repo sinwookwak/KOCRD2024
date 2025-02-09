@@ -3,8 +3,8 @@ import json
 import logging
 
 from kocrd.managers.ai_managers.ai_training_manager import AITrainingManager
-from kocrd.managers.ai_managers.ai_model_manager import AIModelManager # AIModelManager import
-from kocrd.utils.file_utils import copy_file # file_utils import (필요한 경우)
+from kocrd.managers.ai_managers.ai_model_manager import AIModelManager
+from kocrd.utils.file_utils import copy_file
 
 class TrainingEventHandler:
     def __init__(self, system_manager, model_manager, ai_data_manager, error_handler, queues):
@@ -55,5 +55,3 @@ class TrainingEventHandler:
             logging.info(f"Model saved to {destination_path}")
         except Exception as e:
             self.error_handler.handle_error(None, "model_save_error", "500", e, "모델 저장 중 오류 발생")
-
-# ... (send_message_to_queue 함수는 필요에 따라 여기에 정의하거나, 별도의 모듈로 분리)

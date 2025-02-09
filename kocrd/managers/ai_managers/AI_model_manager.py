@@ -10,6 +10,7 @@ from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from system import DatabaseManager, SettingsManager
 from typing import Dict, Any, Optional
 from config.config import get_message, handle_error, send_message_to_queue
+from kocrd.handlers.training_event_handler import TrainingEventHandler  # TrainingEventHandler import
 
 class AIModelManager:
     _instance = None
@@ -37,7 +38,7 @@ class AIModelManager:
         """AIDataManager 인스턴스 설정."""
         self.ai_data_manager = ai_data_manager
 
-    def set_ai_event_manager(self, ai_event_manager):
+    def set_ai_event_manager(self, ai_event_manager: TrainingEventHandler):  # 타입 힌트 추가
         """AIEventManager 인스턴스 설정."""
         self.ai_event_manager = ai_event_manager
 
