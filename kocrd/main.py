@@ -52,7 +52,7 @@ def main():
         ocr_kwargs = get_required_setting(ocr, constants.get("KWARGS_KEY", ""), f"Critical error: '{constants.get('KWARGS_KEY', '')}' not found in ocr")
         tesseract_cmd = get_required_setting(ocr_kwargs, constants.get("TESSERACT_CMD_KEY", ""), f"Critical error: '{constants.get('TESSERACT_CMD_KEY', '')}' not found in ocr_kwargs")
         tessdata_dir = get_required_setting(ocr_kwargs, constants.get("TESSDATA_DIR_KEY", ""), f"Critical error: '{constants.get('TESSDATA_DIR_KEY', '')}' not found in ocr_kwargs")
-
+        ai_event_manager = AIEventManager(system_manager, settings_manager, model_manager, ai_data_manager, error_handler, config.queues["queues"])  # queues 전달, config.queues -> config.queues["queues"]로 변경
         system_manager = system.SystemManager(settings_manager, None, tesseract_cmd, tessdata_dir)
 
         try:
