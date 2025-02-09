@@ -4,6 +4,9 @@ import logging
 from datetime import datetime
 from typing import Dict, Any
 import os
+from kocrd.handlers.message_handler import MessageHandler
+from kocrd.handlers.training_event_handler import TrainingEventHandler
+
 
 class RabbitMQConfig:
     def __init__(self, config):
@@ -138,7 +141,30 @@ class SystemManager:
 
     def get_manager(self, manager_name):
         return self.managers.get(manager_name) # 매니저가 없을 경우 None 반환
+class ConfigManager:
+    def __init__(self, config_file_path: str):
+        self.config_file_path = config_file_path
+        self.config_data = self._load_config_file()
 
+    def _load_config_file(self) -> dict:
+        """설정 파일을 로드하고 JSON 데이터를 파싱합니다."""
+        try:
+            with open(self.config_file_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"설정 파일 '{self.config_file_path}'을 찾을 수 없습니다.")
+        except json.JSONDecodeError:
+            raise json.JSONDecodeError(f"설정 파일 '{self.config_file_path}'의 JSON 형식이 올바르지 않습니다.")
+
+    def get(self, key: str, default=None):
+        """설정 값을 반환합니다. key가 없으면 default 값을 반환합니다."""
+        return self.config_data.get(key, default)
+
+    def validate(self, key: str, validator: callable, message: str):
+        """설정 값의 유효성을 검증합니다. validator는 검증 함수이고, message는 에러 메시지입니다."""
+        value = self.get(key)
+        if not validator(value):
+            raise ValueError(message)
 # RabbitMQ 큐 이름
 QUEUE_NAMES = {
     "ocr_requests": "dev_ocr_requests",
@@ -208,29 +234,6 @@ def send_message_to_queue(system_manager, queue_name, message):
     except Exception as e:
         handle_error(system_manager, "error", "511", e, "RabbitMQ 오류")
         raise
-class MessageHandler:
-    def __init__(self, ai_event_manager, error_handler):
-        self.ai_event_manager = ai_event_manager
-        self.error_handler = error_handler
-
-    def handle_message(self, ch, method, properties, body):
-        try:
-            message = json.loads(body)
-            self.process_message(message)
-        except json.JSONDecodeError as e:
-            self.error_handler.handle_error(self.ai_event_manager.system_manager, "error", "512", e, "JSON 파싱 오류")
-        except Exception as e:
-            self.error_handler.handle_error(self.ai_event_manager.system_manager, "error", "513", e, "OCR 메시지 처리 중 오류")
-
-    def process_message(self, message):
-        message_type = message.get("type")
-        if message_type == config.messages["message_types"]["101"]:
-            self.ai_event_manager.ocr_processor.process_ocr(message["data"])  # 변경된 메서드 이름 호출
-        elif message_type == config.messages["message_types"]["102"]:
-            self.ai_event_manager.ocr_processor.process_ocr(message["data"])  # 변경된 메서드 이름 호출
-        else:
-            logging.warning(f"알 수 없는 메시지 타입: {message_type}")
-
 
 class OCRProcessor:
     def __init__(self, ai_event_manager, error_handler, settings_manager):
@@ -243,7 +246,6 @@ class OCRProcessor:
         ocr_engine_type = self.settings_manager.ui["settings"].get("ocr_engine", "tesseract")
         ocr_engine = OCREngineFactory.create_engine(ocr_engine_type)
         extracted_text = ocr_engine.perform_ocr(file_path)
-        self.ai_event_manager._create_and_send_prediction_request(file_path, extracted_text)  # 간접적인 호출
 
 class ClassificationModel(AIModel):
     def predict(self, data: Any) -> Any:
@@ -357,12 +359,12 @@ class AIEventManager:
         self.error_handler = error_handler
         self.queues = queues
 
-        self.message_handler = MessageHandler(self, error_handler)
         self.ocr_processor = OCRProcessor(self, error_handler, settings_manager)
         self.prediction_event_handler = PredictionEventHandler(ai_data_manager, error_handler)
         self.ocr_event_handler = OCREventHandler(system_manager, error_handler, self.prediction_event_handler, queues)
-        self.training_event_handler = TrainingEventHandler(system_manager, model_manager, ai_data_manager, error_handler)
         self.feedback_event_handler = FeedbackEventHandler(ai_data_manager, error_handler)
+        self.training_event_handler = TrainingEventHandler(system_manager, model_manager, ai_data_manager, error_handler, queues)
+        self.message_handler = MessageHandler(self.training_event_handler, error_handler)  # TrainingEventHandler 전달
 
     def handle_message(self, ch, method, properties, body):
         self.message_handler.handle_message(ch, method, properties, body)
@@ -378,12 +380,3 @@ class AIEventManager:
         self.feedback_event_handler.handle_request_user_feedback(file_path)
     def request_feedback(self, original_message: Any, error_reason: str):
         self.feedback_event_handler.request_feedback(original_message, error_reason)
-    def _create_and_send_prediction_request(self, file_path, extracted_text):
-            logging.info("Handling OCR completion event.")
-            prediction_request = {
-                "type": "PREDICT_DOCUMENT_TYPE",
-                "data": {"text": extracted_text, "file_path": file_path},
-                "reply_to": self.queues["events_queue"]  # 수정: events -> events_queue
-            }
-            send_message_to_queue(self.system_manager, self.queues["prediction_requests"], prediction_request)
-            self.prediction_event_handler.handle_prediction_requested(file_path)  # 예측 요청 이벤트 발생

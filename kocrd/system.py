@@ -13,8 +13,8 @@ from managers.document.document_manager import DocumentManager
 from managers.temp_file_manager import TempFileManager
 from kocrd.window.menubar_manager import MenubarManager
 from utils.embedding_utils import EmbeddingUtils
-from kocrd.config.config import get_message
 from kocrd.managers.system_manager import SystemManager  # SystemManager에서 RabbitMQManager 통합
+from kocrd.config.config import ConfigManager
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -86,9 +86,19 @@ def create_manager(manager_config, settings_manager):
     module = __import__(module_name, fromlist=[class_name])
     manager_class = getattr(module, class_name)
     return manager_class(settings_manager, **kwargs)
-
 class SystemManager:
-    def __init__(self, settings_manager: SettingsManager, main_window=None, tesseract_cmd=None, tessdata_dir=None):
+    def __init__(self, settings_path="config/development.json"):
+        self.config_manager = ConfigManager(settings_path)  # ConfigManager 인스턴스 생성
+        self.rabbitmq_settings = self.config_manager.get_rabbitmq_settings()
+        self.file_paths = self.config_manager.get_file_paths()
+        self.constants = self.config_manager.get_constants()
+        self.ui_settings = self.config_manager.get_ui_settings()
+        self.ui_id_mapping = self.config_manager.get_ui_id_mapping()
+        self.managers_config = self.config_manager.get_managers()
+        self.messages_config = self.config_manager.get_messages()
+    def __init__(self, settings_path="config/development.json", main_window=None, tesseract_cmd=None, tessdata_dir=None):
+        self.config_manager = ConfigManager(settings_path)  # ConfigManager 인스턴스 생성
+        self.settings = self.config_manager.get("settings")  # 설정 로드
         self.settings_manager = settings_manager
         self.main_window = main_window  # MainWindow 인스턴스 설정
         self.tesseract_cmd = tesseract_cmd
