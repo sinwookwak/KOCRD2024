@@ -1,116 +1,157 @@
- 
 {
-    "rabbitmq": {
-      "RABBITMQ_HOST": "localhost",
-      "RABBITMQ_PORT": 5672,
-      "RABBITMQ_USER": "guest",
-      "RABBITMQ_PASSWORD": "guest",
-      "RABBITMQ_VIRTUAL_HOST": "/",
-      "RABBITMQ_EVENTS_QUEUE": "events_queue",
-      "RABBITMQ_PREDICTION_REQUESTS_QUEUE": "prediction_requests_queue",
-      "RABBITMQ_PREDICTION_RESULTS_QUEUE": "prediction_results_queue",
-      "RABBITMQ_FEEDBACK_QUEUE": "feedback_queue",
-      "RABBITMQ_EXCHANGE_NAME": "default_exchange",
-      "RABBITMQ_EXCHANGE_TYPE": "direct",
-      "RABBITMQ_ROUTING_KEY": "default_key"
+  "rabbitmq": {
+    "RABBITMQ_HOST": "localhost",
+    "RABBITMQ_PORT": 5672,
+    "RABBITMQ_USER": "guest",
+    "RABBITMQ_PASSWORD": "guest",
+    "RABBITMQ_VIRTUAL_HOST": "/",
+    "RABBITMQ_EVENTS_QUEUE": "events_queue",
+    "RABBITMQ_PREDICTION_REQUESTS_QUEUE": "prediction_requests_queue",
+    "RABBITMQ_PREDICTION_RESULTS_QUEUE": "prediction_results_queue",
+    "RABBITMQ_FEEDBACK_QUEUE": "feedback_queue",
+    "RABBITMQ_EXCHANGE_NAME": "default_exchange",
+    "RABBITMQ_EXCHANGE_TYPE": "direct",
+    "RABBITMQ_ROUTING_KEY": "default_key"
+  },
+  "file_paths": {
+    "MODEL_PATH": "F:/AI-M1/model/Korean_CNN_model(97.8).h5",
+    "document_embedding_path": "F:/AI-M1/model/document_embedding.json",
+    "document_types_path": "F:/AI-M1/model/document_types.json",
+    "temp_dir": "C:/temp",
+    "ai_model_path": "path/to/ai_model", // 추가
+    "gpt_model_path": "path/to/gpt_model"  // 추가
+  },
+  "constants": {
+    "MAX_FILE_SIZE": 10485760,
+    "DEFAULT_REPORT_FILENAME": "report.txt",
+    "DEFAULT_EXCEL_FILENAME": "documents.xlsx",
+    "VALID_FILE_EXTENSIONS": [
+      ".txt",
+      ".pdf",
+      ".png",
+      ".jpg",
+      ".xlsx",
+      ".docx"
+    ]
+  },
+  "ui": {
+    "language": "ko",
+    "settings": {
+      "ocr_engine": "tesseract",
+      "ai_model": "classification"
     },
-    "file_paths": {
-      "MODEL_PATH": "F:/AI-M1/model/Korean_CNN_model(97.8).h5",
-      "document_embedding_path": "F:/AI-M1/model/document_embedding.json",
-      "document_types_path": "F:/AI-M1/model/document_types.json",
-      "temp_dir": "C:/temp"  // 필요에 따라 수정
-    },
-    "constants": {
-      "MAX_FILE_SIZE": 10485760, // 10MB
-      "DEFAULT_REPORT_FILENAME": "report.txt",
-      "DEFAULT_EXCEL_FILENAME": "documents.xlsx",
-      "VALID_FILE_EXTENSIONS": [".txt", ".pdf", ".png", ".jpg", ".xlsx", ".docx"]
-    },
-    "ui": {
-      "language": "ko",
-      "settings": {
-          "ocr_engine": "tesseract",
-          "ai_model": "classification"
-      },
-      "id_mapping": {  // UI 텍스트 ID 매핑 정보
-        "ui": {
-          "file_menu": "FILE_MENU",
-          "open_file": "OPEN_FILE"
-          // ... 다른 UI 요소 ID 매핑
-        },
-        "messages": { // 메시지 키 매핑
-          "MES": {
-            "201": "document_type_prediction"
-          }
-        }
-      }
-    },
-    "managers": {
-        "document": {
-          "module": "kocrd.managers.document.document_manager",
-          "class": "DocumentManager",
-          "dependencies": ["database", "temp_file"],
-          "kwargs": {}
-        },
-        "database": {
-          "module": "kocrd.managers.database_manager",
-          "class": "DatabaseManager",
-          "kwargs": {}
-        },
-        "temp_file": {
-          "module": "kocrd.managers.temp_file_manager",
-          "class": "TempFileManager",
-          "kwargs": {}
-        },
-        "ocr": {
-          "module": "kocrd.managers.ocr.ocr_manager",
-          "class": "OCRManager",
-          "kwargs": {}
-        },
-        "message_queue": {
-          "module": "kocrd.managers.message_queue_manager",
-          "class": "MessageQueueManager",
-          "kwargs": {}
-        },
-        "ai_prediction": {
-          "module": "kocrd.managers.ai_managers.ai_prediction_manager",
-          "class": "AIPredictionManager",
-          "dependencies": ["ai_model", "message_queue"],
-          "kwargs": {}
-        },
-        "ai_model": {
-          "module": "kocrd.managers.ai_managers.ai_model_manager",
-          "class": "AIModelManager",
-          "kwargs": {}
-        }
+    "id_mapping": {
+      "ui": {
+        "file_menu": "FILE_MENU",
+        "open_file": "OPEN_FILE"
       },
       "messages": {
-        "messages": {
-          "MES": {
-            "201": "document_type_prediction"
-          }
-        },
-        "id_mapping": {
-          "ui": {
-            "file_menu": "FILE_MENU",
-            "open_file": "OPEN_FILE"
-          }
+        "MES": {
+          "201": "document_type_prediction"
         }
-      },
-      "queues": {
-        "ocr_requests": "dev_ocr_requests",
-        "ocr_results": "dev_ocr_results",
-        "prediction_requests": "dev_prediction_requests",
-        "prediction_results": "dev_prediction_results",
-        "events": "dev_events",
-        "ui_feedback_requests": "dev_ui_feedback_requests"
-      },
-      "database_url": "dev_database_url",
-      "file_settings": {
-        "default_report_filename": "report.txt",
-        "default_excel_filename": "documents.xlsx",
-        "valid_file_extensions": [".txt", ".pdf", ".png", ".jpg", ".xlsx", ".docx"],
-        "max_file_size": 10485760
       }
     }
-    
+  },
+  "managers": {
+    "document": {
+      "module": "kocrd.managers.document.document_manager",
+      "class": "DocumentManager",
+      "dependencies": [
+        "database",
+        "temp_file"
+      ],
+      "kwargs": {}
+    },
+    "database": {
+      "module": "kocrd.managers.database_manager",
+      "class": "DatabaseManager",
+      "kwargs": {}
+    },
+    "temp_file": {
+      "module": "kocrd.managers.temp_file_manager",
+      "class": "TempFileManager",
+      "kwargs": {}
+    },
+    "ocr": {
+      "module": "kocrd.managers.ocr.ocr_manager",
+      "class": "OCRManager",
+      "kwargs": {}
+    },
+    "message_queue": {
+      "module": "kocrd.managers.message_queue_manager",
+      "class": "MessageQueueManager",
+      "kwargs": {}
+    },
+    "ai_prediction": {
+      "module": "kocrd.managers.ai_managers.ai_prediction_manager",
+      "class": "AIPredictionManager",
+      "dependencies": [
+        "ai_model",
+        "message_queue"
+      ],
+      "kwargs": {}
+    },
+    "ai_model": {
+      "module": "kocrd.managers.ai_managers.ai_model_manager",
+      "class": "AIModelManager",
+      "dependencies": ["database", "training_event_handler", "ai_training"],
+      "additional_settings": {
+        "model_path": "file_paths.ai_model_path",
+        "gpt_model_path": "file_paths.gpt_model_path"
+      },
+      "kwargs": {}
+    },
+    "ai_training": {
+      "module": "kocrd.managers.ai_managers.ai_training_manager",
+      "class": "AITrainingManager",
+      "dependencies": ["ai_model", "ai_data"],
+      "kwargs": {}
+    },
+    "ai_data": {   
+      "module": "kocrd.managers.ai_managers.ai_data_manager",
+      "class": "AIDataManager",
+      "dependencies": ["database", "ai_model", "settings"],  
+      "kwargs": {}
+    },
+    "settings": {  
+      "module": "kocrd.managers.settings_manager",
+      "class": "SettingsManager",
+      "kwargs": {}
+    }
+  },
+  "messages": {
+    "messages": {
+      "MES": {
+        "201": "document_type_prediction"
+      }
+    },
+    "id_mapping": {
+      "ui": {
+        "file_menu": "FILE_MENU",
+        "open_file": "OPEN_FILE"
+      }
+    }
+  },
+  "queues": {
+    "ocr_requests": "dev_ocr_requests",
+    "ocr_results": "dev_ocr_results",
+    "prediction_requests": "dev_prediction_requests",
+    "prediction_results": "dev_prediction_results",
+    "events": "dev_events",
+    "ui_feedback_requests": "dev_ui_feedback_requests"
+  },
+  "database_url": "dev_database_url",
+  "file_settings": {
+    "default_report_filename": "report.txt",
+    "default_excel_filename": "documents.xlsx",
+    "valid_file_extensions": [
+      ".txt",
+      ".pdf",
+      ".png",
+      ".jpg",
+      ".xlsx",
+      ".docx"
+    ],
+    "max_file_size": 10485760
+  }
+}

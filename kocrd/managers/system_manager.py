@@ -17,21 +17,46 @@ from kocrd.managers.document.document_manager import DocumentManager
 from kocrd.Settings.settings_manager import SettingsManager
 from kocrd.utils.embedding_utils import generate_document_type_embeddings, run_embedding_generation, EmbeddingUtils
 from kocrd.managers.ai_managers.ai_model_manager import AIModelManager
+from kocrd.config.config import ConfigManager
+from kocrd.managers.manager_factory import ManagerFactory
+from kocrd.handlers.message_handler import MessageHandler
+from kocrd.managers.rabbitmq_manager import RabbitMQManager
 
 class SystemManager:
-    def __init__(self, settings_manager: SettingsManager, main_window=None, tesseract_cmd=None, tessdata_dir=None):
+    def __init__(self, settings_manager: SettingsManager,config_files: list, main_window=None, tesseract_cmd=None, tessdata_dir=None):
         self.settings_manager = settings_manager
         self.main_window = main_window  # MainWindow 인스턴스 설정
         self.tesseract_cmd = tesseract_cmd
         self.tessdata_dir = tessdata_dir
         self.managers = {}
         self.uis = {}
-        self.settings = self.load_development_settings()
         self._init_components(self.settings)
-        self.initialize_managers()
         self.rabbitmq_connection = None
         self.rabbitmq_channel = None
         self._configure_rabbitmq()
+        self.config_manager = ConfigManager(config_files)
+        self.message_handler = MessageHandler(self)
+        self.rabbitmq_manager = RabbitMQManager(self.config_manager)
+        self._initialize_managers()
+        self.manager_factory = ManagerFactory(self.config_manager)
+    def _initialize_managers(self):
+        managers_config = self.config_manager.get("managers")
+        for manager_name, manager_config in managers_config.items():
+            self.managers[manager_name] = self.manager_factory.create_manager(manager_name, manager_config)
+
+    def trigger_process(self, process_type: str, data: Optional[Dict[str, Any]] = None):
+        manager = self.get_manager(process_type) # 매니저 이름 대신 process_type으로 매니저 객체를 가져온다.
+        if manager:
+            manager.handle_process(data) # 각 매니저가 handle_process 메서드를 구현해야 한다.
+        else:
+            logging.warning(f"🔴 알 수 없는 프로세스 유형: {process_type}")
+            QMessageBox.warning(self.main_window, "오류", "알 수 없는 작업 유형입니다.")
+
+    def handle_message(self, ch, method, properties, body):
+        self.message_handler.handle_message(ch, method, properties, body, self)
+
+    def get_manager(self, manager_name):
+        return self.managers.get(manager_name)
 
     @staticmethod
     def initialize_settings(settings_path="config/development.json"):
@@ -58,11 +83,6 @@ class SystemManager:
         settings_manager.load_from_env()
         return settings_manager, config
 
-    def load_development_settings(self):
-        config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'development.json')
-        with open(config_path, 'r') as f:
-            return json.load(f)
-
     def initialize_managers(self):
         config = self.settings
         for manager_name, manager_config in config["managers"].items():
@@ -80,12 +100,6 @@ class SystemManager:
         self.managers["ocr"] = self.create_ocr_manager()
         self._configure_tesseract()
 
-    def create_temp_file_manager(self):
-        return TempFileManager(self.settings_manager)
-
-    def create_database_manager(self):
-        return DatabaseManager(self.settings_manager.get_setting("db_path"), self.settings_manager.get_setting("backup_path"))
-
     def get_temp_file_manager(self):
         return self.managers.get("temp_file")
 
@@ -100,22 +114,6 @@ class SystemManager:
 
     def create_ocr_manager(self):
         return OCRManager(self.settings_manager)
-
-    def _configure_tesseract(self):
-        pytesseract.pytesseract.tesseract_cmd = self.tesseract_cmd
-        if self.tessdata_dir:
-            pytesseract.pytesseract.tessdata_dir = self.tessdata_dir
-            logging.info(f"🟢 Tessdata 설정 완료: {self.tessdata_dir}")
-        logging.info(f"🟢 Tesseract 설정 완료: {self.tesseract_cmd}")
-        logging.info("🟢 SystemManager 초기화 완료.")
-
-    def _configure_rabbitmq(self):
-        rabbitmq_settings = self.settings["managers"]["message_queue"]["kwargs"]
-        credentials = pika.PlainCredentials(rabbitmq_settings["username"], rabbitmq_settings["password"])
-        parameters = pika.ConnectionParameters(rabbitmq_settings["host"], rabbitmq_settings["port"], '/', credentials)
-        self.rabbitmq_connection = pika.BlockingConnection(parameters)
-        self.rabbitmq_channel = self.rabbitmq_connection.channel()
-        logging.info("🟢 RabbitMQ 설정 완료.")
 
     def _init_components(self, settings: Dict[str, Any]) -> None:
         """설정 파일을 기반으로 매니저 및 UI 초기화"""
@@ -189,10 +187,6 @@ class SystemManager:
         """AIModelManager 인스턴스 반환."""
         return self.managers.get("ai_model")
 
-    def get_class(self, module_name: str, class_name: str):
-        """모듈에서 클래스를 동적으로 가져옵니다."""
-        module = __import__(module_name, fromlist=[class_name])
-        return getattr(module, class_name)
 
 # main_window 모듈을 나중에 임포트
 from kocrd.window.main_window import MainWindow

@@ -27,3 +27,14 @@ class ManagerFactory:
             return manager_class(*dependency_instances, tesseract_cmd=tesseract_cmd, tessdata_dir=tessdata_dir, **kwargs)
         # ... 다른 매니저에 대한 조건 추가
         return manager_class(*dependency_instances, **kwargs)
+
+    def get_class(self, module_name: str, class_name: str):
+        """모듈에서 클래스를 동적으로 가져옵니다."""
+        module = __import__(module_name, fromlist=[class_name])
+        return getattr(module, class_name)
+    def create_temp_file_manager(self):
+        return TempFileManager(self.settings_manager)
+
+    def create_database_manager(self):
+        return DatabaseManager(self.settings_manager.get_setting("db_path"), self.settings_manager.get_setting("backup_path"))
+
