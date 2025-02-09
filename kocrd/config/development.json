@@ -18,8 +18,8 @@
     "document_embedding_path": "F:/AI-M1/model/document_embedding.json",
     "document_types_path": "F:/AI-M1/model/document_types.json",
     "temp_dir": "C:/temp",
-    "ai_model_path": "path/to/ai_model", // 추가
-    "gpt_model_path": "path/to/gpt_model"  // 추가
+    "ai_model_path": "path/to/ai_model",
+    "gpt_model_path": "path/to/gpt_model"  
   },
   "constants": {
     "MAX_FILE_SIZE": 10485760,

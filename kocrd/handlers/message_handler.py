@@ -5,6 +5,8 @@ from typing import Callable, Dict, Optional  # 타입 힌트 import
 
 from kocrd.config.config import ConfigManager  # ConfigManager import
 from kocrd.handlers.training_event_handler import TrainingEventHandler
+from typing import Dict, Any
+
 class MessageHandler:
     def __init__(self, config_manager: ConfigManager, training_event_handler: TrainingEventHandler, error_handler: Callable[[Optional[Any], str, str, Exception, str], None]):  # 타입 힌트 추가
         self.config_manager = config_manager

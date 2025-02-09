@@ -13,70 +13,72 @@ from managers.document.document_manager import DocumentManager
 from managers.temp_file_manager import TempFileManager
 from kocrd.window.menubar_manager import MenubarManager
 from utils.embedding_utils import EmbeddingUtils
-from kocrd.managers.system_manager import SystemManager  # SystemManager에서 RabbitMQManager 통합
 from kocrd.config.config import ConfigManager
+from kocrd.managers.system_manager import SystemManager
 
 logging.basicConfig(level=logging.DEBUG)
 
 def process_message(process_func):
     """메시지를 처리하는 공통 함수"""
-    def wrapper(channel, method, properties, body, manager):
+    def wrapper(channel, method, properties, body, system_manager: SystemManager):  # system_manager 타입 힌트 추가
         try:
-            process_func(channel, method, properties, body, manager)
+            process_func(channel, method, properties, body, system_manager)  # system_manager 전달
             channel.basic_ack(delivery_tag=method.delivery_tag)
         except json.JSONDecodeError as e:
-            logging.error(get_message("error", "512").format(e=e, body=body))
+            logging.error(system_manager.get_message("error", "512").format(e=e, body=body))  # system_manager.get_message 호출
             channel.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
         except Exception as e:
-            logging.error(get_message("error", "513").format(e=e, body=body))
+            logging.error(system_manager.get_message("error", "513").format(e=e, body=body))  # system_manager.get_message 호출
             channel.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
     return wrapper
 
-def handle_process(channel, method, properties, body, manager, process_func):
+def handle_process(channel, method, properties, body, system_manager: SystemManager, process_func):  # system_manager 인자 추가
     """공통 메시지 처리 함수"""
     message = json.loads(body.decode())
-    process_func(manager, message)
-    logging.info(get_message("log", "333").format(message=message))
+    process_func(system_manager, message)  # system_manager 전달
+    logging.info(system_manager.get_message("log", "333").format(message=message))  # system_manager.get_message 호출
 
-def process_document(manager, message):
+
+def process_document(system_manager: SystemManager, message):  # system_manager 인자 추가
     """문서 처리 함수"""
     file_paths = message.get("file_paths", [])
     if not file_paths:
-        logging.warning(get_message("warning", "403").format(message=message))
+        logging.warning(system_manager.get_message("warning", "403").format(message=message))  # system_manager.get_message 호출
         return
     for file_path in file_paths:
-        manager.load_document(file_path)
-    logging.info(get_message("log", "324").format(file_paths=file_paths))
+        system_manager.get_manager("document").load_document(file_path) # system_manager를 통해 document manager 접근
+    logging.info(system_manager.get_message("log", "324").format(file_paths=file_paths))  # system_manager.get_message 호출
 
-def process_database_packaging(manager, message):
+
+def process_database_packaging(system_manager: SystemManager, message):
     """데이터베이스 패키징 함수"""
-    manager.package_database()
-    logging.info(get_message("log", "330"))
+    system_manager.get_manager("database").package_database()
+    logging.info(system_manager.get_message("log", "330"))
 
-def process_ai_training(manager, message):
+def process_ai_training(system_manager: SystemManager, message):
     """AI 학습 처리 함수"""
-    manager.train_ai()
-    logging.info(get_message("log", "331"))
+    system_manager.get_manager("ai_training").train_ai()
+    logging.info(system_manager.get_message("log", "331"))
 
-def process_temp_file_manager(manager, message):
+def process_temp_file_manager(system_manager: SystemManager, message):
     """임시 파일 관리"""
-    manager.handle_message(message)
-    logging.info(get_message("log", "315"))
+    system_manager.get_manager("temp_file").handle_message(message)
+    logging.info(system_manager.get_message("log", "315"))
 
-def process_ai_prediction(manager, message):
+def process_ai_prediction(system_manager: SystemManager, message):
     """AI 예측 수행"""
-    manager.handle_message(message)
-    logging.info(get_message("log", "332"))
+    system_manager.get_manager("ai_prediction").handle_message(message)
+    logging.info(system_manager.get_message("log", "332"))
 
-def process_ai_event(manager, message):
+def process_ai_event(system_manager: SystemManager, message):
     """AI 이벤트 핸들링"""
-    manager.handle_message(message)
-    logging.info(get_message("log", "333"))
+    system_manager.get_manager("ai_event").handle_message(message)
+    logging.info(system_manager.get_message("log", "333"))
 
-def process_ai_ocr_running(manager, message):
+def process_ai_ocr_running(system_manager: SystemManager, message):
     """AI OCR 실행"""
-    manager.handle_ocr_result(message)
-    logging.info(get_message("log", "334"))
+    system_manager.get_manager("ai_ocr_running").handle_ocr_result(message)
+    logging.info(system_manager.get_message("log", "334"))
 
 def create_manager(manager_config, settings_manager):
     """설정 파일에서 매니저 인스턴스를 생성합니다."""
@@ -87,19 +89,10 @@ def create_manager(manager_config, settings_manager):
     manager_class = getattr(module, class_name)
     return manager_class(settings_manager, **kwargs)
 class SystemManager:
-    def __init__(self, settings_path="config/development.json"):
-        self.config_manager = ConfigManager(settings_path)  # ConfigManager 인스턴스 생성
-        self.rabbitmq_settings = self.config_manager.get_rabbitmq_settings()
-        self.file_paths = self.config_manager.get_file_paths()
-        self.constants = self.config_manager.get_constants()
-        self.ui_settings = self.config_manager.get_ui_settings()
-        self.ui_id_mapping = self.config_manager.get_ui_id_mapping()
-        self.managers_config = self.config_manager.get_managers()
-        self.messages_config = self.config_manager.get_messages()
-    def __init__(self, settings_path="config/development.json", main_window=None, tesseract_cmd=None, tessdata_dir=None):
+    def __init__(self, settings_path="config/development.json", main_window=None, tesseract_cmd=None, tessdata_dir=None, settings_manager=None): # settings_manager 인자 추가
         self.config_manager = ConfigManager(settings_path)  # ConfigManager 인스턴스 생성
         self.settings = self.config_manager.get("settings")  # 설정 로드
-        self.settings_manager = settings_manager
+        self.settings_manager = settings_manager  # settings_manager 할당
         self.main_window = main_window  # MainWindow 인스턴스 설정
         self.tesseract_cmd = tesseract_cmd
         self.tessdata_dir = tessdata_dir
@@ -108,6 +101,7 @@ class SystemManager:
         self.settings = self.load_development_settings()
         self._init_components(self.settings)
         self.initialize_managers()
+
 
     def initialize_managers(self):
         config = self.settings
@@ -164,9 +158,9 @@ class SystemManager:
         pytesseract.pytesseract.tesseract_cmd = self.tesseract_cmd
         if self.tessdata_dir:
             pytesseract.pytesseract.tessdata_dir = self.tessdata_dir
-            logging.info(get_message("log", "320").format(tessdata_dir=self.tessdata_dir))
-        logging.info(get_message("log", "319").format(tesseract_cmd=self.tesseract_cmd))
-        logging.info(get_message("log", "333"))
+            logging.info(self.get_message("log", "320").format(tessdata_dir=self.tessdata_dir)) # self.get_message
+        logging.info(self.get_message("log", "319").format(tesseract_cmd=self.tesseract_cmd)) # self.get_message
+        logging.info(self.get_message("log", "333")) # self.get_message
 
     def _init_components(self, settings: Dict[str, Any]) -> None:
         """설정 파일을 기반으로 매니저 및 UI 초기화"""
@@ -177,31 +171,40 @@ class SystemManager:
                     dependencies = [self.managers[dep] for dep in component_settings.get("dependencies", [])]
                     kwargs = component_settings.get("kwargs", {})
                     component_dict[component_name] = class_(*dependencies, **kwargs)
-                    logging.info(get_message("log", "328").format(component_type=component_type.capitalize(), component_name=component_name))
+                    logging.info(self.get_message("log", "328").format(component_type=component_type.capitalize(), component_name=component_name)) # self.get_message
                 except Exception as e:
-                    logging.error(get_message("error", "333").format(component_type=component_type.capitalize(), component_name=component_name, e=e))
+                    logging.error(self.get_message("error", "333").format(component_type=component_type.capitalize(), component_name=component_name, e=e)) # self.get_message
                     sys.exit(1)
 
     def database_packaging(self):
         self.get_manager("database").package_database()  # get_manager 사용
 
     def trigger_process(self, process_type: str, data: Optional[Dict[str, Any]] = None):
-        """AI 모델 실행 프로세스 트리거"""
-        if process_type == "database_packaging":
-            self.get_temp_file_manager().database_packaging()
-        elif process_type == "document_processing":
-            self.get_manager("document").request_document_processing(data)
-        elif process_type == "ai_training":
-            self.get_manager("ai_training").request_ai_training(data)
-        elif process_type == "generate_text":
-            ai_manager = self.get_ai_manager()
-            if ai_manager:
-                return ai_manager.generate_text(data.get("command", ""))
+            """AI 모델 실행 프로세스 트리거"""
+            if process_type == "database_packaging":
+                self.get_temp_file_manager().database_packaging()
+            elif process_type == "document_processing":
+                self.get_manager("document").request_document_processing(data)
+            elif process_type == "ai_training":
+                self.get_manager("ai_training").request_ai_training(data)
+            elif process_type == "generate_text":
+                ai_manager = self.get_manager("ai_prediction")
+                if ai_manager:
+                    return ai_manager.generate_text(data.get("command", ""))
+                else:
+                    logging.error(self.get_message("error", "514")) # self.get_message 추가
             else:
-                logging.error(get_message("error", "514"))
-        else:
-            logging.warning(get_message("warning", "404").format(process_type=process_type))
-            QMessageBox.warning(self.main_window, "오류", get_message("warning", "404").format(process_type=process_type))
+                logging.warning(self.get_message("warning", "404").format(process_type=process_type)) # self.get_message 추가
+                QMessageBox.warning(self.main_window, "오류", self.get_message("warning", "404").format(process_type=process_type)) # self.get_message 추가
+
+    def get_message(self, message_type: str, message_code: str) -> str:
+        """메시지 설정에서 메시지를 가져옵니다."""
+        try:
+            messages = self.config_manager.get("messages", {}) # default 값으로 빈 딕셔너리 지정
+            return messages[message_type][message_code]
+        except KeyError:
+            logging.error(f"Message not found: {message_type} - {message_code}")
+            return f"Message not found: {message_type} - {message_code}"  # 메시지 없을 경우 기본 메시지 반환
 
     def handle_error(self, message, error_code=None):
         if error_code:
@@ -237,10 +240,12 @@ class SystemManager:
 def main():
     """메인 실행 함수"""
     settings_manager = SettingsManager()
-    
+    system_manager = SystemManager(settings_manager)  # SystemManager 인스턴스 생성
+
     connection, channel = settings_manager.connect_to_rabbitmq()
+
     if connection is None:
-        logging.error(get_message("error", "511"))
+        logging.error(system_manager.get_message("error", "511")) # system_manager.get_message 사용
         return
 
     try:
@@ -255,15 +260,19 @@ def main():
         database_manager = settings_manager.get_manager("database")
         ai_manager = settings_manager.get_manager("ai_training")
 
-        channel.basic_consume(queue=config["queues"]["document_processing"], on_message_callback=process_message(lambda ch, method, props, body: handle_process(ch, method, props, body, document_manager, process_document)), auto_ack=False)
+        channel.basic_consume(
+            queue=config["queues"]["document_processing"],
+            on_message_callback=process_message(lambda ch, method, props, body: handle_process(ch, method, props, body, system_manager, process_document)),
+            auto_ack=False
+        )
         channel.basic_consume(queue=config["queues"]["database_packaging"], on_message_callback=process_message(lambda ch, method, props, body: handle_process(ch, method, props, body, database_manager, process_database_packaging)), auto_ack=False)
         channel.basic_consume(queue=config["queues"]["ai_training_queue"], on_message_callback=process_message(lambda ch, method, props, body: handle_process(ch, method, props, body, ai_manager, process_ai_training)), auto_ack=False)
 
-        logging.info(get_message("log", "333"))
+        logging.info(system_manager.get_message("log", "333"))  # system_manager.get_message 호출
         channel.start_consuming()
 
     except KeyboardInterrupt:
-        logging.info(get_message("log", "333"))
+        logging.info(system_manager.get_message("log", "333"))  # system_manager.get_message 호출
         if connection and connection.is_open:
             connection.close()
 

@@ -97,6 +97,13 @@ class OCRManager:
         except Exception as e:
             self.log("error", "505", e=e)
             return None
+    def _configure_tesseract(self):
+        pytesseract.pytesseract.tesseract_cmd = self.tesseract_cmd
+        if self.tessdata_dir:
+            pytesseract.pytesseract.tessdata_dir = self.tessdata_dir
+            logging.info(f"🟢 Tessdata 설정 완료: {self.tessdata_dir}")
+        logging.info(f"🟢 Tesseract 설정 완료: {self.tesseract_cmd}")
+        logging.info("🟢 SystemManager 초기화 완료.")
 
     def _extract_text_from_pdf(self, file_path: str, lang: str) -> Optional[str]:
         """PDF 파일에서 텍스트를 추출."""

@@ -10,7 +10,7 @@ from kocrd.config.config import ConfigManager  # ConfigManager import
 from kocrd.managers.database_manager import DatabaseManager
 from kocrd.handlers.training_event_handler import TrainingEventHandler
 from kocrd.managers.ai_managers.ai_training_manager import AITrainingManager  # import 추가
-from kocrd.utils.error_handler import handle_error # error_handler import
+from kocrd.utils.error_utils import handle_error  # import 추가
 
 def singleton(cls):
     instances = {}

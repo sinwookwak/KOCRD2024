@@ -6,7 +6,8 @@ from typing import Dict, Any
 import os
 from kocrd.handlers.message_handler import MessageHandler
 from kocrd.handlers.training_event_handler import TrainingEventHandler
-
+from kocrd.utils.error_utils import handle_error  # import 추가
+from kocrd.User import FeedbackEventHandler
 
 class RabbitMQConfig:
     def __init__(self, config):
@@ -142,62 +143,83 @@ class SystemManager:
     def get_manager(self, manager_name):
         return self.managers.get(manager_name) # 매니저가 없을 경우 None 반환
 class ConfigManager:
-    def __init__(self, config_file_path: str):
-        self.config_file_path = config_file_path
-        self.config_data = self._load_config_file()
+    def __init__(self, config_files: list):
+        self.config_data = {}
+        self._load_and_merge_configs(config_files)
 
-    def _load_config_file(self) -> dict:
+    def _load_config_file(self, file_path: str) -> dict:
         """설정 파일을 로드하고 JSON 데이터를 파싱합니다."""
         try:
-            with open(self.config_file_path, "r", encoding="utf-8") as f:
+            config_dir = os.path.dirname(os.path.abspath(__file__))
+            file_path = os.path.join(config_dir, file_path)
+            with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except FileNotFoundError:
-            raise FileNotFoundError(f"설정 파일 '{self.config_file_path}'을 찾을 수 없습니다.")
+            logging.error(f"설정 파일 '{file_path}'을 찾을 수 없습니다.")  # 로그 출력
+            return {} # 빈 딕셔너리 반환
         except json.JSONDecodeError:
-            raise json.JSONDecodeError(f"설정 파일 '{self.config_file_path}'의 JSON 형식이 올바르지 않습니다.")
+            logging.error(f"설정 파일 '{file_path}'의 JSON 형식이 올바르지 않습니다.") # 로그 출력
+            return {} # 빈 딕셔너리 반환
+        except Exception as e:
+            logging.exception(f"설정 파일 '{file_path}' 로드 중 오류 발생: {e}") # 상세 오류 로그
+            return {} # 빈 딕셔너리 반환
+    def _merge_configs(self, config1: dict, config2: dict) -> dict:
+        """두 설정을 병합합니다. config2가 config1을 덮어씁니다."""
+        merged = config1.copy()  # config1 복사본 생성
+        merged.update(config2)  # config2의 내용을 merged에 추가 (덮어쓰기)
+        return merged
 
-    def get(self, key: str, default=None):
-        """설정 값을 반환합니다. key가 없으면 default 값을 반환합니다."""
-        return self.config_data.get(key, default)
+    def _load_and_merge_configs(self, config_files: list):
+        for file_path in config_files:
+            config_data = self._load_config_file(file_path)
+            self.config_data = self._merge_configs(self.config_data, config_data)
 
-    def validate(self, key: str, validator: callable, message: str):
+    def get(self, key_path: str, default=None):
+        """설정 값을 반환합니다. key_path는 'key1.key2.key3' 형태의 경로입니다."""
+        keys = key_path.split(".")
+        data = self.config_data
+        for key in keys:
+            if isinstance(data, dict) and key in data:
+                data = data[key]
+            else:
+                return default
+        return data
+
+    def validate(self, key_path: str, validator: callable, message: str):
         """설정 값의 유효성을 검증합니다. validator는 검증 함수이고, message는 에러 메시지입니다."""
-        value = self.get(key)
+        value = self.get(key_path)
         if not validator(value):
             raise ValueError(message)
-# RabbitMQ 큐 이름
-QUEUE_NAMES = {
-    "ocr_requests": "dev_ocr_requests",
-    "ocr_results": "dev_ocr_results",
-    "prediction_requests": "dev_prediction_requests",
-    "prediction_results": "dev_prediction_results",
-    "events": "dev_events",
-    "ui_feedback_requests": "dev_ui_feedback_requests"
-}
 
-# 데이터베이스 연결
-DATABASE_URL = "dev_database_url"
+    def get_rabbitmq_settings(self):
+        return self.get("rabbitmq")
 
-# 파일 처리 설정
-FILE_SETTINGS = {
-    "default_report_filename": "report.txt",
-    "default_excel_filename": "documents.xlsx",
-    "valid_file_extensions": {'.pdf', '.docx', '.xlsx', '.txt', '.csv', '.png', '.jpg', '.jpeg'},
-    "max_file_size": 10 * 1024 * 1024  # 10MB
-}
+    def get_file_paths(self):
+        return self.get("file_paths")
 
-# 언어팩 디렉토리 경로
-LANG_DIR = "config/language"
-lang_packs = config.language.lang_packs
+    def get_constants(self):
+        return self.get("constants")
 
-default_lang_pack = config.language.load_language_pack("ko")
+    def get_ui_settings(self):
+        return self.get("ui.settings")
 
-# 언어 설정
-language = config.ui.get("language", "ko")
-selected_lang_pack = lang_packs.get(language, default_lang_pack)
+    def get_ui_id_mapping(self):
+        return self.get("ui.id_mapping")
 
-# ID 맵핑
-id_mapping = config.ui["id_mapping"]
+    def get_managers(self):
+        return self.get("managers")
+
+    def get_messages(self):
+        return self.get("messages")
+
+    def get_queues(self):
+        return self.get("queues") # queues 설정 추가
+
+    def get_database_url(self):
+        return self.get("database_url") # database_url 설정 추가
+
+    def get_file_settings(self):
+        return self.get("file_settings") # file_settings 설정 추가
 
 # 전략 패턴을 위한 인터페이스 정의
 class OCREngine:
