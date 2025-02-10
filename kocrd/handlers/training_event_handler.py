@@ -18,33 +18,34 @@ class TrainingEventHandler:
         self.ai_model_manager = AIModelManager.get_instance()
         self.ai_model_manager.set_ai_event_manager(self)
     def handle_ocr_request(self, file_path):
-        """OCR 요청 처리."""
         try:
             extracted_text = self.perform_ocr(file_path)
             self.system_manager.trigger_event("ocr_completed", {"file_path": file_path, "extracted_text": extracted_text})
-
         except Exception as e:
-            handle_error(logging, "ocr_error", "515", e, "OCR 처리 중 오류 발생")  # error_utils 사용
+            logging.error(f"OCR 요청 처리 오류: {e}")  # 로그 출력
+            handle_error(logging, "ocr_error", "515", e, "OCR 처리 중 오류 발생")
             self.system_manager.trigger_event("ocr_failed", {"file_path": file_path, "error_message": str(e)})
 
     def perform_ocr(self, file_path):
-            """실제 OCR 작업을 수행."""
-            ocr_engine_type = config.ui["settings"].get("ocr_engine", "tesseract")
-            try:
-                ocr_engine = OCREngineFactory.create_engine(ocr_engine_type)  # 팩토리 클래스 사용
-                from PIL import Image
-                image = Image.open(file_path)
-                extracted_text = ocr_engine.perform_ocr(image)  # 엔진을 통해 OCR 수행
-                return extracted_text
-            except ValueError as e:  # OCREngineFactory 에러 처리
-                handle_error(logging, "ocr_engine_error", "516", e, "OCR 엔진 선택 오류")
-                raise
-            except ImportError as e:  # PIL import 에러 추가
-                handle_error(logging, "ocr_engine_error", "516", e, "PIL import 오류")
-                raise
-            except Exception as e:
-                handle_error(logging, "ocr_engine_error", "516", e, "OCR 엔진 실행 중 오류")
-                raise
+        ocr_engine_type = config.get("ui.settings.ocr_engine", "tesseract")  # config.get() 사용
+        try:
+            ocr_engine = OCREngineFactory.create_engine(ocr_engine_type)
+            from PIL import Image
+            image = Image.open(file_path)
+            extracted_text = ocr_engine.perform_ocr(image)
+            return extracted_text
+        except ValueError as e:
+            logging.error(f"OCR 엔진 선택 오류: {e}")  # 로그 출력
+            handle_error(logging, "ocr_engine_error", "516", e, "OCR 엔진 선택 오류")
+            raise
+        except ImportError as e:
+            logging.error(f"PIL import 오류: {e}")  # 로그 출력
+            handle_error(logging, "ocr_engine_error", "516", e, "PIL import 오류")
+            raise
+        except Exception as e:
+            logging.error(f"OCR 엔진 실행 중 오류: {e}")  # 로그 출력
+            handle_error(logging, "ocr_engine_error", "516", e, "OCR 엔진 실행 중 오류")
+            raise
 
     def handle_training_start(self, features, label):
         """훈련 시작 이벤트 처리."""
