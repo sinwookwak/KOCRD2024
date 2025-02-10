@@ -9,6 +9,8 @@ from kocrd.handlers.training_event_handler import TrainingEventHandler
 from kocrd.utils.error_utils import handle_error  # import 추가
 from kocrd.User import FeedbackEventHandler
 
+MESSAGES_FILE_PATH = 'kocrd/config/messages.json'  # messages.json 파일 경로 상수화
+
 class RabbitMQConfig:
     def __init__(self, config):
         self.host = config["host"]
@@ -27,6 +29,7 @@ class LanguageConfig:
         self.language_packs = {}
         self.lang_dir = config["language_dir"]
         self.messages = config["messages"]
+        self.language = config["ui"]["language"]  # 언어 설정 추가
 
     def load_language_pack(self, lang_code: str) -> dict:
         """특정 언어 코드에 대한 언어팩을 로드합니다."""
@@ -37,7 +40,9 @@ class LanguageConfig:
 
                 # "language" 속성 체크 (필요에 따라)
                 if "language" not in lang_pack:
-                    raise ValueError(f"Language pack '{lang_code}.json' must have 'language' attribute.")
+                    raise ValueError(
+                        f"Language pack '{lang_code}.json' must have 'language' attribute."
+                    )
 
                 return lang_pack
         except FileNotFoundError:
@@ -47,11 +52,12 @@ class LanguageConfig:
             logging.error(f"Error decoding JSON in '{lang_code}.json'.")
             return {}
         except ValueError as e:
-            logging.error(str(e))
+            logging.error(f"Error loading language pack: {e}")  # 더 구체적인 메시지
             return {}
-        except Exception as e: # 예상치 못한 에러에 대한 처리
+        except Exception as e:  # 예상치 못한 에러에 대한 처리
             logging.exception(f"An unexpected error occurred: {e}")
             return {}
+
     def get_language_pack(self, lang_code: str) -> dict:
         """언어팩을 반환하거나, 언어팩이 없을 경우 로드 후 반환합니다."""
 
@@ -61,10 +67,12 @@ class LanguageConfig:
             lang_pack = self.load_language_pack(lang_code)
             self.language_packs[lang_code] = lang_pack  # 로드한 언어팩 저장
             return lang_pack
+
     def set_language_directory(self, lang_dir: str):
         """언어팩 디렉토리 경로를 변경합니다. 기존 언어팩은 초기화됩니다."""
         self.lang_dir = lang_dir
         self.language_packs = {}  # 기존 언어팩 초기화
+
     def get_message(self, message_id, lang_pack=None):
         if lang_pack is None:
             lang_pack = self.get_language_pack(self.language)
@@ -75,7 +83,11 @@ class LanguageConfig:
         try:
             return lang_pack[message_key]  # 언어팩에서 메시지 가져오기
         except KeyError:
+            logging.error(
+                f"Unknown message ID: {message_id} (in language pack: {self.language})"
+            )  # 어떤 메시지 ID가 누락되었는지 로깅
             return f"Unknown message ID: {message_id}"
+
     def get_ui_text(self, ui_id, lang_pack=None):  # UI 텍스트 가져오는 메서드 추가
         if lang_pack is None:
             lang_pack = self.get_language_pack(self.language)
@@ -83,6 +95,9 @@ class LanguageConfig:
         try:
             return lang_pack[self.messages["id_mapping"]["ui"][ui_id]]  # 언어팩에서 UI 텍스트 가져오기
         except KeyError:
+            logging.error(
+                f"Unknown UI ID: {ui_id} (in language pack: {self.language})"
+            )  # 어떤 UI ID가 누락되었는지 로깅
             return f"Unknown UI ID: {ui_id}"
 
 class UIConfig:
@@ -90,27 +105,51 @@ class UIConfig:
         self.language = config.get("language", "ko")
         self.id_mapping = config["id_mapping"]
         self.settings = config["settings"]
+
 class Config:
     def __init__(self, config_file):
-        with open(config_file, "r", encoding="utf-8") as f:
-            config = json.load(f)
+        try:
+            with open(config_file, "r", encoding="utf-8") as f:
+                config = json.load(f)
 
-        self.rabbitmq = RabbitMQConfig(config["rabbitmq"])
-        self.file_paths = FilePathConfig(config["file_paths"])
-        self.ui = UIConfig(config["ui"])
+            self.rabbitmq = RabbitMQConfig(config["rabbitmq"])
+            self.file_paths = FilePathConfig(config["file_paths"])
+            self.ui = UIConfig(config["ui"])
 
-        self.managers = {}  # 매니저 정보를 담을 딕셔너리
-        for manager_name, manager_config in config["managers"].items():
-            self.managers[manager_name] = manager_config  # managers.json의 각 매니저 설정 저장
-        self.messages = config["messages"]  # messages.json 내용 저장
-        self.language = LanguageConfig(config)  # LanguageConfig 객체 생성 시 config 전달
-        self.queues = self._load_json("config/queues.json") # queues.json 파일 경로 직접 지정
+            self.managers = {}  # 매니저 정보를 담을 딕셔너리
+            for manager_name, manager_config in config["managers"].items():
+                self.managers[manager_name] = manager_config  # managers.json의 각 매니저 설정 저장
+            self.messages = config["messages"]  # messages.json 내용 저장
+            self.language = LanguageConfig(config)  # LanguageConfig 객체 생성 시 config 전달
+            self.queues = self._load_json("config/queues.json")  # queues.json 파일 경로 직접 지정
+        except FileNotFoundError:
+            logging.error(f"설정 파일 '{config_file}'을 찾을 수 없습니다.")
+            exit()  # 프로그램 종료
+        except json.JSONDecodeError:
+            logging.error(f"설정 파일 '{config_file}'의 JSON 형식이 올바르지 않습니다.")
+            exit()  # 프로그램 종료
+        except KeyError as e:  # KeyError 처리 추가
+            logging.error(f"설정 파일에 필요한 키 '{e}'가 없습니다.")
+            exit()  # 프로그램 종료
+        except Exception as e:
+            logging.exception(f"설정 파일 '{config_file}' 로드 중 오류 발생: {e}")
+            exit()  # 프로그램 종료
+
     def _load_json(self, file_path):
-        with open(file_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except FileNotFoundError:
+            logging.error(f"설정 파일 '{file_path}'을 찾을 수 없습니다.")
+            raise  # 예외 다시 발생
+        except json.JSONDecodeError:
+            logging.error(f"설정 파일 '{file_path}'의 JSON 형식이 올바르지 않습니다.")
+            raise  # 예외 다시 발생
+        except Exception as e:
+            logging.exception(f"설정 파일 '{file_path}' 로드 중 오류 발생: {e}")
+            raise  # 예외 다시 발생
 config = Config("config/development.json")
-# SystemManager에서 매니저 객체 생성 및 관리
+
 class SystemManager:
     def __init__(self, settings_manager):
         self.settings_manager = settings_manager
@@ -124,7 +163,9 @@ class SystemManager:
             kwargs = manager_config.get("kwargs", {})
 
             # 의존성 있는 매니저 인스턴스 가져오기
-            dependencies_instances = [self.managers[dep] for dep in dependencies]  # 의존성 매니저가 아직 생성되지 않았을 수 있으므로 try-except 필요
+            dependencies_instances = [
+                self.managers[dep] for dep in dependencies
+            ]  # 의존성 매니저가 아직 생성되지 않았을 수 있으므로 try-except 필요
 
             try:
                 # 매니저 클래스 동적 로딩
@@ -132,46 +173,37 @@ class SystemManager:
                 manager_class = getattr(module, class_name)
 
                 # 매니저 인스턴스 생성 및 저장
-                self.managers[manager_name] = manager_class(*dependencies_instances, **kwargs) # 의존성 주입
+                self.managers[manager_name] = manager_class(
+                    *dependencies_instances, **kwargs
+                )  # 의존성 주입
             except ImportError as e:
                 logging.error(f"Error importing module {module_path}: {e}")
+                # raise  # 예외 다시 발생
             except AttributeError as e:
-                logging.error(f"Error getting class {class_name} from module {module_path}: {e}")
+                logging.error(
+                    f"Error getting class {class_name} from module {module_path}: {e}")
+                # raise  # 예외 다시 발생
             except Exception as e:
-                logging.error(f"An unexpected error occurred during manager initialization: {e}")
+                logging.error(
+                    f"An unexpected error occurred during manager initialization: {e}")
+                # raise  # 예외 다시 발생
 
     def get_manager(self, manager_name):
-        return self.managers.get(manager_name) # 매니저가 없을 경우 None 반환
+        return self.managers.get(manager_name)  # 매니저가 없을 경우 None 반환
+
 class ConfigManager:
     def __init__(self, config_files: list):
         self.config_data = {}
         self._load_and_merge_configs(config_files)
 
-    def _load_config_file(self, file_path: str) -> dict:
-        """설정 파일을 로드하고 JSON 데이터를 파싱합니다."""
-        try:
-            config_dir = os.path.dirname(os.path.abspath(__file__))
-            file_path = os.path.join(config_dir, file_path)
-            with open(file_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except FileNotFoundError:
-            logging.error(f"설정 파일 '{file_path}'을 찾을 수 없습니다.")  # 로그 출력
-            return {} # 빈 딕셔너리 반환
-        except json.JSONDecodeError:
-            logging.error(f"설정 파일 '{file_path}'의 JSON 형식이 올바르지 않습니다.") # 로그 출력
-            return {} # 빈 딕셔너리 반환
-        except Exception as e:
-            logging.exception(f"설정 파일 '{file_path}' 로드 중 오류 발생: {e}") # 상세 오류 로그
-            return {} # 빈 딕셔너리 반환
     def _merge_configs(self, config1: dict, config2: dict) -> dict:
         """두 설정을 병합합니다. config2가 config1을 덮어씁니다."""
-        merged = config1.copy()  # config1 복사본 생성
-        merged.update(config2)  # config2의 내용을 merged에 추가 (덮어쓰기)
-        return merged
+        config1.update(config2)
+        return config1
 
     def _load_and_merge_configs(self, config_files: list):
         for file_path in config_files:
-            config_data = self._load_config_file(file_path)
+            config_data = self._load_json(file_path)
             self.config_data = self._merge_configs(self.config_data, config_data)
 
     def get(self, key_path: str, default=None):
@@ -213,15 +245,28 @@ class ConfigManager:
         return self.get("messages")
 
     def get_queues(self):
-        return self.get("queues") # queues 설정 추가
+        return self.get("queues")  # queues 설정 추가
 
     def get_database_url(self):
-        return self.get("database_url") # database_url 설정 추가
+        return self.get("database_url")  # database_url 설정 추가
 
     def get_file_settings(self):
-        return self.get("file_settings") # file_settings 설정 추가
+        return self.get("file_settings")  # file_settings 설정 추가
 
-# 전략 패턴을 위한 인터페이스 정의
+    def _load_json(self, file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except FileNotFoundError as e:
+            handle_error(logging, "config_error", "512", e, f"설정 파일 '{file_path}'을 찾을 수 없습니다.")
+            return {}  # 빈 딕셔너리 반환
+        except json.JSONDecodeError as e:
+            handle_error(logging, "config_error", "511", e, f"설정 파일 '{file_path}'의 JSON 형식이 올바르지 않습니다.")
+            return {}  # 빈 딕셔너리 반환
+        except Exception as e:
+            handle_error(logging, "config_error", "513", e, f"설정 파일 '{file_path}' 로드 중 오류 발생")
+            return {}  # 빈 딕셔너리 반환
+
 class OCREngine:
     def perform_ocr(self, image: Any) -> str:
         raise NotImplementedError
@@ -229,6 +274,7 @@ class OCREngine:
 class TesseractOCR(OCREngine):
     def perform_ocr(self, image: Any) -> str:
         import pytesseract
+
         return pytesseract.image_to_string(image)
 
 class CloudVisionOCR(OCREngine):
@@ -250,8 +296,8 @@ def send_message_to_queue(system_manager, queue_name, message):
     try:
         queue_config = config.queues[queue_name]  # config.queues에서 큐 설정 정보 가져오기
         # 메시지를 큐에 전송하는 로직 추가 (queue_config 사용)
-    except KeyError:
-        handle_error(system_manager, "error", "511", None, "RabbitMQ 설정 오류")
+    except KeyError as e:
+        handle_error(system_manager, "error", "511", e, "RabbitMQ 설정 오류")
         raise
     except Exception as e:
         handle_error(system_manager, "error", "511", e, "RabbitMQ 오류")
@@ -299,6 +345,7 @@ class AIModelFactory:
             return ObjectDetectionModel()
         else:
             raise ValueError(f"Unknown AI model type: {model_type}")
+
 class OCREventHandler:
     def __init__(self, system_manager, error_handler, prediction_event_handler, queues):
         self.system_manager = system_manager
@@ -311,10 +358,14 @@ class OCREventHandler:
         prediction_request = {
             "type": "PREDICT_DOCUMENT_TYPE",
             "data": {"text": extracted_text, "file_path": file_path},
-            "reply_to": self.queues["events_queue"]  # queues 사용, "events" -> "events_queue"로 변경
+            "reply_to": self.queues["events_queue"],  # queues 사용, "events" -> "events_queue"로 변경
         }
-        send_message_to_queue(self.system_manager, self.queues["prediction_requests"], prediction_request)  # queues 사용
-        self.prediction_event_handler.handle_prediction_requested(file_path) # 예측 요청 이벤트 발생
+        send_message_to_queue(
+            self.system_manager, self.queues["prediction_requests"], prediction_request
+        )  # queues 사용
+        self.prediction_event_handler.handle_prediction_requested(
+            file_path
+        )  # 예측 요청 이벤트 발생
 
 class PredictionEventHandler:
     def __init__(self, ai_data_manager, error_handler):
@@ -329,7 +380,11 @@ class PredictionEventHandler:
             self._trigger_next_step(file_path, document_type)  # 예시: 다음 단계 작업 트리거
         except Exception as e:
             self.error_handler.handle_error(  # ErrorHandler를 통해 에러 처리
-                None, "prediction_error", "500", e, "예측 결과 처리 중 오류 발생"  # 적절한 에러 카테고리, 코드, 메시지 사용
+                None,
+                "prediction_error",
+                "500",
+                e,
+                "예측 결과 처리 중 오류 발생",  # 적절한 에러 카테고리, 코드, 메시지 사용
             )
 
     def handle_prediction_requested(self, file_path):
@@ -365,15 +420,22 @@ def save_event_data(ai_data_manager, event_type, additional_data=None):
     event_data = {
         "event_type": event_type,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "additional_data": additional_data or {}
+        "additional_data": additional_data or {},
     }
     if ai_data_manager is None:  # ai_data_manager가 None인 경우 예외 발생
         raise ValueError("ai_data_manager is not initialized.")
     ai_data_manager.save_feedback(event_data)
     logging.info(f"Event data saved: {event_data}")
-
 class AIEventManager:
-    def __init__(self, system_manager, settings_manager, model_manager, ai_data_manager, error_handler, queues):
+    def __init__(
+        self,
+        system_manager,
+        settings_manager,
+        model_manager,
+        ai_data_manager,
+        error_handler,
+        queues,
+    ):
         self.system_manager = system_manager
         self.settings_manager = settings_manager
         self.model_manager = model_manager
@@ -383,22 +445,38 @@ class AIEventManager:
 
         self.ocr_processor = OCRProcessor(self, error_handler, settings_manager)
         self.prediction_event_handler = PredictionEventHandler(ai_data_manager, error_handler)
-        self.ocr_event_handler = OCREventHandler(system_manager, error_handler, self.prediction_event_handler, queues)
+        self.ocr_event_handler = OCREventHandler(
+            system_manager, error_handler, self.prediction_event_handler, queues
+        )
         self.feedback_event_handler = FeedbackEventHandler(ai_data_manager, error_handler)
-        self.training_event_handler = TrainingEventHandler(system_manager, model_manager, ai_data_manager, error_handler, queues)
-        self.message_handler = MessageHandler(self.training_event_handler, error_handler)  # TrainingEventHandler 전달
+        self.training_event_handler = TrainingEventHandler(
+            system_manager, model_manager, ai_data_manager, error_handler, queues
+        )
+        self.message_handler = MessageHandler(
+            self.training_event_handler, error_handler
+        )  # TrainingEventHandler 전달
 
     def handle_message(self, ch, method, properties, body):
         self.message_handler.handle_message(ch, method, properties, body)
+
     def handle_ocr_event(self, file_path, extracted_text):
         self.ocr_event_handler.handle_ocr_event(file_path, extracted_text)
+
     def handle_prediction_result(self, file_path, document_type):
-        self.prediction_event_handler.handle_prediction_result(file_path, document_type)
+        self.prediction_event_handler.handle_prediction_result(
+            file_path, document_type
+        )
+
     def handle_training_event(self, model_path=None, training_metrics=None):
-        self.training_event_handler.handle_training_event(model_path, training_metrics)
+        self.training_event_handler.handle_training_event(
+            model_path, training_metrics
+        )
+
     def handle_save_feedback(self, file_path, doc_type):
         self.feedback_event_handler.handle_save_feedback(file_path, doc_type)
+
     def handle_request_user_feedback(self, file_path):
         self.feedback_event_handler.handle_request_user_feedback(file_path)
+
     def request_feedback(self, original_message: Any, error_reason: str):
         self.feedback_event_handler.request_feedback(original_message, error_reason)
