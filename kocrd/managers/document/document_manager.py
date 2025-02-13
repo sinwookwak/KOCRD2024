@@ -60,6 +60,9 @@ class DocumentManager(QWidget):
         log_message = error_message.format(error=exception) # 로깅 메시지 포맷
         logging.error(log_message)  # 에러 메시지 로깅
         QMessageBox.critical(parent, "오류", error_message.format(error=exception))  # QMessageBox 표시
+    def show_message(self, parent, title, message):
+        """메시지를 표시합니다."""
+        QMessageBox.information(parent, title, message)
 
     def save_document_info(self, document_info):
         """문서 정보를 데이터베이스에 저장."""

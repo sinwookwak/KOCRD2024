@@ -6,7 +6,8 @@ import json
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QWidget, QVBoxLayout
 import pandas as pd
 from fpdf import FPDF
-from managers.document.Document_Table_View import DocumentTableView
+from managers.document.document_Table_View import DocumentTableView
+from managers.document.document_manager import DocumentManager
 
 config_path = os.path.join(os.path.dirname(__file__), '..', 'managers_config.json')
 with open(config_path, 'r', encoding='utf-8') as f:
@@ -30,6 +31,7 @@ class DocumentController(QWidget):
         self.system_manager = system_manager
         self.message_queue_manager = system_manager.message_queue_manager # message_queue_manager 추가
         self.document_table_view = DocumentTableView(self)
+        self.document_manager = DocumentManager(self.system_manager, self.parent, self.message_queue_manager)
         self.init_ui()
         logging.info("DocumentController initialized.")
     def init_ui(self):
@@ -183,8 +185,7 @@ class DocumentController(QWidget):
 
             logging.info(f"Document search completed for keyword: {keyword}")
         except Exception as e:
-            logging.error(config["messages"]["error"]["520"].format(error=e))
-            QMessageBox.critical(self.parent, "검색 오류", config["messages"]["error"]["520"].format(error=e))
+            self.document_manager.handle_document_exception(self.parent, "document", "520", e, "문서 검색 중 오류 발생")
 
     def start_consuming(self):
         """메시지 큐에서 메시지를 소비."""
