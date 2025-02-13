@@ -7,6 +7,7 @@ import pika
 import pytesseract
 from typing import Dict, Any, Optional
 from PyQt5.QtWidgets import QMessageBox, QApplication
+from PIL import Image, UnidentifiedImageError  # PIL import 위치 변경
 
 from kocrd.managers.ocr.ocr_manager import OCRManager
 from kocrd.managers.temp_file_manager import TempFileManager
@@ -85,12 +86,12 @@ class SystemManager:
         """RabbitMQ 메시지를 처리합니다."""
         self.message_handler.handle_message(ch, method, properties, body, self) # MessageHandler로 위임
 
-    def handle_error(self, message, error_code=None):
-        if error_code:
-            logging.error(f"{message} (Error Code: {error_code})")
+    def handle_error(self, message, error_message_key=None):  # error_message_key 추가
+        if error_message_key:
+            logging.error(f"{message} (Error Key: {error_message_key})")  # 키 정보 로깅
         else:
             logging.error(message)
-        QMessageBox.critical(self.main_window, "Error", message)
+        QMessageBox.critical(self.main_window, "Error", message)  # QMessageBox 그대로 사용
 
     def run_embedding_generation(self):
         EmbeddingUtils.run_embedding_generation(self.config_manager) # self.settings_manager -> self.config_manager

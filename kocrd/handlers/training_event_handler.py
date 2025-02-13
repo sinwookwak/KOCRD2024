@@ -22,8 +22,7 @@ class TrainingEventHandler:
             extracted_text = self.perform_ocr(file_path)
             self.system_manager.trigger_event("ocr_completed", {"file_path": file_path, "extracted_text": extracted_text})
         except Exception as e:
-            logging.error(f"OCR 요청 처리 오류: {e}")
-            handle_error(logging, "ocr_error", "515", e, "OCR 처리 중 오류 발생")
+            handle_error(self.system_manager, "ocr_error", "515", e, f"OCR 처리 중 오류 발생: {e}, 파일 경로: {file_path}")
             self.system_manager.trigger_event("ocr_failed", {"file_path": file_path, "error_message": str(e)})
 
     def perform_ocr(self, file_path):
@@ -34,24 +33,19 @@ class TrainingEventHandler:
             extracted_text = ocr_engine.perform_ocr(image)
             return extracted_text
         except ValueError as e:
-            logging.error(f"OCR 엔진 선택 오류: {e}")
-            handle_error(logging, "ocr_engine_error", "516", e, "OCR 엔진 선택 오류")
+            handle_error(self.system_manager, "ocr_engine_error", "516", e, "OCR 엔진 선택 오류")
             raise
         except ImportError as e:
-            logging.error(f"PIL import 오류: {e}")
-            handle_error(logging, "ocr_engine_error", "516", e, "PIL import 오류")
+            handle_error(self.system_manager, "ocr_engine_error", "516", e, "PIL import 오류")
             raise
         except FileNotFoundError as e:
-            logging.error(f"파일을 찾을 수 없음: {e}")
-            handle_error(logging, "ocr_engine_error", "516", e, "파일을 찾을 수 없음")
+            handle_error(self.system_manager, "ocr_engine_error", "516", e, "파일을 찾을 수 없음")
             raise
         except UnidentifiedImageError as e:
-            logging.error(f"이미지 식별 오류: {e}")
-            handle_error(logging, "ocr_engine_error", "516", e, "이미지 식별 오류")
+            handle_error(self.system_manager, "ocr_engine_error", "516", e, "이미지 식별 오류")
             raise
         except Exception as e:
-            logging.error(f"OCR 엔진 실행 중 오류: {e}")
-            handle_error(logging, "ocr_engine_error", "516", e, "OCR 엔진 실행 중 오류")
+            handle_error(self.system_manager, "ocr_engine_error", "516", e, "OCR 엔진 실행 중 오류")
             raise
 
     def handle_training_start(self, features, label):
@@ -76,7 +70,7 @@ class TrainingEventHandler:
             self.system_manager.trigger_event("training_completed", {"model_path": model_save_path})
 
         except Exception as e:
-            handle_error(logging, "training_error", "500", e, "An error occurred during model training.")
+            handle_error(self.system_manager, "training_error", "500", e, "모델 훈련 중 오류 발생")
             self.system_manager.trigger_event("training_failed", {"error_message": str(e)})
 
     def handle_hyperparameter_change(self, hyperparameters):
@@ -86,10 +80,10 @@ class TrainingEventHandler:
             self.system_manager.trigger_event("hyperparameters_changed", hyperparameters)
 
         except (KeyError, ValueError) as e:
-            handle_error(logging, "hyperparameter_error", "500", e, f"An error occurred while changing hyperparameters: {e}")
+            handle_error(self.system_manager, "hyperparameter_error", "500", e, f"하이퍼파라미터 변경 중 오류 발생: {e}")
             self.system_manager.trigger_event("hyperparameters_change_failed", {"error_message": str(e)})
         except Exception as e:
-            handle_error(logging, "hyperparameter_error", "500", e, "An error occurred while changing hyperparameters.")
+            handle_error(self.system_manager, "hyperparameter_error", "500", e, "하이퍼파라미터 변경 중 오류 발생")
             self.system_manager.trigger_event("hyperparameters_change_failed", {"error_message": str(e)})
 
     def handle_training_data_change(self, data_path):
@@ -101,10 +95,10 @@ class TrainingEventHandler:
             self.system_manager.trigger_event("training_data_changed", data_path)
 
         except (FileNotFoundError, ValueError) as e:
-            handle_error(logging, "training_data_error", "500", e, f"An error occurred while changing training data: {e}")
+            handle_error(self.system_manager, "training_data_error", "500", e, f"훈련 데이터 변경 중 오류 발생: {e}")
             self.system_manager.trigger_event("training_data_change_failed", {"error_message": str(e)})
         except Exception as e:
-            handle_error(logging, "training_data_error", "500", e, "An error occurred while changing training data.")
+            handle_error(self.system_manager, "training_data_error", "500", e, "훈련 데이터 변경 중 오류 발생")
             self.system_manager.trigger_event("training_data_change_failed", {"error_message": str(e)})
 
     def handle_model_save_request(self, source_path, destination_path):
@@ -112,7 +106,7 @@ class TrainingEventHandler:
             copy_file(source_path, destination_path)
             logging.info(f"Model saved to {destination_path}")
         except Exception as e:
-            handle_error(logging, "model_save_error", "500", e, f"An error occurred while saving the model to {destination_path}.")
+            handle_error(self.system_manager, "model_save_error", "500", e, f"모델 저장 중 오류 발생: {e}")
             self.system_manager.trigger_event("model_save_failed", {"error_message": str(e)})
 
     def send_message_to_queue(self, queue_name, message):
@@ -121,8 +115,8 @@ class TrainingEventHandler:
             # RabbitMQ에 메시지 전송 로직 (queue_config 활용)
             # ...
         except KeyError as e:
-            handle_error(logging, "error", "511", e, f"RabbitMQ 설정 오류: {queue_name} not found in configuration.")
+            handle_error(self.system_manager, "queue_error", "601", e, f"RabbitMQ 설정 오류: {queue_name} not found in configuration.")
             raise
         except Exception as e:
-            handle_error(logging, "error", "511", e, "An error occurred while sending a message to RabbitMQ.")
+            handle_error(self.system_manager, "queue_error", "600", e, "RabbitMQ 오류")
             raise
