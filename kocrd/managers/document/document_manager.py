@@ -11,6 +11,8 @@ from PyQt5.QtWidgets import QWidget, QFileDialog, QMessageBox, QApplication
 from sqlalchemy.exc import SQLAlchemyError
 from pdf2image import convert_from_path
 from typing import List, Optional
+from PyQt5.QtWidgets import QMessageBox
+from kocrd.config.config import config, get_message
 
 config_path = os.path.join(os.path.dirname(__file__), 'Document_config.json')
 with open(config_path, 'r', encoding='utf-8') as f:
@@ -41,10 +43,23 @@ class DocumentManager(QWidget):
         self.document_processor = DocumentProcessor(database_manager, ocr_manager, parent, self, message_queue_manager)
         self.document_table_view = DocumentTableView(self)
         self.document_controller = DocumentController(self.document_processor, parent, self)
+
         logging.info("DocumentManager initialized.")
     
     def add_document_to_table(self, document_info):
         self.document_table_view.add_document(document_info)
+
+    def handle_document_exception(self, parent, category, code, exception, additional_message=None):
+        """문서 관련 예외를 처리하고 메시지를 표시합니다."""
+
+        message_id = f"{category}_{code}"
+        error_message = config.get_message(message_id)  # config.get_message() 사용
+        if additional_message:
+            error_message += f" - {additional_message}"
+
+        log_message = error_message.format(error=exception) # 로깅 메시지 포맷
+        logging.error(log_message)  # 에러 메시지 로깅
+        QMessageBox.critical(parent, "오류", error_message.format(error=exception))  # QMessageBox 표시
 
     def save_document_info(self, document_info):
         """문서 정보를 데이터베이스에 저장."""
@@ -145,6 +160,7 @@ class DocumentManager(QWidget):
     def cleanup_specific_files(self, files: Optional[List[str]]):
         """특정 파일들을 정리합니다."""
         self.temp_file_manager.cleanup_specific_files(files)
+
 
 def process_document_task(ch, method, properties, body):
     message = json.loads(body)

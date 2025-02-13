@@ -133,15 +133,9 @@ class DocumentController(QWidget):
             df.to_excel(file_path, index=False, engine='openpyxl')
             logging.info(f"Data saved to Excel: {file_path}")
             QMessageBox.information(self.parent, "저장 완료", f"Excel 파일로 문서 정보가 저장되었습니다: {file_path}")
-        except PermissionError as e:
-            logging.error(config["messages"]["error"]["520"].format(error=e))
-            QMessageBox.critical(self.parent, "저장 오류", config["messages"]["error"]["520"].format(error=e))
-        except IOError as e:
-            logging.error(config["messages"]["error"]["520"].format(error=e))
-            QMessageBox.critical(self.parent, "저장 오류", config["messages"]["error"]["520"].format(error=e))
-        except Exception as e:
-            logging.error(config["messages"]["error"]["520"].format(error=e))
-            QMessageBox.critical(self.parent, "저장 오류", config["messages"]["error"]["520"].format(error=e))
+        except (PermissionError, IOError, Exception) as e:
+            self.document_manager.handle_document_exception(self.parent, "document", "520", e, "파일 저장 중 오류 발생")
+            
     def clear_table(self):
         self.document_table_view.clear_table()
     def filter_documents(self, criteria):
