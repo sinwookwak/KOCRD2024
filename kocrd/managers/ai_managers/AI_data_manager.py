@@ -11,6 +11,7 @@ from ai_model_manager import AIModelManager
 from config.config import get_message, handle_error, send_message_to_queue
 from utils.embedding_utils import generate_document_type_embeddings
 
+
 class AIDataManager:
     def __init__(self, database_manager, model_manager, settings_manager, system_manager):
         """AIDataManager 초기화 메서드."""

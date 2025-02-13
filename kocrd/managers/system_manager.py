@@ -20,6 +20,7 @@ from kocrd.handlers.message_handler import MessageHandler
 from kocrd.managers.rabbitmq_manager import RabbitMQManager
 from kocrd.Settings.settings_manager import SettingsManager # SettingsManager import 유지
 from kocrd.utils.embedding_utils import EmbeddingUtils # EmbeddingUtils import 유지
+from kocrd.handlers.training_event_handler import TrainingEventHandler
 
 class SystemManager:
     def __init__(self, config_files: list, main_window=None):
@@ -29,6 +30,8 @@ class SystemManager:
         self.managers = {}
         self.message_handler = MessageHandler(self)
         self.rabbitmq_manager = RabbitMQManager(self.config_manager)
+        self.ai_model_manager = AIModelManager.get_instance()
+        self.training_event_handler = TrainingEventHandler(self, self.model_manager, self.ai_data_manager, self.ai_model_manager)
         self._initialize_managers()
 
     def _initialize_managers(self):

@@ -4,18 +4,17 @@ import logging
 from PIL import Image, UnidentifiedImageError  # PIL import 위치 변경
 
 from kocrd.managers.ai_managers.ai_training_manager import AITrainingManager
-from kocrd.managers.ai_managers.ai_model_manager import AIModelManager
 from kocrd.utils.file_utils import copy_file
 from kocrd.config.config import config, OCREngineFactory  # config 및 OCREngineFactory import
 from kocrd.utils.error_utils import handle_error  # error_utils import
 
 class TrainingEventHandler:
-    def __init__(self, system_manager, model_manager, ai_data_manager):
+    def __init__(self, system_manager, model_manager, ai_data_manager, ai_model_manager):
         self.system_manager = system_manager
         self.model_manager = model_manager
         self.ai_data_manager = ai_data_manager
         self.ai_training_manager = AITrainingManager(model_manager, system_manager, ai_data_manager)
-        self.ai_model_manager = AIModelManager.get_instance()
+        self.ai_model_manager = ai_model_manager
         self.ai_model_manager.set_ai_event_manager(self)
 
     def handle_ocr_request(self, file_path):
