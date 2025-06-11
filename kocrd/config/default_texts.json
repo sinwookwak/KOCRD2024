@@ -4,10 +4,10 @@
       "201": "An error occurred while filtering the document.",
       "202": "Do you want to delete all data in the file table?",
       "203": "The file table has been initialized.",
-      "204": "An error occurred while updating the document type:",
+      "204": "error 524",
       "205": "Do you want to delete the document '{file_name}'?",
       "206": "The document '{file_name}' has been deleted.",
-      "207": "An error occurred while deleting the document:",
+      "207": "error 525",
       "208": "Please select a document to edit.",
       "209": "The search keyword is empty. Displaying all rows.",
       "210": "Window configuration loaded successfully.",
@@ -15,7 +15,12 @@
       "212": "Window size set to {width}x{height}.",
       "213": "Window position set to x:{x}, y:{y}.",
       "214": "Window configuration saved successfully.",
-      "215": "An error occurred while saving the window configuration: {e}"
+      "215": "An error occurred while saving the window configuration: {e}",
+      "250": "KOCRD2024", // APP_NAME
+      "251": "1.0", // APP_VERSION
+      "252": "sinwookwak", // APP_AUTHOR
+      "253": "About", // ABOUT_TITLE
+      "254": "Model Parameters (*.traineddata);;All Files (*)" // MODEL_FILE_FILTER_TEXT
     },
     "log": {
       "311": "Document filtering successful",
@@ -41,7 +46,15 @@
       "331": "Window position set: x:{x}, y:{y}",
       "332": "Window configuration saved successfully",
       "333": "Failed to save window configuration: {e}",
-      "334": "Feedback saved successfully: {data}"
+      "334": "Feedback saved successfully: {data}",
+      "335": "File open action executed",
+      "336": "File save action executed.",
+      "337": "Application exit action executed.",
+      "338": "Settings open action executed.",
+      "339": "About dialog action executed.",
+      "340": "AI model file selected: {file_path}",
+      "341": "No AI model file selected."
+
     },
     "warning": {
       "401": "PyMuPDF is not installed. Performing OCR after image conversion.",
@@ -76,7 +89,11 @@
       "520": "An error occurred while processing AI response.",
       "521": "Error occurred while displaying content: {error}",
       "522": "DatabaseManager not found.",
-      "523": "Error occurred while saving feedback: {e}"
+      "523": "Error occurred while saving feedback: {e}",
+      "524": "An error occurred while updating the document type:",
+      "525": "An error occurred while deleting the document:",
+      "526": "AI Manager not properly configured."
+
     }
   },
   "id_mapping": {
