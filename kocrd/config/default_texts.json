@@ -146,17 +146,23 @@
       "menu_file": "파일",
       "menu_settings": "설정",
       "menu_help": "도움말",
-
       "action_open": "열기",
       "action_save": "저장",
       "action_exit": "종료",
       "action_configure": "환경설정",
       "action_about": "정보",
-
       "button_start_doc_processing": "문서 처리 시작",
       "button_package_database": "데이터베이스 패키징",
       "button_start_ai_training": "AI 모델 학습 시작",
-
+      "progress_bar_name": "진행률",
+      "log_display_name": "로그",
+      "chat_output_name": "채팅 출력",
+      "chat_input_name": "채팅 입력",
+      "file_list_widget_name": "파일 목록",
+      "column_file_name": "파일 이름",
+      "column_document_type": "문서 유형",
+      "column_creation_date": "생성 날짜",
+      "column_modification_date": "수정 날짜",
       "dialog_select_model_file_title": "모델 파일 선택",
       "message_model_file_selected": "선택된 파일: {file_path}",
       "message_no_file_selected": "선택된 파일 없음."
