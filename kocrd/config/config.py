@@ -22,6 +22,7 @@ class ConfigLoader:
             logging.error(f"Error decoding JSON from {file_path}: {e}")
             return {}
 
+
 class TextManager:
     """ 애플리케이션의 모든 텍스트(일반 메시지, 로그 메시지, UI 레이블 등)를 관리하는 클래스입니다.
     다국어 지원과 언어팩에 텍스트가 없는 경우 기본값(영어)으로 폴백하는 기능을 제공합니다.
@@ -198,7 +199,27 @@ class TextManager:
             logging.warning(f"Text not found for path: '{'.'.join(path_segments)}'.")
             return f"TEXT_NOT_FOUND: {'.'.join(path_segments)}"
 
-# TextManager의 전역 싱글톤 인스턴스를 생성합니다.
+    def get_general_text(self, key: str, **replacements: Any) -> Union[str, List[Any], Dict[str, Any]]:
+        """'general' 카테고리에서 텍스트를 가져옵니다."""
+        return self.get_text("general", key, **replacements)
+
+    def get_log_text(self, key: str, **replacements: Any) -> Union[str, List[Any], Dict[str, Any]]:
+        """'log' 카테고리에서 텍스트를 가져옵니다."""
+        return self.get_text("log", key, **replacements)
+
+    def get_warning_text(self, key: str, **replacements: Any) -> Union[str, List[Any], Dict[str, Any]]:
+        """'warning' 카테고리에서 텍스트를 가져옵니다."""
+        return self.get_text("warning", key, **replacements)
+
+    def get_error_text(self, key: str, **replacements: Any) -> Union[str, List[Any], Dict[str, Any]]:
+        """'error' 카테고리에서 텍스트를 가져옵니다. 오류 객체를 replacements에 'error' 키로 전달할 수 있습니다."""
+        return self.get_text("error", key, **replacements)
+
+    def get_ui_text(self, *path_segments: str, **replacements: Any) -> Union[str, List[Any], Dict[str, Any]]:
+        """'ui' 카테고리에서 텍스트를 가져옵니다. 'ui' 아래의 추가 경로를 지정합니다."""
+        # 'ui' 카테고리는 중첩될 수 있으므로 가변 인자를 그대로 전달합니다.
+        return self.get_text("ui", *path_segments, **replacements)
+
 text_manager = TextManager(default_texts_path='kocrd/config/default_texts.json')
 
 class FilePathConfig:
@@ -208,30 +229,6 @@ class FilePathConfig:
         self.document_types = config["document_types"]
         self.temp_files = config["temp_files"]
 
-class LanguageConfig:
-    def __init__(self, lang_dir: str):
-        self.lang_packs = {}
-        for filename in os.listdir(lang_dir):
-            if filename.endswith(".json"):
-                lang_code = filename[:-5]
-                lang_path = os.path.join(lang_dir, filename)
-                try:
-                    with open(lang_path, "r", encoding="utf-8") as f:
-                        lang_pack = json.load(f)
-                        if "language" not in lang_pack:
-                            raise ValueError(f"Language pack '{filename}' must have 'language' attribute.")
-                        self.lang_packs[lang_code] = lang_pack
-                except (FileNotFoundError, json.JSONDecodeError, ValueError) as e:
-                    print(f"Error loading language pack '{filename}': {e}")
-
-    def load_language_pack(self, lang_code: str) -> Dict[str, Any]:
-        lang_path = os.path.join(LANG_DIR, f"{lang_code}.json")
-        try:
-            with open(lang_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"Error loading default language pack '{lang_code}': {e}")
-            return {}
 class AppConfig:
     """애플리케이션의 정적 설정 데이터를 중앙 관리하는 클래스입니다.managers.json, queues.json, ui.json(텍스트 제외), 그리고 기타 고정된 경로 등을 포함합니다."""
     # Manager 설정 (kocrd/config/managers.json에서 로드)
@@ -256,6 +253,7 @@ class AppConfig:
         "tessdata_dir": "C:/Program Files/Tesseract-OCR/tessdata" # Tesseract 훈련 데이터 경로
     }
     # UI_SETTINGS는 이제 default_texts.json의 "ui" 카테고리 전체를 참조합니다.
+    # ui.json 파일 자체는 더 이상 직접 로드하지 않고, default_texts.json에 통합된 "ui" 데이터를 사용합니다.
     UI_SETTINGS: Dict[str, Any] = text_manager.default_texts.get('ui', {})
 
     # 기타 정적 설정들을 여기에 추가할 수 있습니다.
@@ -280,8 +278,8 @@ class TesseractOCR(OCREngine):
     def perform_ocr(self, image: Any) -> str:
         import pytesseract
         # Tesseract 실행 경로 및 데이터 경로를 OCR_SETTINGS에서 가져와 설정
-        pytesseract.pytesseract.tesseract_cmd = AppConfig.OCR_SETTINGS["tesseract_cmd"]
-        # pytesseract.pytesseract.tessdata_dir_config = f'--tessdata-dir "{AppConfig.OCR_SETTINGS["tessdata_dir"]}"' # 필요시 설정
+        pytesseract.pytesseract.tesseract_cmd = AppConfig.OCR_SETTINGS.get("tesseract_cmd", "") # 기본값 추가
+        # pytesseract.pytesseract.tessdata_dir_config = f'--tessdata-dir "{AppConfig.OCR_SETTINGS.get("tessdata_dir", "")}"' # 필요시 설정, 기본값 추가
         return pytesseract.image_to_string(image)
 
 class CloudVisionOCR(OCREngine):
@@ -290,7 +288,6 @@ class CloudVisionOCR(OCREngine):
         # Cloud Vision API 호출 로직 (실제 구현 필요)
         logging.info("Calling Cloud Vision API (dummy implementation)")
         return "Cloud Vision OCR result (dummy)"
-
 class AIModel:
     """AI 모델의 인터페이스 (추상 클래스)"""
     def predict(self, data: Any) -> Any:
