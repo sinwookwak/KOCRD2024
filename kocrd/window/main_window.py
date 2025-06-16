@@ -140,4 +140,4 @@ class MainWindow(QMainWindow):
 
 
 # system_manager 모듈을 나중에 임포트
-from system import SystemManager
+from kocrd.system import SystemManager
