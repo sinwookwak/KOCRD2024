@@ -2,8 +2,7 @@ import shutil
 import logging
 import os
 from PyQt5.QtWidgets import QMessageBox, QInputDialog
-from kocrd.config import development  # Update the import path
-
+from kocrd.config.config import text_manager, AppConfig
 class User:
     """
     Manages user information and permissions.
