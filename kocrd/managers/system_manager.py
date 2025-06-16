@@ -7,8 +7,8 @@ import pika
 import pytesseract
 from typing import Dict, Any, Optional
 from PyQt5.QtWidgets import QMessageBox, QApplication
+from kocrd.config.config import AppConfig, text_manager # AppConfig와 text_manager 임포트 (필요할 수 있으므로 유지)
 
-from kocrd.config.config import load_config, load_language_pack, get_message, handle_error, send_message_to_queue
 from kocrd.managers.ocr.ocr_manager import OCRManager
 from kocrd.managers.temp_file_manager import TempFileManager
 from kocrd.managers.database_manager import DatabaseManager
@@ -22,12 +22,14 @@ class SystemManager:
     def __init__(self, settings_manager: SettingsManager, main_window=None, tesseract_cmd=None, tessdata_dir=None):
         self.settings_manager = settings_manager
         self.main_window = main_window  # MainWindow 인스턴스 설정
-        self.tesseract_cmd = tesseract_cmd
-        self.tessdata_dir = tessdata_dir
+        self.tesseract_cmd = AppConfig.OCR_SETTINGS.get("tesseract_cmd")
+        self.tessdata_dir = AppConfig.OCR_SETTINGS.get("tessdata_dir")
         self.managers = {}
         self.uis = {}
-        self.settings = self.load_development_settings()
-        self._init_components(self.settings)
+        # self.settings = self.load_development_settings() # 이 로직은 AppConfig와 중복될 수 있습니다. 검토 필요.
+        # _init_components가 self.settings를 사용하므로, AppConfig를 사용하도록 수정하거나
+        # load_development_settings를 유지해야 합니다. 현재는 오류 해결에 집중합니다.
+        self._init_components(self.load_development_settings()) # 임시로 load_development_settings 유지
         self.initialize_managers()
         self.rabbitmq_connection = None
         self.rabbitmq_channel = None
@@ -59,25 +61,53 @@ class SystemManager:
         return settings_manager, config
 
     def load_development_settings(self):
+        # 이 메서드는 AppConfig와 별개로 설정을 로드합니다. 코드 구조 검토가 필요합니다.
+        # 현재는 _init_components에서 사용하므로 유지합니다.
         config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'development.json')
-        with open(config_path, 'r') as f:
-            return json.load(f)
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f: # 인코딩 추가
+                return json.load(f)
+        except FileNotFoundError:
+            logging.critical(f"Development settings file not found: {config_path}")
+            raise
+        except json.JSONDecodeError as e:
+            logging.critical(f"Error decoding JSON from development settings file: {e}")
+            raise
+        except Exception as e:
+            logging.critical(f"Unexpected error loading development settings file: {e}")
+            raise
 
     def initialize_managers(self):
-        config = self.settings
-        for manager_name, manager_config in config["managers"].items():
-            manager_class = self.get_class(manager_config["module"], manager_config["class"])
-            kwargs = manager_config.get("kwargs", {})
-            dependencies = [self.managers[dep] for dep in manager_config.get("dependencies", [])]
-            manager_instance = manager_class(*dependencies, **kwargs)
-            self.managers[manager_name] = manager_instance
+        # 이 메서드는 self.settings (load_development_settings 결과)를 사용합니다.
+        # AppConfig.MANAGERS를 사용하도록 수정하는 것이 일관성 있습니다.
+        # 현재는 오류 해결에 집중합니다.
+        config = self.load_development_settings() # self.settings 대신 다시 로드하거나 __init__에서 self.settings를 사용
+        for manager_name, manager_config in config.get("managers", {}).items(): # .get() 추가하여 안전하게 접근
+            try:
+                manager_class = self.get_class(manager_config["module"], manager_config["class"])
+                kwargs = manager_config.get("kwargs", {})
+                dependencies = [self.managers[dep] for dep in manager_config.get("dependencies", []) if dep in self.managers] # 의존성 확인 추가
+                manager_instance = manager_class(*dependencies, **kwargs)
+                self.managers[manager_name] = manager_instance
+                logging.info(f"🟢 Manager '{manager_name}' 초기화 완료.")
+            except KeyError as e:
+                 logging.error(f"🔴 Manager '{manager_name}' 초기화 실패: 설정에 필요한 키가 누락되었습니다 - {e}")
+                 sys.exit(1)
+            except ImportError as e:
+                 logging.error(f"🔴 Manager '{manager_name}' 초기화 실패: 모듈 또는 클래스를 임포트할 수 없습니다 - {e}")
+                 sys.exit(1)
+            except Exception as e:
+                logging.error(f"🔴 Manager '{manager_name}' 초기화 실패: {e}")
+                sys.exit(1)
 
-        self.managers["temp_file"] = self.create_temp_file_manager()
-        self.managers["database"] = self.create_database_manager()
-        self.managers["analysis"] = self.create_analysis_manager()
-        self.managers["menubar"] = self.create_menubar_manager()
-        self.managers["document"] = self.create_document_manager()
-        self.managers["ocr"] = self.create_ocr_manager()
+
+        # 아래 하드코딩된 매니저 생성은 config 파일 기반 초기화와 중복될 수 있습니다. 검토 필요.
+        # self.managers["temp_file"] = self.create_temp_file_manager()
+        # self.managers["database"] = self.create_database_manager()
+        # self.managers["analysis"] = self.create_analysis_manager() # create_analysis_manager 메서드 없음
+        # self.managers["menubar"] = self.create_menubar_manager() # create_menubar_manager 메서드 없음
+        # self.managers["document"] = self.create_document_manager() # create_document_manager 메서드 없음
+        # self.managers["ocr"] = self.create_ocr_manager() # create_ocr_manager 메서드 없음
         self._configure_tesseract()
 
     def create_temp_file_manager(self):
@@ -92,9 +122,6 @@ class SystemManager:
     def get_database_manager(self):
         return self.managers.get("database")
 
-    def create_menubar_manager(self):
-        return MenubarManager(self.main_window)
-
     def create_document_manager(self):
         return DocumentManager(self.settings_manager)
 
@@ -102,12 +129,15 @@ class SystemManager:
         return OCRManager(self.settings_manager)
 
     def _configure_tesseract(self):
-        pytesseract.pytesseract.tesseract_cmd = self.tesseract_cmd
-        if self.tessdata_dir:
-            pytesseract.pytesseract.tessdata_dir = self.tessdata_dir
-            logging.info(f"🟢 Tessdata 설정 완료: {self.tessdata_dir}")
-        logging.info(f"🟢 Tesseract 설정 완료: {self.tesseract_cmd}")
+        # Tesseract 경로는 AppConfig에서 가져오는 것이 좋습니다.
+        pytesseract.pytesseract.tesseract_cmd = AppConfig.OCR_SETTINGS.get("tesseract_cmd", self.tesseract_cmd)
+        tessdata_dir = AppConfig.OCR_SETTINGS.get("tessdata_dir", self.tessdata_dir)
+        if tessdata_dir:
+            pytesseract.pytesseract.tessdata_dir = tessdata_dir
+            logging.info(f"🟢 Tessdata 설정 완료: {tessdata_dir}")
+        logging.info(f"🟢 Tesseract 설정 완료: {pytesseract.pytesseract.tesseract_cmd}")
         logging.info("🟢 SystemManager 초기화 완료.")
+
 
     def _configure_rabbitmq(self):
         rabbitmq_settings = self.settings["managers"]["message_queue"]["kwargs"]

@@ -23,10 +23,9 @@ class MainWindow(QMainWindow):
 
         # UI 설정은 AppConfig에서 가져옴 (ui.json의 기본값)
         # 텍스트는 text_manager에서 가져옴
-        
         # 창 제목 설정
         self.setWindowTitle(self.text_manager.get_text("ui", "main_window", "title"))
-        
+
         # 창 크기 설정 (AppConfig에서 가져옴)
         main_window_size = AppConfig.UI_SETTINGS.get("main_window", {}).get("size", {})
         width = main_window_size.get("width", 1200)
@@ -53,17 +52,14 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(main_splitter)
 
-    # 이전 load_config 함수는 이제 ConfigLoader.load_config를 사용하므로 필요 없습니다.
-    # def load_config(self):
-    #     print(messages["601"])
-    #     return messages
-
     def closeEvent(self, event):
         reply = QMessageBox.question(
-            self, 
-            self.get_message("16"), 
-            self.get_message("16"),
-            QMessageBox.Yes | QMessageBox.No, 
+            self,
+            # self.get_message("16"), # 이전 코드
+            # self.get_message("16"), # 이전 코드
+            self.text_manager.get_text("general", "16"), # 수정: text_manager 사용
+            self.text_manager.get_text("general", "16"), # 수정: text_manager 사용
+            QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No
         )
         if reply == QMessageBox.Yes:
@@ -90,9 +86,11 @@ class MainWindow(QMainWindow):
             self.monitoring_ui_system.display_chat_response(response)
             self.command_processed.emit(command_text, response)
         except Exception as e:
-            logging.error(self.get_error_message("02").format(error=e))
-            QMessageBox.critical(self, "Command Error", self.get_error_message("02").format(error=e))
-
+            # logging.error(self.get_error_message("02").format(error=e)) # 이전 코드
+            # QMessageBox.critical(self, "Command Error", self.get_error_message("02").format(error=e)) # 이전 코드
+            error_message = self.text_manager.get_text("error", "02", error=e) # 수정: text_manager 사용
+            logging.error(error_message)
+            QMessageBox.critical(self, "Command Error", error_message) # 수정: text_manager 사용
     def process_ocr_event(self, file_path):
         """OCR 이벤트 처리."""
         try:
@@ -100,8 +98,11 @@ class MainWindow(QMainWindow):
             log_message = f"Extracted Text: {text}"
             self.monitoring_ui_system.display_log(log_message)
         except Exception as e:
-            logging.error(self.get_error_message("03").format(error=e))
-            QMessageBox.critical(self, "OCR Error", self.get_error_message("03").format(error=e))
+            # logging.error(self.get_error_message("03").format(error=e)) # 이전 코드
+            # QMessageBox.critical(self, "OCR Error", self.get_error_message("03").format(error=e)) # 이전 코드
+            error_message = self.text_manager.get_text("error", "03", error=e) # 수정: text_manager 사용
+            logging.error(error_message)
+            QMessageBox.critical(self, "OCR Error", error_message) # 수정: text_manager 사용
 
     def handle_monitoring_event(self, event_type):
         """AI_Monitoring_event와 연동."""
@@ -109,8 +110,11 @@ class MainWindow(QMainWindow):
             self.event_manager.handle_monitoring_event(event_type)
             logging.info(f"Monitoring event '{event_type}' handled successfully.")
         except Exception as e:
-            logging.error(self.get_error_message("04").format(error=e))
-            QMessageBox.critical(self, "Monitoring Event Error", self.get_error_message("04").format(error=e))
+            # logging.error(self.get_error_message("04").format(error=e)) # 이전 코드
+            # QMessageBox.critical(self, "Monitoring Event Error", self.get_error_message("04").format(error=e)) # 이전 코드
+            error_message = self.text_manager.get_text("error", "04", error=e) # 수정: text_manager 사용
+            logging.error(error_message)
+            QMessageBox.critical(self, "Monitoring Event Error", error_message) # 수정: text_manager 사용
 
     def handle_chat(self, message):
         """사용자 메시지 처리."""
@@ -125,6 +129,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logging.error(self.text_manager.get_text("log", "MSG_CHAT_ERROR", error=e))
             self.monitoring_ui_system.display_chat_message(message, self.text_manager.get_text("log", "MSG_CHAT_ERROR", error=e))
+
     def display_document_content(self, text, source="AI"):
         """문서 내용 표시."""
         try:
