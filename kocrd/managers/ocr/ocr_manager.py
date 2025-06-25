@@ -34,8 +34,8 @@ class OCRManager:
             pytesseract.pytesseract.tesseract_cmd = self.tesseract_cmd
         if self.tessdata_dir:
             os.environ["TESSDATA_PREFIX"] = self.tessdata_dir
-            self.log("info", "320", self.tessdata_dir=self.tessdata_dir)
-        self.log("info", "319", self.tesseract_cmd=self.tesseract_cmd)
+            self.log("info", "320", tessdata_dir=self.tessdata_dir) # 수정: 키워드 인자 이름만 사용
+        self.log("info", "319", tesseract_cmd=self.tesseract_cmd) # 수정: 키워드 인자 이름만 사용
 
         # 시스템 매니저와 프로그레스바 초기화 확인
         if self.monitoring_window:

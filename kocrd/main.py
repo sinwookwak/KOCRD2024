@@ -13,6 +13,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 from kocrd.managers.system_manager import SystemManager # 새로운 SystemManager 임포트
 from kocrd.Settings.settings_manager import SettingsManager # SettingsManager 임포트
 from kocrd.window.main_window import MainWindow # MainWindow 임포트
+from kocrd.config.config import text_manager # text_manager 임포트
 
 def run_worker(config_path):
     """Worker 프로세스를 실행하는 함수 (메시지 소비 담당)."""
@@ -41,9 +42,6 @@ def start_worker_process(config_path):
     return worker_process
 
 def main():
-    # 로깅 설정은 파일 상단에서 이미 수행됨
-    # logging.basicConfig(level=logging.INFO) # 중복 제거
-
     app = QApplication(sys.argv)
 
     # 1. 설정 로드 및 SettingsManager 생성
@@ -53,8 +51,9 @@ def main():
         # settings_manager.load_config() # SystemManager 생성 시 내부에서 로드됨
         # AppConfig는 SettingsManager에 의해 로드된다고 가정
     except Exception as e:
-        logging.critical(f"Failed to initialize settings: {e}")
-        QMessageBox.critical(None, "Configuration Error", f"Failed to load application configuration: {e}")
+        logging.critical(text_manager.get_error_text("502", file=config_path, e=e)) # text_manager 사용
+        QMessageBox.critical(None, text_manager.get_general_text("configuration_error"), # text_manager 사용
+                             text_manager.get_error_text("502", file=config_path, e=e)) # text_manager 사용
         sys.exit(1) # 설정 로드 실패 시 종료
 
     # 2. SystemManager 생성 (MainWindow 인스턴스는 나중에 설정)
@@ -98,45 +97,42 @@ def main():
         if ai_model_manager:
             # AI 모델 매니저에 모델 로딩/적용 메서드가 있다고 가정
             # 모델 경로는 AppConfig 또는 settings_manager에서 가져와야 합니다.
-            # 예: model_path = AppConfig.AI_SETTINGS.get("model_path")
+            # 예: model_path = settings_manager.get_setting("MODEL_PATH")
             # ai_model_manager.load_and_apply_model(model_path) # AI 모델 매니저에 구현 필요
-            logging.info("AI Model Manager initialized. Model loading/application should happen internally.")
+            logging.info(text_manager.get_log_text("354", message="AI Model Manager initialized. Model loading/application should happen internally.")) # text_manager 사용
         else:
-            logging.warning("AI Model Manager not found in SystemManager. Skipping model application.")
+            logging.warning(text_manager.get_warning_text("416")) # AI Model Manager 누락 경고 (새 ID 필요)
             # AI 모델이 필수적이라면 여기서 오류 처리 및 종료
 
     except FileNotFoundError as e:
-        QMessageBox.critical(None, "오류", f"모델 파일 로드 실패: {e}")
+        logging.critical(text_manager.get_error_text("507", e=e)) # text_manager 사용
+        QMessageBox.critical(None, text_manager.get_general_text("error"), # text_manager 사용
+                             text_manager.get_error_text("507", e=e)) # text_manager 사용
         sys.exit(1) # 모델 파일 로드 실패 시 종료
     except Exception as e:
-        logging.exception(f"모델 적용 중 오류 발생: {e}")
-        QMessageBox.critical(None, "오류", f"모델 적용 중 오류 발생: {e}")
+        logging.exception(text_manager.get_error_text("508", e=e)) # text_manager 사용
+        QMessageBox.critical(None, text_manager.get_general_text("error"), # text_manager 사용
+                             text_manager.get_error_text("508", e=e)) # text_manager 사용
         sys.exit(1) # 모델 적용 중 오류 발생 시 종료
 
-
-    # 5. Worker 프로세스 시작 (메시지 소비)
-    # 워커 프로세스에 설정 파일 경로를 전달하여 자체적으로 설정 로드
-    worker_process = start_worker_process(config_path)
-    logging.info("Worker process started for message consumption.")
-
-    # 6. GUI 표시 및 이벤트 루프 시작
     main_window.show()
     sys.exit(app.exec_()) # 애플리케이션 실행
 
 
 if __name__ == "__main__":
-    # 멀티프로세싱 시작 메서드 설정 (Windows에서는 'spawn'이 안전)
-    multiprocessing.freeze_support() # 실행 파일 생성 시 필요
-    multiprocessing.set_start_method('spawn', force=True)
-
+    # 멀티프로세싱 시작 메서드 설정 (Windows에서는 'spawn'이 안전) - 멀티프로세싱 제거 시 필요 없음
+    # multiprocessing.freeze_support() # 실행 파일 생성 시 필요
+    # multiprocessing.set_start_method('spawn', force=True)
     try:
         # 설정 로드는 main 함수 내부에서 수행
         main()
     except KeyError as e:
-        logging.critical(f"Configuration key error: {e}")
-        QMessageBox.critical(None, "Configuration Error", f"Missing required configuration key: {e}")
+        logging.critical(text_manager.get_error_text("509", key=e)) # text_manager 사용
+        QMessageBox.critical(None, text_manager.get_general_text("configuration_error"), # text_manager 사용
+                             text_manager.get_error_text("509", key=e)) # text_manager 사용
         sys.exit(1)
     except Exception as e:
-        logging.critical(f"An unhandled error occurred: {e}", exc_info=True)
-        QMessageBox.critical(None, "Application Error", f"An unexpected error occurred: {e}")
+        logging.critical(text_manager.get_error_text("510", e=e), exc_info=True) # text_manager 사용
+        QMessageBox.critical(None, text_manager.get_general_text("application_error"), # text_manager 사용
+                             text_manager.get_error_text("510", e=e)) # text_manager 사용
         sys.exit(1)

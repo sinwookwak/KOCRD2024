@@ -19,11 +19,6 @@ class SettingsManager:
         self.settings: Dict[str, Union[str, int, list, dict]] = {}
         self.load_config()
         self.load_from_env()
-        # self.connection: Optional[pika.BlockingConnection] = None # RabbitMQ 제거
-        # self.channel: Optional[pika.channel.Channel] = None  # 채널 타입 명시 # RabbitMQ 제거
-        # self.messages_config = load_config("config/messages.json")  # messages.json 로드 # TextManager 사용
-        # self.queues_config = load_config("config/queues.json")  # queues.json 로드 # AppConfig 사용
-        # self.managers_config = load_config("config/managers.json")  # managers.json 로드 # AppConfig 사용
         self.text_manager = text_manager
 
     def load_config(self):
@@ -54,16 +49,6 @@ class SettingsManager:
             "document_embedding_path": (str, r"F:\AI-M1\model\document_embedding.json"),
             "document_types_path": (str, r"F:\AI-M1\model\document_types.json"),
             "temp_dir": (str, tempfile.gettempdir()),
-            # RabbitMQ 관련 환경 변수 제거 또는 주석 처리
-            # "RABBITMQ_HOST": (str, "localhost"),
-            # "RABBITMQ_PORT": (int, 5672),
-            # "RABBITMQ_QUEUE": (str, "task_queue"),
-            # "RABBITMQ_USER": (str, "guest"),
-            # "RABBITMQ_PASSWORD": (str, "guest"),
-            # "RABBITMQ_FEEDBACK_QUEUE": (str, "feedback_queue"),
-            # "RABBITMQ_EXCHANGE_NAME": (str, "default_exchange"),
-            # "RABBITMQ_EXCHANGE_TYPE": (str, "direct"),
-            # "RABBITMQ_ROUTING_KEY": (str, "default_key"),
             "ai_version": (str, "1.0.0"),
         }
         for var_name, (cast_func, default_value) in env_vars.items():
@@ -87,35 +72,8 @@ class SettingsManager:
             "document_embedding_path": r"F:\AI-M1\model\document_embedding.json",
             "document_types_path": r"F:\AI-M1\model\document_types.json",
             "temp_dir": tempfile.gettempdir(),
-            # "RABBITMQ_HOST": "localhost",
-            # "RABBITMQ_PORT": 5672,
-            # "RABBITMQ_QUEUE": "task_queue",
-            # "RABBITMQ_USER": "guest",
-            # "RABBITMQ_PASSWORD": "guest",
-            # "RABBITMQ_EVENTS_QUEUE": "events_queue",
-            # "RABBITMQ_PREDICTION_REQUESTS_QUEUE": "prediction_requests_queue",
-            # "RABBITMQ_PREDICTION_RESULTS_QUEUE": "prediction_results_queue",
-            # "RABBITMQ_FEEDBACK_QUEUE": "feedback_queue",
-            # "RABBITMQ_EXCHANGE_NAME": "default_exchange",
-            # "RABBITMQ_EXCHANGE_TYPE": "direct",
-            # "RABBITMQ_ROUTING_KEY": "default_key",
             "ai_version": "1.0.0",
         }
-        # self.set_rabbitmq_defaults() # RabbitMQ 제거
-
-    # def set_rabbitmq_defaults(self): # RabbitMQ 제거
-    #     """RabbitMQ 기본 설정값을 설정합니다."""
-    #     self.rabbitmq_settings = {
-    #         "RABBITMQ_HOST": "localhost",
-    #         "RABBITMQ_PORT": 5672,
-    #         "RABBITMQ_USER": "guest",
-    #         "RABBITMQ_PASSWORD": "guest",
-    #         "RABBITMQ_EVENTS_QUEUE": "events_queue",
-    #         "RABBITMQ_PREDICTION_REQUESTS_QUEUE": "prediction_requests_queue",
-    #         "RABBITMQ_PREDICTION_RESULTS_QUEUE": "prediction_results_queue",
-    #         "RABBITMQ_FEEDBACK_QUEUE": "feedback_queue"
-    #     }
-    #     self.settings.update(self.rabbitmq_settings)
 
     def get_setting(self, setting_name: str, default: Union[str, int, list, dict, None] = None) -> Union[str, int, list, dict, None]:
         """설정 값을 반환합니다."""
@@ -188,120 +146,10 @@ class SettingsManager:
         else:
             logging.info(self.text_manager.get_log_text("354", message=f"{setting_name} path selection cancelled.")) # text_manager 사용
 
-    # def connect_to_rabbitmq(self) -> Tuple[Optional[pika.BlockingConnection], Optional[pika.channel.Channel]]:
-    #     """RabbitMQ에 연결하고 연결 객체와 채널 객체를 반환합니다."""
-    #     try:
-    #         host = self.get_setting("RABBITMQ_HOST")
-    #         port = int(self.get_setting("RABBITMQ_PORT"))
-    #         user = self.get_setting("RABBITMQ_USER")
-    #         password = self.get_setting("RABBITMQ_PASSWORD")
-    #         virtual_host = self.get_setting("RABBITMQ_VIRTUAL_HOST", "/")
-    #         credentials = pika.PlainCredentials(user, password)
-
-    #         parameters = pika.ConnectionParameters(
-    #             host=host,
-    #             port=port,
-    #             virtual_host=virtual_host,
-    #             credentials=credentials
-    #         )
-
-    #         connection = pika.BlockingConnection(parameters)
-    #         channel = connection.channel()
-    #         logging.info(f"Connected to RabbitMQ: {host}:{port}:{virtual_host}")
-    #         return connection, channel
-
-    #     except AMQPConnectionError as e:
-    #         logging.error(f"Failed to connect to RabbitMQ: {e}")
-    #         return None, None
-    #     except Exception as e:
-    #         logging.error(f"RabbitMQ 연결 중 오류 발생: {e}")
-    #         return None, None
-
-    # def send_message(self, queue_name: str, message: str):
-    #     """메시지를 지정된 RabbitMQ 큐에 보냅니다."""
-
-    #     queue_config = self.queues_config.get(queue_name)  # 큐 설정 가져오기
-    #     if not queue_config:
-    #         logging.error(get_message(self.messages_config, "516", f"Queue '{queue_name}' configuration not found."))  # 516 에러코드 추가
-    #         return
-
-    #     connection, channel = self.connect_to_rabbitmq()
-    #     if channel is None:
-    #         logging.error(get_message(self.messages_config, "511", "RabbitMQ 연결 실패. 메시지 전송 불가"))
-    #         return
-
-    #     try:
-    #         channel.queue_declare(queue=queue_name, durable=queue_config.get("durable", False))  # durable 설정 추가
-    #         channel.basic_publish(exchange='', routing_key=queue_name, body=message)
-    #         logging.info(get_message(self.messages_config, "312", f"Sent message to {queue_name}: {message}"))
-    #     except pika.exceptions.AMQPConnectionError as e:
-    #         logging.error(get_message(self.messages_config, "511", f"Failed to send message: {e}"))
-    #         raise
-    #     finally:
-    #         if connection and connection.is_open:  # connection 확인 추가
-    #             connection.close()
-    #             logging.info(get_message(self.messages_config, "312", "RabbitMQ connection closed."))
-
-    # def send_exchange_message(self, message: str):
-    #     """메시지를 지정된 RabbitMQ 교환기에 보냅니다."""
-    #     connection, channel = self.connect_to_rabbitmq()
-    #     if channel is None:
-    #         logging.error("RabbitMQ 연결 실패. 메시지 전송 불가")
-    #         return
-
-    #     try:
-    #         exchange_settings = self.get_message_exchange_settings()
-    #         channel.exchange_declare(exchange=exchange_settings["exchange_name"], exchange_type=exchange_settings["exchange_type"])
-    #         channel.basic_publish(exchange=exchange_settings["exchange_name"], routing_key=exchange_settings["routing_key"], body=message)
-    #         logging.info(f"Sent message to exchange {exchange_settings['exchange_name']} with routing key {exchange_settings['routing_key']}: {message}")
-    #     except pika.exceptions.AMQPConnectionError as e:
-    #         logging.error(f"Failed to send message: {e}")
-    #     except Exception as e:
-    #         logging.error(f"Unexpected error occurred while sending message: {e}")
-    #     finally:
-    #         if connection and connection.is_open:
-    #             connection.close()
-    #             logging.info("RabbitMQ connection closed.")
-
-    # def consume_messages(self, queue_name: str, callback: Callable):
-    #     """지정된 RabbitMQ 큐에서 메시지를 소비합니다."""
-    #     queue_config = self.queues_config.get(queue_name)  # 큐 설정 가져오기
-    #     if not queue_config:
-    #         logging.error(get_message(self.messages_config, "516", f"Queue '{queue_name}' configuration not found."))  # 516 에러코드 추가
-    #         return
-
-    #     connection, channel = self.connect_to_rabbitmq()
-    #     if channel is None:
-    #         logging.error("RabbitMQ 연결 실패. 메시지를 받을 수 없습니다.")
-    #         return
-
-    #     try:
-    #         channel.queue_declare(queue=queue_name, durable=queue_config.get("durable", False))  # durable 설정 추가
-    #         channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
-    #         logging.info(f"Start Consuming from RabbitMQ: {queue_name}")
-    #         channel.start_consuming()
-    #     except pika.exceptions.AMQPConnectionError as e:
-    #         logging.error(f"Failed to consume messages: {e}")
-    #         raise
-    #     finally:
-    #         if connection and connection.is_open:  # connection 확인 추가
-    #             connection.close()
-    #             logging.info("RabbitMQ connection closed.")
-
-    # def disconnect_from_rabbitmq(self):
-    #     """RabbitMQ 연결을 종료합니다."""
-    #     if self.connection and self.connection.is_open:
-    #         self.connection.close()
-    #         logging.info("Disconnected from RabbitMQ.")
-    #     self.connection = None
-    #     self.channel = None
-
     def get_user_settings(self, user_id):
         """사용자 설정을 반환합니다."""
         user_settings_file = os.path.join(os.path.dirname(self.config_file), f"user_{user_id}_settings.json") # config_file의 디렉토리 사용
         try:
-            # with open(user_settings_file, "r", encoding="utf-8") as f: # ConfigLoader 사용
-            #     return json.load(f)
             return ConfigLoader.load_json_file(user_settings_file)
         except Exception as e: # FileNotFoundError, json.JSONDecodeError 포함
             logging.error(self.text_manager.get_error_text("505", user_id=user_id, e=e)) # text_manager 사용
@@ -323,13 +171,15 @@ class SettingsManager:
 
     def save_feedback(self, feedback_data):
         """피드백 데이터를 저장합니다."""
-        feedback_file = os.path.join(self.get_temp_dir(), "feedback.json")
+        # 임시 디렉토리 경로는 SettingsManager에서 가져옴
+        temp_dir = self.get_temp_dir()
+        feedback_file = os.path.join(temp_dir, "feedback.json")
         try:
-            with open(feedback_file, "w", encoding="utf-8") as f:
+            with open(feedback_file, "w", encoding='utf-8') as f: 
                 json.dump(feedback_data, f, ensure_ascii=False, indent=4)
-            logging.info(f"Feedback saved to {feedback_file}")
+            logging.info(self.text_manager.get_log_text("334", data=feedback_data)) # text_manager 사용
         except Exception as e:
-            logging.error(f"피드백 저장 오류: {e}")
+            logging.error(self.text_manager.get_error_text("506", e=e)) # text_manager 사용
 
     def get_message_exchange_settings(self) -> dict:
         """메시지 교환을 위한 설정값을 반환합니다."""
