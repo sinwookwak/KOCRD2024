@@ -317,7 +317,6 @@ class TesseractOCR(OCREngine):
 
         return pytesseract.image_to_string(image)
 
-
 class CloudVisionOCR(OCREngine):
     """Google Cloud Vision OCR 엔진 구현 (예시)"""
     def perform_ocr(self, image: Any) -> str:
