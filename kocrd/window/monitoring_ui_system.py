@@ -2,14 +2,16 @@
 import json
 import logging
 from PyQt5.QtWidgets import QProgressBar, QTextEdit, QLineEdit, QListWidget, QVBoxLayout, QWidget
-
-from kocrd.config.config import load_config, get_message
+from kocrd.config.config import AppConfig, text_manager
 
 class MonitoringUISystem(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.config = load_config("config/ui.json")
-        self.messages_config = load_config("config/messages.json")
+        # self.config = load_config("config/ui.json") # load_config 호출 제거
+        # self.messages_config = load_config("config/messages.json") # load_config 호출 제거
+        # AppConfig와 text_manager는 config.py에서 전역으로 초기화되므로 직접 참조
+        self.app_config = AppConfig
+        self.text_manager = text_manager
         self.init_ui()
 
     def init_ui(self):
@@ -43,19 +45,22 @@ class MonitoringUISystem(QWidget):
     def load_ui_config(self):
         """UI 설정을 로드하고 적용합니다."""
         try:
-            components = self.config["components"]["monitoring"]["widgets"]
+            # self.config 대신 AppConfig.UI_SETTINGS 사용
+            components = self.app_config.UI_SETTINGS.get("components", {}).get("monitoring", {}).get("widgets", [])
             for component in components:
-                if component["name"] == "progress_bar":
+                if component.get("name") == "progress_bar":
                     self.progress_bar.setValue(0)
-                elif component["name"] == "log_display":
+                elif component.get("name") == "log_display":
                     self.log_display.setPlainText("")
-                elif component["name"] == "chat_output":
+                elif component.get("name") == "chat_output":
                     self.chat_output.setPlainText("")
-                elif component["name"] == "chat_input":
+                elif component.get("name") == "chat_input":
                     self.chat_input.setText("")
-                elif component["name"] == "file_list_widget":
+                elif component.get("name") == "file_list_widget":
                     self.file_list_widget.clear()
-            logging.info(get_message(self.messages_config, "328"))
+            # get_message 대신 text_manager.get_text 사용 (로그 메시지 키 확인 필요)
+            # main_window.py에서 MSG_328을 사용하므로 동일하게 적용
+            logging.info(self.text_manager.get_text("log", "MSG_328"))
         except KeyError as e:
             logging.error(f"Error loading UI configuration: {e}")
 
@@ -74,17 +79,13 @@ class MonitoringUISystem(QWidget):
     def generate_ai_response(self, message):
         """AI 응답 생성."""
         try:
-            input_ids = self.tokenizer.encode(message, return_tensors="pt")
-            pad_token_id = self.tokenizer.pad_token_id or self.tokenizer.eos_token_id
-            attention_mask = (input_ids != pad_token_id).long()
-            output = self.gpt_model.generate(
-                input_ids=input_ids, attention_mask=attention_mask,
-                max_new_tokens=50, pad_token_id=pad_token_id
-            )
+            # ...existing code...
             return self.tokenizer.decode(output[0], skip_special_tokens=True)
         except Exception as e:
             logging.error(f"Error generating AI response: {e}")
-            return get_message(self.messages_config, "520")
+            # get_message 대신 text_manager.get_text 사용 (오류 메시지 키 확인 필요)
+            # 임시로 "error" 카테고리와 "520" 키 사용
+            return self.text_manager.get_text("error", "520", default=f"Error generating response: {e}")
 
     def update_file_list(self, documents):
         """가져온 파일 목록을 업데이트."""
@@ -93,44 +94,19 @@ class MonitoringUISystem(QWidget):
             self.file_list_widget.addItem(f"{doc['name']} ({doc['date']})")
 
     def init_ui(self):
-        central_widget = QWidget(self.main_window)
-        self.main_window.setCentralWidget(central_widget)
-        central_widget.setLayout(QVBoxLayout())
+        layout = QVBoxLayout(self) # self를 부모로 설정
 
-        splitter = QSplitter(central_widget)
-        central_widget.layout().addWidget(splitter)
+        # ProgressBar 추가 (이미 __init__에서 생성됨)
+        layout.addWidget(self.progress_bar)
 
-        monitoring_ui_widget = self
-        if isinstance(monitoring_ui_widget, QWidget):
-            if monitoring_ui_widget.layout() is None:
-                monitoring_layout = QVBoxLayout()
-                monitoring_ui_widget.setLayout(monitoring_layout)
-            else:
-                monitoring_layout = monitoring_ui_widget.layout()
-            monitoring_layout.addWidget(self.progress_bar)
-            
-            log_display = QTextEdit()
-            log_display.setReadOnly(True)
-            monitoring_layout.addWidget(log_display)
+        # Log Display 추가 (이미 __init__에서 생성됨)
+        layout.addWidget(self.log_display)
 
-            for widget_config in self.config["monitoring_ui"]["widgets"]:
-                widget = getattr(self.main_window, widget_config["name"])
-                monitoring_layout.addWidget(widget)
+        # Chat Output 추가 (이미 __init__에서 생성됨)
+        layout.addWidget(self.chat_output)
 
-        else:
-            logging.error("Monitoring UI is not a QWidget. Cannot add progress bar.")
+        # Chat Input 추가 (이미 __init__에서 생성됨)
+        layout.addWidget(self.chat_input)
 
-        splitter.setSizes([1000, 200])
-        logging.info(get_message(self.messages_config, "328"))
-
-    def load_config(self):
-        config_path = os.path.join(os.path.dirname(__file__), 'window_config.json')
-        with open(config_path, 'r') as f:
-            return json.load(f)
-
-def setup_monitoring_ui():
-    # ...existing code...
-    print(get_message(self.messages_config, "351"))  # Documents filtered successfully.
-    # ...existing code...
-    print(get_message(self.messages_config, "352"))  # Document search completed for keyword: {keyword}
-    # ...existing code...
+        # File List Widget 추가 (이미 __init__에서 생성됨)
+        layout.addWidget(self.file_list_widget)

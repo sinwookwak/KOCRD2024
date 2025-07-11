@@ -1,55 +1,73 @@
 import pytesseract
 from pdf2image import convert_from_path
-import shutil
-import fitz
-import json
-import logging
-import os
-import pika
 from PIL import Image
 from typing import List, Optional, Dict, Any, Callable
-import sys
 from PyQt5.QtWidgets import QMessageBox
+import sys
+import os # os 모듈 임포트 추가
+import json
+import logging
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 
-from managers.ocr.ocr_utils import OCRHelper
-from Settings.settings_manager import SettingsManager
+from kocrd.managers.ocr.ocr_utils import OCRHelper # kocrd 패키지 내부 경로 사용
+from kocrd.Settings.settings_manager import SettingsManager # kocrd 패키지 내부 경로 사용
+from kocrd.config.config import text_manager # text_manager 임포트
 
-# managers_config.json 파일 로드
-with open(os.path.join(os.path.dirname(__file__), '../managers_config.json'), 'r') as f:
-    managers_config = json.load(f)
 
 class OCRManager:
     """OCR 작업을 처리하는 클래스."""
     def __init__(self, tesseract_cmd: Optional[str], tessdata_dir: Optional[str], settings_manager: SettingsManager, monitoring_window: Any = None):
         self.monitoring_window = monitoring_window
+        # Tesseract 경로는 SettingsManager 또는 생성자 인자로 받아 사용
         self.tesseract_cmd = tesseract_cmd
         self.tessdata_dir = tessdata_dir
         self.settings_manager = settings_manager
         self.progress_bar = monitoring_window.progress_bar if monitoring_window else None
-        self.temp_dir = os.path.join(os.environ.get("TEMP", os.path.expanduser("~/.tmp")), "ocr_manager")
+        # 임시 디렉토리 경로는 SettingsManager에서 가져오는 것이 좋습니다.
+        # self.temp_dir = os.path.join(os.environ.get("TEMP", os.path.expanduser("~/.tmp")), "ocr_manager")
+        self.temp_dir = os.path.join(self.settings_manager.get_temp_dir(), "ocr_manager") # SettingsManager 사용
         os.makedirs(self.temp_dir, exist_ok=True)
 
+        # pytesseract 설정은 SystemManager 또는 OCRManager 초기화 시 SettingsManager 값을 사용
         if self.tesseract_cmd:
             pytesseract.pytesseract.tesseract_cmd = self.tesseract_cmd
+            self.log("info", "319", tesseract_cmd=self.tesseract_cmd) # 수정된 키워드 인자 사용
+        else:
+             self.log("warning", "410") # Tesseract 경로 설정 안됨 경고
+
         if self.tessdata_dir:
             os.environ["TESSDATA_PREFIX"] = self.tessdata_dir
-            self.log("info", "320", self.tessdata_dir=self.tessdata_dir)
-        self.log("info", "319", self.tesseract_cmd=self.tesseract_cmd)
+            self.log("info", "320", tessdata_dir=self.tessdata_dir) # 수정된 키워드 인자 사용
+        # else: # tessdata_dir이 필수는 아닐 수 있으므로 경고는 필요에 따라 추가
+        #      self.log("warning", "...") # Tessdata 경로 설정 안됨 경고 (새 ID 필요)
+
 
         # 시스템 매니저와 프로그레스바 초기화 확인
+        # 이 로직은 SystemManager에서 OCRManager를 생성하고 주입할 때 확인하는 것이 더 적절할 수 있습니다.
+        # OCRManager 자체는 monitoring_window가 None일 수도 있습니다.
         if self.monitoring_window:
             if not hasattr(self.monitoring_window, 'system_manager'):
-                self.log("error", "509")
+                self.log("error", "509") # text_manager 사용
             if not hasattr(self.monitoring_window, 'progress_bar'):
-                self.log("error", "510")
+                self.log("error", "510") # text_manager 사용
         else:
-            self.log("warning", "408")
+            self.log("warning", "408") # text_manager 사용
 
     def log(self, level: str, code: str, **kwargs) -> None:
-        """간략화된 로깅."""
-        message = managers_config["messages"][level].get(code, "").format(**kwargs)
-        getattr(logging, level)(message)
+        """TextManager를 사용하여 로그 메시지를 기록합니다."""
+        message = text_manager.get_text(level, code, **kwargs)
+        if level == "info":
+            logging.info(message)
+        elif level == "warning":
+            logging.warning(message)
+        elif level == "error":
+            logging.error(message)
+        elif level == "critical":
+            logging.critical(message)
+        else:
+            logging.debug(message) # 알 수 없는 레벨은 debug로 처리
+
+
 
     def show_message(self, level: str, code: str) -> None:
         """간략화된 메시지 박스."""

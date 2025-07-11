@@ -5,9 +5,8 @@ import numpy as np
 import os
 from typing import Dict, List, Optional
 from sentence_transformers import SentenceTransformer
-from Settings.settings_manager import SettingsManager
+from setting.settings_manager import SettingsManager
 
-# 로깅 설정
 logging.basicConfig(level=logging.DEBUG)
 
 class EmbeddingUtils:
