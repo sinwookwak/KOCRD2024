@@ -6,16 +6,27 @@ import os
 import pika # RabbitMQ 사용을 위해 pika 임포트
 from typing import Dict, Any, Optional
 from PyQt5.QtWidgets import QMessageBox, QApplication
+from PyQt5.QtCore import Qt # QMessageBox.StandardButtons 등을 위해 필요할 수 있습니다.
 from kocrd.config.config import AppConfig, text_manager # AppConfig와 text_manager 임포트
+from kocrd.managers.message_broker import display_alert, display_warning, display_error,ask_question, confirm_delete,publish_system_event, subscribe 
 
-# 필요한 매니저 모듈 임포트 (경로 확인 필요)
+from kocrd.config.system_constants import SystemConstants #상수
+
 from kocrd.managers.ocr.ocr_manager import OCRManager
 from kocrd.managers.temp_file_manager import TempFileManager
 from kocrd.managers.database_manager import DatabaseManager
-# from kocrd.window.menubar_manager import MenubarManager # UI 컴포넌트일 경우 매니저로 초기화하지 않을 수 있음
 from kocrd.managers.document.document_manager import DocumentManager
 from kocrd.Settings.settings_manager import SettingsManager
-from kocrd.utils.embedding_utils import EmbeddingUtils # 사용될 경우 유지
+from kocrd.utils.embedding_utils import EmbeddingUtils 
+
+try:
+    import pytesseract
+except ImportError:
+    logging.warning("pytesseract is not installed. OCR functionalities might be limited.")
+    pytesseract = None
+
+# event_window 모듈에서 다이얼로그 클래스 임포트
+from kocrd.window.event_window import AlertDialog, WarningDialog, ErrorDialog, QuestionDialog, ConfirmDeleteDialog
 
 
 class SystemManager:
@@ -43,7 +54,7 @@ class SystemManager:
         self.rabbitmq_channel: Optional[pika.adapters.blocking_connection.BlockingChannel] = None
         self._configure_rabbitmq() # RabbitMQ 연결 및 채널 설정
 
-        self._configure_tesseract() # Tesseract 설정
+        self._configure_tesseract()
         logging.info(text_manager.get_log_text("345")) # "SystemManager initialization completed."
 
     # initialize_settings 및 load_development_settings 메서드는 settings_manager를 통해 설정이 로드되므로 제거합니다.
@@ -221,14 +232,6 @@ class SystemManager:
             self.rabbitmq_connection = None
             self.rabbitmq_channel = None
 
-    # _init_components 메서드는 현재 로직이 불분명하므로 주석 처리하거나 제거합니다.
-    # def _init_components(self, settings: Dict[str, Any]) -> None:
-    #     """설정 파일을 기반으로 컴포넌트 (예: UI)를 초기화합니다."""
-    #     pass # 구현 필요 또는 제거
-
-    # --- RabbitMQ 메시지 처리 메서드 (kocrd\system.py에서 통합) ---
-
-
     def _process_message_callback(self, process_func):
         """메시지 처리 함수를 ACK/NACK/Reject 로직으로 감싸는 데코레이터 역할을 하는 헬퍼."""
         def wrapper(channel, method, properties, body):
@@ -264,9 +267,6 @@ class SystemManager:
         except Exception as e:
             logging.error(text_manager.get_error_text("513", e=e, body=body)) # text_manager 사용
             raise # 래퍼에 의해 잡히도록 예외 다시 발생
-
-
-    # 특정 메시지 처리 메서드 (kocrd\system.py에서 가져옴, self 사용하도록 수정)
 
     def _process_document(self, message: Dict[str, Any]):
         """문서 처리 메시지를 처리합니다."""
@@ -338,6 +338,64 @@ class SystemManager:
         else:
             logging.error(text_manager.get_error_text("537")) # OCR Manager 누락 오류 메시지 추가 (예: 537)
 
+    def display_message_box(self, message_type: str, title_key: str, message_key: str,
+                            detail_info: Optional[str] = None,
+                            buttons_type: Optional[str] = None,
+                            delete_target: Optional[str] = None,
+                            show_do_not_show_again: bool = False) -> str:
+        """
+        메인 윈도우를 통해 사용자에게 메시지 박스를 표시하고 결과를 반환합니다.
+        SystemConstants.EventTypes를 사용하여 메시지 유형에 따라 적절한 EventWindow 클래스를 호출합니다.
+        """
+        if not self.main_window:
+            logging.error(text_manager.get_error_text("542", message="Main window instance not available to display message box."))
+            title = text_manager.get_general_text(title_key)
+            message = text_manager.get_general_text(message_key)
+            logging.error(f"UI Error (No MainWindow): {title} - {message} {f'Details: {detail_info}' if detail_info else ''}")
+            return SystemConstants.EventResults.CANCEL # UI 없이 진행될 경우 기본 반환값
+
+        dialog_class = None
+        if message_type == SystemConstants.EventTypes.ALERT:
+            dialog_class = AlertDialog
+        elif message_type == SystemConstants.EventTypes.WARNING:
+            dialog_class = WarningDialog
+        elif message_type == SystemConstants.EventTypes.ERROR:
+            dialog_class = ErrorDialog
+        elif message_type == SystemConstants.EventTypes.QUESTION:
+            dialog_class = QuestionDialog
+        elif message_type == SystemConstants.EventTypes.CONFIRM_DELETE:
+            dialog_class = ConfirmDeleteDialog
+        else:
+            logging.warning(text_manager.get_warning_text("415", message_type=message_type)) # 알 수 없는 메시지 유형
+            dialog_class = AlertDialog # 기본값으로 알림 사용
+
+        if dialog_class == ConfirmDeleteDialog:
+            result = dialog_class.show_dialog(
+                parent=self.main_window,
+                message_key=message_key,
+                delete_target=delete_target if delete_target else "선택된 항목",
+                detail_info=detail_info,
+                show_do_not_show_again=show_do_not_show_again
+            )
+        elif dialog_class == QuestionDialog:
+            result = dialog_class.show_dialog(
+                parent=self.main_window,
+                title_key=title_key,
+                message_key=message_key,
+                detail_info=detail_info,
+                buttons_type=buttons_type,
+                show_do_not_show_again=show_do_not_show_again
+            )
+        else:
+            result = dialog_class.show_dialog(
+                parent=self.main_window,
+                title_key=title_key,
+                message_key=message_key,
+                detail_info=detail_info,
+                show_do_not_show_again=show_do_not_show_again
+            )
+        return result
+
     # --- 공개 메서드 ---
 
     def start_message_consumption(self):
@@ -404,71 +462,54 @@ class SystemManager:
 
     def trigger_process(self, process_type: str, data: Optional[Dict[str, Any]] = None):
         """프로세스 유형에 따라 적절한 매니저로 요청을 라우팅합니다."""
-        # 이 메서드는 UI 등 외부에서 특정 작업을 요청하는 진입점
-        # 요청을 해당 매니저의 메서드로 라우팅해야 함
         if process_type == "database_packaging":
-            # 데이터베이스 패키징은 데이터베이스 매니저가 직접 처리하거나 임시 파일 매니저를 통해 처리
-            # 여기서는 데이터베이스 매니저에게 직접 요청한다고 가정
             db_manager = self.get_manager("database")
             if db_manager:
-                 db_manager.request_database_packaging(data) # DatabaseManager에 request_database_packaging 메서드가 있다고 가정
+                db_manager.request_database_packaging(data)
             else:
-                 logging.error(text_manager.get_error_text("522"))
+                logging.error(text_manager.get_error_text("522"))
+                self.display_message_box(SystemConstants.EventTypes.ERROR,"501","522",)
 
         elif process_type == "document_processing":
             doc_manager = self.get_manager("document")
             if doc_manager:
-                doc_manager.request_document_processing(data) # DocumentManager에 request_document_processing 메서드가 있다고 가정
+                doc_manager.request_document_processing(data)
             else:
                 logging.error(text_manager.get_error_text("528"))
+                self.display_message_box(SystemConstants.EventTypes.ERROR,"501","528",)
 
         elif process_type == "ai_training":
             ai_trainer = self.get_manager("ai_trainer")
             if ai_trainer:
-                ai_trainer.request_ai_training(data) # AITrainer에 request_ai_training 메서드가 있다고 가정
+                ai_trainer.request_ai_training(data)
             else:
                 logging.error(text_manager.get_error_text("529"))
+                self.display_message_box(
+                    SystemConstants.EventTypes.ERROR,"501","529",)
 
         elif process_type == "generate_text":
             ai_prediction_manager = self.get_manager("ai_prediction")
             if ai_prediction_manager:
-                # generate_text는 메시지 큐를 통하지 않고 직접 호출된다고 가정
-                return ai_prediction_manager.generate_text(data.get("command", "")) # AIPredictionManager에 generate_text 메서드가 있다고 가정
+                return ai_prediction_manager.generate_text(data.get("command", ""))
             else:
-                logging.error(text_manager.get_error_text("526")) # text_manager 사용 (AI Manager 설정 오류)
-                if self.main_window:
-                     QMessageBox.critical(self.main_window, text_manager.get_error_text("501"), text_manager.get_error_text("526")) # text_manager 사용
-                return text_manager.get_error_text("526") # 오류 메시지 반환
-
-        # 다른 프로세스 유형 필요시 추가
-        # elif process_type == "some_other_process":
-        #     some_manager = self.get_manager("some_manager")
-        #     if some_manager:
-        #         some_manager.handle_process(data)
-        #     else:
-        #         logging.error("SomeManager not found.")
+                logging.error(text_manager.get_error_text("526"))
+                self.display_message_box(SystemConstants.EventTypes.ERROR,"501","526",)
+                return text_manager.get_error_text("526")
 
         else:
-            logging.warning(text_manager.get_warning_text("404", message_type=process_type)) # text_manager 사용
-            if self.main_window:
-                 QMessageBox.warning(self.main_window, text_manager.get_error_text("501"), text_manager.get_warning_text("404", message_type=process_type)) # text_manager 사용
+            logging.warning(text_manager.get_warning_text("404", message_type=process_type))
+            self.display_message_box(SystemConstants.EventTypes.WARNING,"501","404",detail_info=f"Type: {process_type}")
 
-
-    def handle_error(self, message, error_code=None):
-        """오류를 로깅하고 필요시 메시지 박스를 표시합니다."""
-        log_message = message
-        if error_code:
-            log_message = f"{message} (Error Code: {error_code})"
+    def handle_error(self, message_key: str, error_detail: str = None, title_key: str = "501"): # 오류를 로깅하고 SystemManager를 통해 메시지 박스를 표시합니다.
+        log_message = text_manager.get_error_text(message_key, error=error_detail)
         logging.error(log_message)
-        if self.main_window:
-            QMessageBox.critical(self.main_window, text_manager.get_error_text("501"), message) # text_manager 사용
+        self.display_message_box(SystemConstants.EventTypes.ERROR, title_key, message_key, detail_info=error_detail)
 
     def run_embedding_generation(self):
         """임베딩 생성을 트리거합니다."""
         # EmbeddingUtils가 유틸리티 클래스라고 가정
         EmbeddingUtils.run_embedding_generation(self.settings_manager)
         logging.info(text_manager.get_log_text("354", message="Embedding generation triggered")) # "System process completed: Embedding generation triggered" (일반적인 로그)
-
 
     def close_rabbitmq_connection(self):
         """RabbitMQ 연결을 종료합니다."""
@@ -494,7 +535,6 @@ class SystemManager:
         if ui_component is None:
              logging.warning(text_manager.get_warning_text("414", ui_name=ui_name)) # 요청된 UI 컴포넌트 누락 경고 메시지 추가 (예: 414)
         return ui_component
-
 
     def get_ai_model_manager(self):
         """AI 모델 매니저 인스턴스를 가져옵니다."""

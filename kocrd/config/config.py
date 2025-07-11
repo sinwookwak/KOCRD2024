@@ -244,7 +244,6 @@ class FilePathConfig:
         self.document_types = config.get("document_types")
         self.temp_files = config.get("temp_files")
 
-
 class AppConfig:
     """애플리케이션의 정적 설정 데이터를 중앙 관리하는 클래스입니다.managers.json, queues.json, ui.json(텍스트 제외), 그리고 기타 고정된 경로 등을 포함합니다."""
     # ConfigLoader는 config.py 기준으로 상대 경로를 처리하도록 수정됨
