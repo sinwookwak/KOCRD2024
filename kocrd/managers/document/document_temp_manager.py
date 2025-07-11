@@ -6,7 +6,7 @@ import shutil
 import uuid
 from datetime import datetime, timedelta
 from typing import List, Optional
-from kocrd.config.development import settings
+from kocrd.setting.settings_manager import SettingsManager
 import json
 
 config_path = os.path.join(os.path.dirname(__file__), '..', 'managers_config.json')

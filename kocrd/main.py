@@ -11,7 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 from kocrd.managers.system_manager import SystemManager # 새로운 SystemManager 임포트
-from kocrd.Settings.settings_manager import SettingsManager # SettingsManager 임포트
+from kocrd.setting.settings_manager import SettingsManager # SettingsManager 임포트
 from kocrd.window.main_window import MainWindow # MainWindow 임포트
 from kocrd.config.config import text_manager # text_manager 임포트
 

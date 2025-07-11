@@ -3,12 +3,11 @@ import logging
 import json
 import sys
 import os
-import pika # RabbitMQ 사용을 위해 pika 임포트
 from typing import Dict, Any, Optional
 from PyQt5.QtWidgets import QMessageBox, QApplication
 from PyQt5.QtCore import Qt # QMessageBox.StandardButtons 등을 위해 필요할 수 있습니다.
 from kocrd.config.config import AppConfig, text_manager # AppConfig와 text_manager 임포트
-from kocrd.managers.message_broker import display_alert, display_warning, display_error,ask_question, confirm_delete,publish_system_event, subscribe 
+from kocrd.config.message_broker import display_alert, display_warning, display_error,ask_question, confirm_delete,publish_system_event, subscribe 
 
 from kocrd.config.system_constants import SystemConstants #상수
 
@@ -25,10 +24,6 @@ except ImportError:
     logging.warning("pytesseract is not installed. OCR functionalities might be limited.")
     pytesseract = None
 
-# event_window 모듈에서 다이얼로그 클래스 임포트
-from kocrd.window.event_window import AlertDialog, WarningDialog, ErrorDialog, QuestionDialog, ConfirmDeleteDialog
-
-
 class SystemManager:
     def __init__(self, settings_manager: SettingsManager, main_window=None):
         self.settings_manager = settings_manager
@@ -44,45 +39,9 @@ class SystemManager:
         # settings_manager가 development.json과 같은 메인 설정 파일을 로드한다고 가정
         self.config = self.settings_manager.load_config() # 메인 설정 파일 로드
 
-        # 매니저 초기화 (로드된 설정을 기반으로)
         self.initialize_managers()
-
-        # 기타 컴포넌트 (UI 등) 초기화 (필요하다면)
-        # self._init_components(self.config) # 이 부분의 목적을 재평가하고 필요시 수정
-
-        self.rabbitmq_connection: Optional[pika.BlockingConnection] = None
-        self.rabbitmq_channel: Optional[pika.adapters.blocking_connection.BlockingChannel] = None
-        self._configure_rabbitmq() # RabbitMQ 연결 및 채널 설정
-
         self._configure_tesseract()
         logging.info(text_manager.get_log_text("345")) # "SystemManager initialization completed."
-
-    # initialize_settings 및 load_development_settings 메서드는 settings_manager를 통해 설정이 로드되므로 제거합니다.
-
-    @staticmethod
-    def initialize_settings(settings_path="config/development.json"):
-        config_path = os.path.join(os.path.dirname(__file__), settings_path)
-        try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-            if "constants" not in config:
-                raise KeyError("Missing 'constants' in configuration file.")
-        except FileNotFoundError:
-            logging.critical(f"Configuration file not found: {config_path}")
-            raise
-        except json.JSONDecodeError as e:
-            logging.critical(f"Error decoding JSON from configuration file: {e}")
-            raise
-        except KeyError as e:
-            logging.critical(f"Configuration error: {e}")
-            raise
-        except Exception as e:
-            logging.critical(f"Unexpected error loading configuration file: {e}")
-            raise
-
-        settings_manager = SettingsManager(config_path)
-        settings_manager.load_from_env()
-        return settings_manager, config
 
     def load_development_settings(self):
         # 이 메서드는 AppConfig와 별개로 설정을 로드합니다. 코드 구조 검토가 필요합니다.
@@ -180,94 +139,6 @@ class SystemManager:
             pytesseract.pytesseract.tessdata_dir = tessdata_dir
             logging.info(text_manager.get_log_text("343", tessdata_dir=tessdata_dir)) # "Tessdata configuration completed: {tessdata_dir}"
 
-    def _configure_rabbitmq(self):
-        """RabbitMQ 연결 및 채널을 설정합니다."""
-        # AppConfig.QUEUES 또는 self.config.get("queues", {}) 사용
-        # queues.json이 AppConfig.QUEUES에 로드된다고 가정
-        # 연결 정보는 queues.json의 특정 키 (예: "connection_settings")에 있거나,
-        # managers.json의 "message_queue" kwargs에 있을 수 있습니다.
-        # 여기서는 AppConfig.QUEUES의 특정 키 (예: "connection")에 연결 정보가 있다고 가정합니다.
-        rabbitmq_conn_settings = AppConfig.QUEUES.get("connection", {}) # queues.json에 connection 정보 추가 필요
-
-        if not rabbitmq_conn_settings:
-             logging.error(text_manager.get_error_text("527")) # RabbitMQ 설정 누락 오류 메시지 추가 (예: 527)
-             self.rabbitmq_connection = None
-             self.rabbitmq_channel = None
-             return
-
-        try:
-            # 사용자 이름/비밀번호는 settings_manager 또는 다른 설정 소스에서 가져옴
-            # 여기서는 설정 파일에 직접 포함되어 있다고 가정
-            username = rabbitmq_conn_settings.get("username", 'guest') # 기본값 guest
-            password = rabbitmq_conn_settings.get("password", 'guest') # 기본값 guest
-            credentials = pika.PlainCredentials(username, password)
-
-            parameters = pika.ConnectionParameters(
-                host=rabbitmq_conn_settings.get("host", 'localhost'),
-                port=rabbitmq_conn_settings.get("port", 5672),
-                virtual_host=rabbitmq_conn_settings.get("virtual_host", '/'),
-                credentials=credentials
-            )
-            self.rabbitmq_connection = pika.BlockingConnection(parameters)
-            self.rabbitmq_channel = self.rabbitmq_connection.channel()
-            logging.info(text_manager.get_log_text("349")) # "RabbitMQ configuration completed."
-
-            # AppConfig.QUEUES를 기반으로 큐 선언
-            for queue_name, queue_config in AppConfig.QUEUES.items():
-                 # 연결 정보 키는 제외하고 큐만 선언
-                 if queue_name != "connection" and queue_config.get("type") == "rabbitmq":
-                     try:
-                         # ...existing code...
-                         logging.debug(text_manager.get_log_text("359", queue_name=queue_config.get('name', queue_name))) # "Declared queue: {queue_name}"
-                     except Exception as e:
-                         logging.error(text_manager.get_error_text("531", queue_name=queue_name, e=e)) # 큐 선언 실패 오류 메시지 추가 (예: 531)
-
-
-        except pika.exceptions.AMQPConnectionError as e:
-            logging.error(text_manager.get_error_text("511", error=e)) # text_manager 사용
-            self.rabbitmq_connection = None
-            self.rabbitmq_channel = None
-        except Exception as e:
-            logging.error(text_manager.get_error_text("532", e=e)) # 예상치 못한 RabbitMQ 설정 오류 메시지 추가 (예: 532)
-            self.rabbitmq_connection = None
-            self.rabbitmq_channel = None
-
-    def _process_message_callback(self, process_func):
-        """메시지 처리 함수를 ACK/NACK/Reject 로직으로 감싸는 데코레이터 역할을 하는 헬퍼."""
-        def wrapper(channel, method, properties, body):
-            try:
-                # 실제 처리 함수 (SystemManager의 메서드) 호출
-                process_func(channel, method, properties, body)
-                channel.basic_ack(delivery_tag=method.delivery_tag)
-            except json.JSONDecodeError as e:
-                logging.error(text_manager.get_error_text("512", e=e, body=body)) # text_manager 사용
-                channel.basic_reject(delivery_tag=method.delivery_tag, requeue=False) # JSON 오류 시 재큐잉 안 함
-            except Exception as e:
-                logging.error(text_manager.get_error_text("513", e=e, body=body)) # text_manager 사용
-                channel.basic_nack(delivery_tag=method.delivery_tag, requeue=True) # 다른 오류 시 재큐잉
-
-        return wrapper
-
-    def _handle_process(self, channel, method, properties, body, process_func_name: str):
-        """JSON 파싱 및 특정 처리 메서드 호출을 위한 공통 메시지 처리 로직."""
-        try:
-            message = json.loads(body.decode('utf-8')) # body 디코딩
-            process_func = getattr(self, process_func_name, None)
-            if process_func and callable(process_func):
-                process_func(message) # 메시지를 인자로 특정 처리 메서드 호출
-                logging.info(text_manager.get_log_text("354", message=message)) # "System process completed: {message}"
-            else:
-                 logging.error(text_manager.get_error_text("533", func_name=process_func_name)) # 알 수 없는 처리 함수 오류 메시지 추가 (예: 533)
-                 # 알 수 없는 처리 함수 이름에 대한 처리 결정 - reject?
-                 raise ValueError(f"Unknown process function name: {process_func_name}") # nack/reject를 트리거하기 위해 예외 발생
-
-        except json.JSONDecodeError as e:
-            logging.error(text_manager.get_error_text("512", e=e, body=body)) # text_manager 사용
-            raise # 래퍼에 의해 잡히도록 예외 다시 발생
-        except Exception as e:
-            logging.error(text_manager.get_error_text("513", e=e, body=body)) # text_manager 사용
-            raise # 래퍼에 의해 잡히도록 예외 다시 발생
-
     def _process_document(self, message: Dict[str, Any]):
         """문서 처리 메시지를 처리합니다."""
         file_paths = message.get("file_paths", [])
@@ -343,10 +214,7 @@ class SystemManager:
                             buttons_type: Optional[str] = None,
                             delete_target: Optional[str] = None,
                             show_do_not_show_again: bool = False) -> str:
-        """
-        메인 윈도우를 통해 사용자에게 메시지 박스를 표시하고 결과를 반환합니다.
-        SystemConstants.EventTypes를 사용하여 메시지 유형에 따라 적절한 EventWindow 클래스를 호출합니다.
-        """
+
         if not self.main_window:
             logging.error(text_manager.get_error_text("542", message="Main window instance not available to display message box."))
             title = text_manager.get_general_text(title_key)
@@ -354,47 +222,20 @@ class SystemManager:
             logging.error(f"UI Error (No MainWindow): {title} - {message} {f'Details: {detail_info}' if detail_info else ''}")
             return SystemConstants.EventResults.CANCEL # UI 없이 진행될 경우 기본 반환값
 
-        dialog_class = None
+        # MessageBroker의 공개 함수를 직접 호출
         if message_type == SystemConstants.EventTypes.ALERT:
-            dialog_class = AlertDialog
+            return display_alert(self.main_window, message_key, title_key, detail_info, show_do_not_show_again)
         elif message_type == SystemConstants.EventTypes.WARNING:
-            dialog_class = WarningDialog
+            return display_warning(self.main_window, message_key, title_key, detail_info, show_do_not_show_again)
         elif message_type == SystemConstants.EventTypes.ERROR:
-            dialog_class = ErrorDialog
+            return display_error(self.main_window, message_key, title_key, detail_info, show_do_not_show_again)
         elif message_type == SystemConstants.EventTypes.QUESTION:
-            dialog_class = QuestionDialog
+            return ask_question(self.main_window, message_key, title_key, detail_info, buttons_type, show_do_not_show_again)
         elif message_type == SystemConstants.EventTypes.CONFIRM_DELETE:
-            dialog_class = ConfirmDeleteDialog
+            return confirm_delete(self.main_window, delete_target if delete_target else text_manager.get_general_text("selected_item_default"), message_key, detail_info, show_do_not_show_again)
         else:
-            logging.warning(text_manager.get_warning_text("415", message_type=message_type)) # 알 수 없는 메시지 유형
-            dialog_class = AlertDialog # 기본값으로 알림 사용
-
-        if dialog_class == ConfirmDeleteDialog:
-            result = dialog_class.show_dialog(
-                parent=self.main_window,
-                message_key=message_key,
-                delete_target=delete_target if delete_target else "선택된 항목",
-                detail_info=detail_info,
-                show_do_not_show_again=show_do_not_show_again
-            )
-        elif dialog_class == QuestionDialog:
-            result = dialog_class.show_dialog(
-                parent=self.main_window,
-                title_key=title_key,
-                message_key=message_key,
-                detail_info=detail_info,
-                buttons_type=buttons_type,
-                show_do_not_show_again=show_do_not_show_again
-            )
-        else:
-            result = dialog_class.show_dialog(
-                parent=self.main_window,
-                title_key=title_key,
-                message_key=message_key,
-                detail_info=detail_info,
-                show_do_not_show_again=show_do_not_show_again
-            )
-        return result
+            logging.warning(text_manager.get_warning_text("415", message_type=message_type))
+            return display_alert(self.main_window, message_key, title_key, detail_info, show_do_not_show_again) # 알 수 없는 유형은 기본 알림으로
 
     # --- 공개 메서드 ---
 
@@ -466,6 +307,7 @@ class SystemManager:
             db_manager = self.get_manager("database")
             if db_manager:
                 db_manager.request_database_packaging(data)
+                publish_system_event("database_packaged", status="success", timestamp=datetime.now().isoformat())
             else:
                 logging.error(text_manager.get_error_text("522"))
                 self.display_message_box(SystemConstants.EventTypes.ERROR,"501","522",)
@@ -474,6 +316,7 @@ class SystemManager:
             doc_manager = self.get_manager("document")
             if doc_manager:
                 doc_manager.request_document_processing(data)
+                publish_system_event("document_processed", doc_id=data.get("id"), status="completed")
             else:
                 logging.error(text_manager.get_error_text("528"))
                 self.display_message_box(SystemConstants.EventTypes.ERROR,"501","528",)
@@ -482,6 +325,7 @@ class SystemManager:
             ai_trainer = self.get_manager("ai_trainer")
             if ai_trainer:
                 ai_trainer.request_ai_training(data)
+                publish_system_event("ai_training_completed", model_type=data.get("model_type"))
             else:
                 logging.error(text_manager.get_error_text("529"))
                 self.display_message_box(
@@ -490,7 +334,9 @@ class SystemManager:
         elif process_type == "generate_text":
             ai_prediction_manager = self.get_manager("ai_prediction")
             if ai_prediction_manager:
-                return ai_prediction_manager.generate_text(data.get("command", ""))
+                result = ai_prediction_manager.generate_text(data.get("command", ""))
+                publish_system_event("text_generated", result_len=len(result))
+                return result
             else:
                 logging.error(text_manager.get_error_text("526"))
                 self.display_message_box(SystemConstants.EventTypes.ERROR,"501","526",)
@@ -503,7 +349,7 @@ class SystemManager:
     def handle_error(self, message_key: str, error_detail: str = None, title_key: str = "501"): # 오류를 로깅하고 SystemManager를 통해 메시지 박스를 표시합니다.
         log_message = text_manager.get_error_text(message_key, error=error_detail)
         logging.error(log_message)
-        self.display_message_box(SystemConstants.EventTypes.ERROR, title_key, message_key, detail_info=error_detail)
+        display_error(self.main_window,message_key,title_key,detail_info=error_detail)
 
     def run_embedding_generation(self):
         """임베딩 생성을 트리거합니다."""
