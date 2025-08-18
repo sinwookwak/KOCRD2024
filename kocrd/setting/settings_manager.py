@@ -7,24 +7,31 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 
 from PyQt5.QtWidgets import QDialog, QMessageBox, QFileDialog
-from typing import Union, List, Tuple, Callable, Dict, Optional
+from typing import Union, List, Tuple, Callable, Dict, Optional, Any
 from kocrd.config.config import text_manager # TextManager 사용
 
 class SettingsManager:
     """설정 관리 클래스."""
     def __init__(self, config_file="config/development.json"):
         self.config_file = os.path.abspath(config_file)
-        # self.config = load_config(self.config_file) # ConfigLoader 사용
-        self.config = ConfigLoader.load_json_file(self.config_file)
+        self.config = self._load_json_config(self.config_file)
         self.settings: Dict[str, Union[str, int, list, dict]] = {}
         self.load_config()
         self.load_from_env()
         self.text_manager = text_manager
 
+    def _load_json_config(self, file_path: str) -> Dict[str, Any]:
+        """JSON 설정 파일을 안전하게 로드하는 헬퍼 메서드"""
+        try:
+            return ConfigLoader.load_json_file(file_path)
+        except Exception as e:
+            logging.error(f"Failed to load config file {file_path}: {e}")
+            return {}
+
     def load_config(self):
         """JSON 설정 파일을 로드합니다."""
         try:
-            config = ConfigLoader.load_json_file(self.config_file)
+            config = self._load_json_config(self.config_file)
             self.settings.update(config.get("rabbitmq", {})) # RabbitMQ 설정은 제거 예정
             self.settings.update(config.get("general", {})) # 일반 설정 로드
             self.settings.update(config.get("file_paths", {})) # 파일 경로 설정 로드
@@ -149,11 +156,7 @@ class SettingsManager:
     def get_user_settings(self, user_id):
         """사용자 설정을 반환합니다."""
         user_settings_file = os.path.join(os.path.dirname(self.config_file), f"user_{user_id}_settings.json") # config_file의 디렉토리 사용
-        try:
-            return ConfigLoader.load_json_file(user_settings_file)
-        except Exception as e: # FileNotFoundError, json.JSONDecodeError 포함
-            logging.error(self.text_manager.get_error_text("505", user_id=user_id, e=e)) # text_manager 사용
-            return {}
+        return self._load_json_config(user_settings_file)
 
     def cleanup_all_temp_files(self):
         """임시 디렉토리의 모든 파일 정리 (보관 기간 적용)."""

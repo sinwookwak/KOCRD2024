@@ -73,12 +73,16 @@ class TextManager:
             # 만약 'ko' 언어팩이 없으면 자동으로 'default' (default_texts.json의 기본값)로 폴백됩니다.
             self.set_language('ko')
 
+    def _load_json_file(self, file_path: str) -> Dict[str, Any]:
+        """JSON 파일을 로드하는 헬퍼 메서드"""
+        return ConfigLoader.load_json_file(file_path)
+
     def _load_default_texts(self, default_texts_path: str):
         """
         default_texts.json 파일을 로드하여 기본 텍스트를 설정합니다.
         파일의 "messages" 키 아래 내용이 self.default_texts에 저장됩니다.
         """
-        all_data = ConfigLoader.load_json_file(default_texts_path)
+        all_data = self._load_json_file(default_texts_path)
         # default_texts.json의 "messages" 최상위 키 아래의 내용을 가져옵니다.
         self.default_texts = all_data.get("messages", {})
         logging.info(f"Default texts (messages and UI) loaded from {default_texts_path}")
@@ -95,7 +99,7 @@ class TextManager:
                 if filename.endswith(".json"):
                     lang_code = filename[:-5]
                     lang_path = os.path.join(self.lang_dir, filename)
-                    lang_data = ConfigLoader.load_json_file(lang_path)
+                    lang_data = self._load_json_file(lang_path)
 
                     # 언어팩 데이터가 'general', 'log', 'ui' 최상위 키를 가지며
                     # 그 아래에 해당 언어의 텍스트가 정의되어 있다고 가정합니다.
@@ -246,13 +250,23 @@ class FilePathConfig:
 
 class AppConfig:
     """애플리케이션의 정적 설정 데이터를 중앙 관리하는 클래스입니다.managers.json, queues.json, ui.json(텍스트 제외), 그리고 기타 고정된 경로 등을 포함합니다."""
-    # ConfigLoader는 config.py 기준으로 상대 경로를 처리하도록 수정됨
+    
+    @staticmethod
+    def _load_config_section(filename: str, section_key: str = None) -> Dict[str, Any]:
+        """설정 파일에서 특정 섹션을 로드하는 헬퍼 메서드"""
+        try:
+            config_data = ConfigLoader.load_json_file(filename)
+            return config_data.get(section_key, {}) if section_key else config_data
+        except Exception as e:
+            logging.error(f"Failed to load config section from {filename}: {e}")
+            return {}
+
     # Manager 설정 (kocrd/config/managers.json에서 로드)
-    MANAGERS: Dict[str, Any] = ConfigLoader.load_json_file('managers.json').get("managers", {})
+    MANAGERS: Dict[str, Any] = _load_config_section.__func__('managers.json', 'managers')
 
     # Queue 설정 (kocrd/config/queues.json에서 로드) - RabbitMQ 제거 시 필요 없을 수 있음
     # 만약 내부 메시지 전달에 큐 개념을 사용한다면 다른 방식으로 로드하거나 정의해야 함
-    QUEUES: Dict[str, Any] = ConfigLoader.load_json_file('queues.json').get("queues", {})
+    QUEUES: Dict[str, Any] = _load_config_section.__func__('queues.json', 'queues')
 
     # 파일 경로 설정 (이전 config.py의 FilePathConfig와 유사한 역할)
     # 실제 파일 시스템 경로를 나타내는 정적 데이터
