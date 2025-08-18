@@ -3,7 +3,8 @@
     "allow": [
       "Bash(python:*)",
       "Bash(del test_integration.py simple_test.py)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(mv:*)"
     ],
     "deny": [],
     "ask": []

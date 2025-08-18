@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 from PyQt5.QtWidgets import QDialog, QMessageBox, QFileDialog
 from typing import Union, List, Tuple, Callable, Dict, Optional, Any
 from kocrd.config.config import text_manager # TextManager 사용
-
+from kocrd.managers.unified_temp_manager import UnifiedTempManager
 class SettingsManager:
     """설정 관리 클래스."""
     def __init__(self, config_file="config/development.json"):
@@ -19,7 +19,7 @@ class SettingsManager:
         self.load_config()
         self.load_from_env()
         self.text_manager = text_manager
-
+        self.temp_manager = UnifiedTempManager()
     def _load_json_config(self, file_path: str) -> Dict[str, Any]:
         """JSON 설정 파일을 안전하게 로드하는 헬퍼 메서드"""
         try:
@@ -158,19 +158,62 @@ class SettingsManager:
         user_settings_file = os.path.join(os.path.dirname(self.config_file), f"user_{user_id}_settings.json") # config_file의 디렉토리 사용
         return self._load_json_config(user_settings_file)
 
-    def cleanup_all_temp_files(self):
+    async def cleanup_all_temp_files(self):
         """임시 디렉토리의 모든 파일 정리 (보관 기간 적용)."""
-        self.temp_manager.cleanup_all_temp_files()
+        try:
+            await self.temp_manager.cleanup_expired_files()
+            logging.info(self.text_manager.get_log_text("315"))  # "Temporary files cleaned up."
+        except Exception as e:
+            logging.error(self.text_manager.get_error_text("507", e=str(e)))
 
-    def cleanup_specific_files(self, files: Optional[List[str]]):
-        """특정 파일들을 정리합니다."""
-        self.temp_manager.cleanup_specific_files(files)
+    async def cleanup_specific_files(self, file_ids: Optional[List[str]]):
+        """특정 임시 파일들을 정리합니다 (file_id 기반)."""
+        if not file_ids:
+            logging.warning(self.text_manager.get_warning_text("418"))  # "No specific files provided for cleanup."
+            return
+        
+        deleted_count = 0
+        for file_id in file_ids:
+            try:
+                if await self.temp_manager.delete_temp_file(file_id):
+                    deleted_count += 1
+            except Exception as e:
+                logging.error(self.text_manager.get_error_text("507", e=str(e)))
+        
+        logging.info(f"Cleaned up {deleted_count} specific temporary files")
 
-    def get_temp_file_path(self, file_name: str) -> str:
-        return self.temp_manager.get_temp_file_path(file_name)
+    def get_temp_file_path(self, file_id: str) -> Optional[str]:
+        """임시 파일 ID로 파일 경로를 가져옵니다."""
+        try:
+            return self.temp_manager.get_temp_file_path(file_id)
+        except Exception as e:
+            logging.error(self.text_manager.get_error_text("507", e=str(e)))
+            return None
 
+    def get_temp_file_statistics(self) -> Dict[str, Any]:
+        """임시 파일 통계 정보를 반환합니다."""
+        try:
+            return self.temp_manager.get_statistics()
+        except Exception as e:
+            logging.error(self.text_manager.get_error_text("507", e=str(e)))
+            return {
+                "active_files": 0,
+                "total_size_bytes": 0,
+                "files_by_type": {},
+                "error": str(e)
+            }
+    
     def list_temp_files(self) -> List[str]:
-        return self.temp_manager.list_temp_files()
+        """임시 파일 목록을 반환합니다 (레거시 호환성)."""
+        # 레거시 메소드: 기본 임시 디렉토리에서 파일 목록 반환
+        temp_dir = self.get_temp_dir()
+        try:
+            if os.path.exists(temp_dir):
+                return [f for f in os.listdir(temp_dir) if os.path.isfile(os.path.join(temp_dir, f))]
+            return []
+        except Exception as e:
+            logging.error(self.text_manager.get_error_text("507", e=str(e)))
+            return []
 
     def save_feedback(self, feedback_data):
         """피드백 데이터를 저장합니다."""

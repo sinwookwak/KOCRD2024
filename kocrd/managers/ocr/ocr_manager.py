@@ -4,14 +4,28 @@ from PIL import Image
 from typing import List, Optional, Dict, Any, Callable
 from PyQt5.QtWidgets import QMessageBox
 import sys
-import os # os 모듈 임포트 추가
+import os
+import shutil
+import fitz
 import json
 import logging
+import asyncio
+import uuid
+from datetime import datetime
+try:
+    import pika
+except ImportError:
+    pika = None
+    logging.warning("pika module not available - RabbitMQ functionality will be disabled")
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 
 from kocrd.managers.ocr.ocr_utils import OCRHelper # kocrd 패키지 내부 경로 사용
 from kocrd.setting.settings_manager import SettingsManager # kocrd 패키지 내부 경로 사용
 from kocrd.config.config import text_manager # text_manager 임포트
+from kocrd.config.message_broker import display_error, display_warning, display_alert, publish_system_event
+from kocrd.managers.unified_temp_manager import UnifiedTempManager, TempFileType
+from kocrd.patterns.messaging_system import global_message_bus, Message, MessageType, MessagePriority
 
 
 class OCRManager:
@@ -23,10 +37,19 @@ class OCRManager:
         self.tessdata_dir = tessdata_dir
         self.settings_manager = settings_manager
         self.progress_bar = monitoring_window.progress_bar if monitoring_window else None
-        # 임시 디렉토리 경로는 SettingsManager에서 가져오는 것이 좋습니다.
-        # self.temp_dir = os.path.join(os.environ.get("TEMP", os.path.expanduser("~/.tmp")), "ocr_manager")
-        self.temp_dir = os.path.join(self.settings_manager.get_temp_dir(), "ocr_manager") # SettingsManager 사용
+        
+        # Initialize unified temp manager for OCR files
+        self.temp_manager = UnifiedTempManager(
+            name="ocr_temp",
+            settings_manager=settings_manager
+        )
+        
+        # Legacy temp directory for backward compatibility
+        self.temp_dir = os.path.join(self.settings_manager.get_temp_dir(), "ocr_manager")
         os.makedirs(self.temp_dir, exist_ok=True)
+        
+        # Register modern message handlers
+        self._register_message_handlers()
 
         # pytesseract 설정은 SystemManager 또는 OCRManager 초기화 시 SettingsManager 값을 사용
         if self.tesseract_cmd:
@@ -66,14 +89,51 @@ class OCRManager:
             logging.critical(message)
         else:
             logging.debug(message) # 알 수 없는 레벨은 debug로 처리
+    
+    def _register_message_handlers(self):
+        """현대적인 메시지 핸들러를 등록합니다."""
+        try:
+            # OCR 요청 메시지 핸들러 등록
+            global_message_bus.register_handler(
+                "ocr.extract_text",
+                self._handle_extract_text_request
+            )
+            
+            global_message_bus.register_handler(
+                "ocr.batch_process",
+                self._handle_batch_process_request
+            )
+            
+            global_message_bus.register_handler(
+                "ocr.get_status", 
+                self._handle_status_request
+            )
+            
+            self.log("info", "350")  # OCR handlers registered
+        except Exception as e:
+            self.log("error", "529", manager_name="OCRManager", e=str(e))
 
 
 
-    def show_message(self, level: str, code: str) -> None:
-        """간략화된 메시지 박스."""
-        message = managers_config["messages"].get(code, "")
-        if level == "warning":
-            QMessageBox.warning(self.monitoring_window, "오류", message)
+    def show_message(self, level: str, code: str, **kwargs) -> None:
+        """통합된 메시지 박스 표시."""
+        if not self.monitoring_window:
+            self.log("warning", "408")
+            return
+        
+        try:
+            message = text_manager.get_text(level, code, **kwargs)
+            title = text_manager.get_general_text("264")  # "Application Error"
+            
+            if level == "error":
+                display_error(self.monitoring_window, code, "264", **kwargs)
+            elif level == "warning": 
+                display_warning(self.monitoring_window, code, "264", **kwargs)
+            else:
+                display_alert(self.monitoring_window, code, "264", **kwargs)
+                
+        except Exception as e:
+            self.log("error", "521", error=str(e))
 
     def start_scan(self, file_paths: List[str]) -> Optional[List[str]]:
         """문서 스캔 시작."""
@@ -212,82 +272,206 @@ class OCRManager:
         self.monitoring_window.system_manager.send_temp_file_message("cleanup_temp_files", file_paths=file_paths)
 
     def _send_ocr_result(self, file_path: str, extracted_text: Optional[str]) -> None:
-        """OCR 결과를 메시지로 전송."""
-        if self.monitoring_window:
-            self.monitoring_window.system_manager.send_message(managers_config["message_types"]["102"], {"type": managers_config["message_types"]["102"], "file_path": file_path, "extracted_text": extracted_text, "reply_to": managers_config["queues"]["202"]})
-        else:
-            self.log("error", "514")
-
-    def handle_message(self, ch: pika.BlockingConnection, method: pika.spec.Basic.Deliver, properties: pika.BasicProperties, body: bytes) -> None:
-        """메시지 큐에서 OCR 작업 요청을 처리."""
+        """현대적인 이벤트 시스템을 사용하여 OCR 결과를 전송."""
         try:
-            message: Dict = json.loads(body.decode())
-            message_type = message.get("type")
-
-            if message_type == managers_config["message_types"]["101"]:
-                file_path = message.get("file_path")
-                if not file_path:
-                    self.log("warning", "403")
-                    ch.basic_ack(delivery_tag=method.delivery_tag)
-                    return
-
-                extracted_text = self.extract_text(file_path)
-
-                if extracted_text:
-                    is_valid = OCRHelper.validate_extracted_text(extracted_text)
-                    if is_valid:
-                        ocr_result = OCRHelper.extract_cell_and_kclb(extracted_text)
-                        if ocr_result:
-                            self.log("info", "313", ocr_result=ocr_result)
-                        else:
-                            self.log("warning", "407")
-                    else:
-                        self.log("warning", "405")
-                else:
-                    self.log("warning", "406")
-
-                self._send_ocr_result(file_path, extracted_text)
-                ch.basic_ack(delivery_tag=method.delivery_tag)
-
-            else:
-                self.log("warning", "404", message_type=message_type)
-                ch.basic_ack(delivery_tag=method.delivery_tag)
-        except json.JSONDecodeError as e:
-            self.log("error", "512", e=e, body=body.decode())
-            ch.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
+            # Create result message
+            result_data = {
+                "file_path": file_path,
+                "extracted_text": extracted_text,
+                "success": extracted_text is not None,
+                "timestamp": datetime.now().isoformat(),
+                "ocr_manager_id": id(self)
+            }
+            
+            # Send event via modern messaging system
+            message = Message(
+                id=str(uuid.uuid4()),
+                type=MessageType.EVENT,
+                topic="ocr.result",
+                data=result_data,
+                priority=MessagePriority.NORMAL
+            )
+            
+            global_message_bus.publish(message)
+            
+            # Also publish system event for backward compatibility
+            publish_system_event(
+                "ocr_result_processed",
+                file_path=file_path,
+                success=result_data["success"]
+            )
+            
+            self.log("info", "324", file_path=file_path)  # Document processing completed
+            
         except Exception as e:
-            self.log("error", "513", e=e, body=body.decode())
-            ch.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
+            self.log("error", "513", e=str(e), body=str(result_data) if 'result_data' in locals() else "unknown")
 
-    def main(self):
-        """메시지 큐에서 메시지를 소비하여 OCR 작업을 수행."""
+    async def _handle_extract_text_request(self, message: Message) -> Message:
+        """텍스트 추출 요청을 처리합니다."""
         try:
-            connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-            channel = connection.channel()
-            channel.queue_declare(queue=managers_config["queues"]["201"])
-            channel.basic_consume(queue=managers_config["queues"]["201"], on_message_callback=self.handle_message, auto_ack=False)
-            print('Waiting for messages. To exit press CTRL+C')
-            channel.start_consuming()
-        except pika.exceptions.AMQPConnectionError as e:
-            self.log("error", "511", e=e)
-        except KeyboardInterrupt:
-            print('Interrupted')
-            try:
-                channel.stop_consuming()
-                connection.close()
-            except Exception as e2:
-                self.log("error", "Error during shutdown: {e2}", e=e2)
-        finally:
-            if channel is not None and channel.is_open:
-                channel.close()
-            if connection is not None and connection.is_open:
-                connection.close()
+            file_path = message.data.get("file_path")
+            lang = message.data.get("language", "kor+eng")
+            
+            if not file_path:
+                raise ValueError("file_path is required")
+            
+            self.log("info", "322", file_path=file_path)  # Starting document processing
+            extracted_text = self.extract_text(file_path, lang)
+            
+            # Validate and process result
+            success = extracted_text is not None
+            if success:
+                is_valid = OCRHelper.validate_extracted_text(extracted_text)
+                if is_valid:
+                    ocr_result = OCRHelper.extract_cell_and_kclb(extracted_text)
+                    if ocr_result:
+                        self.log("info", "313", file_path=file_path, ocr_result=len(ocr_result))
+                    else:
+                        self.log("warning", "407")
+                else:
+                    self.log("warning", "405")
+            else:
+                self.log("warning", "417")  # Text extraction failed
+            
+            # Send result
+            self._send_ocr_result(file_path, extracted_text)
+            
+            # Return response
+            return Message(
+                id=str(uuid.uuid4()),
+                type=MessageType.RESPONSE,
+                topic=f"{message.topic}.response",
+                data={
+                    "file_path": file_path,
+                    "extracted_text": extracted_text,
+                    "success": success,
+                    "request_id": message.id
+                },
+                priority=MessagePriority.NORMAL
+            )
+            
+        except Exception as e:
+            self.log("error", "513", e=str(e), body=str(message.data))
+            return Message(
+                id=str(uuid.uuid4()),
+                type=MessageType.ERROR,
+                topic=f"{message.topic}.error",
+                data={
+                    "error": str(e),
+                    "request_id": message.id
+                },
+                priority=MessagePriority.HIGH
+            )
+    
+    async def _handle_batch_process_request(self, message: Message) -> Message:
+        """배치 처리 요청을 처리합니다."""
+        try:
+            file_paths = message.data.get("file_paths", [])
+            lang = message.data.get("language", "kor+eng")
+            
+            if not file_paths:
+                raise ValueError("file_paths list is required")
+            
+            results = []
+            for file_path in file_paths:
+                extracted_text = self.extract_text(file_path, lang)
+                results.append({
+                    "file_path": file_path,
+                    "extracted_text": extracted_text,
+                    "success": extracted_text is not None
+                })
+                self._send_ocr_result(file_path, extracted_text)
+            
+            return Message(
+                id=str(uuid.uuid4()),
+                type=MessageType.RESPONSE,
+                topic=f"{message.topic}.response",
+                data={
+                    "results": results,
+                    "total_processed": len(file_paths),
+                    "request_id": message.id
+                },
+                priority=MessagePriority.NORMAL
+            )
+            
+        except Exception as e:
+            self.log("error", "513", e=str(e), body=str(message.data))
+            return Message(
+                id=str(uuid.uuid4()),
+                type=MessageType.ERROR,
+                topic=f"{message.topic}.error",
+                data={
+                    "error": str(e),
+                    "request_id": message.id
+                },
+                priority=MessagePriority.HIGH
+            )
+    
+    async def _handle_status_request(self, message: Message) -> Message:
+        """상태 요청을 처리합니다."""
+        try:
+            status_data = {
+                "manager_type": "OCRManager",
+                "temp_manager_ready": self.temp_manager.is_ready if hasattr(self.temp_manager, 'is_ready') else True,
+                "tesseract_configured": self.tesseract_cmd is not None,
+                "tessdata_configured": self.tessdata_dir is not None,
+                "monitoring_window_available": self.monitoring_window is not None,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            return Message(
+                id=str(uuid.uuid4()),
+                type=MessageType.RESPONSE,
+                topic=f"{message.topic}.response",
+                data=status_data,
+                priority=MessagePriority.NORMAL
+            )
+            
+        except Exception as e:
+            self.log("error", "519", error=str(e))
+            return Message(
+                id=str(uuid.uuid4()),
+                type=MessageType.ERROR,
+                topic=f"{message.topic}.error",
+                data={"error": str(e)},
+                priority=MessagePriority.HIGH
+            )
+
+    async def start_modern_messaging(self):
+        """현대적인 메시징 시스템을 시작합니다."""
+        try:
+            self.log("info", "351")  # Message consumption started
+            print('OCR Manager started with modern messaging system')
+            # The message handlers are already registered in _register_message_handlers
+            # The global_message_bus will route messages to our handlers automatically
+        except Exception as e:
+            self.log("error", "532", e=str(e))
+    
+    async def stop_modern_messaging(self):
+        """현대적인 메시징 시스템을 정지합니다."""
+        try:
+            # Unregister handlers
+            global_message_bus.unregister_handler("ocr.extract_text")
+            global_message_bus.unregister_handler("ocr.batch_process") 
+            global_message_bus.unregister_handler("ocr.get_status")
+            
+            self.log("info", "352")  # Message consumption stopped
+            print('OCR Manager stopped')
+        except Exception as e:
+            self.log("error", "532", e=str(e))
 
     def filter_documents(self, criteria):
         """문서 필터링."""
         try:
-            self.lot[criteria] = self.main_window.filter_table(criteria)
-            self.log("info", "311")
+            if hasattr(self, 'main_window') and self.main_window:
+                if hasattr(self.main_window, 'filter_table'):
+                    result = self.main_window.filter_table(criteria)
+                    self.log("info", "311")  # Document filtering successful
+                    return result
+                else:
+                    self.log("warning", "416")  # Main window not properly configured
+            else:
+                self.log("warning", "408")  # monitoring_window is None
         except Exception as e:
-            self.log("error", "501", e=e)
-            self.show_message("warning", "301")
+            self.log("error", "501", e=str(e))
+            self.show_message("error", "516")  # Document filtering error
