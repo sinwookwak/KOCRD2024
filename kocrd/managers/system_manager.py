@@ -1,22 +1,26 @@
 # file_name: system_manager.py
-import logging
 import json
-import sys
+import logging
 import os
+import sys
+from datetime import datetime
 from typing import Dict, Any, Optional
+
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMessageBox, QApplication
-from PyQt5.QtCore import Qt # QMessageBox.StandardButtons 등을 위해 필요할 수 있습니다.
-from kocrd.config.config import AppConfig, text_manager # AppConfig와 text_manager 임포트
-from kocrd.config.message_broker import display_alert, display_warning, display_error,ask_question, confirm_delete,publish_system_event, subscribe 
 
-from kocrd.config.system_constants import SystemConstants #상수
-
-from kocrd.managers.ocr.ocr_manager import OCRManager
-from kocrd.managers.temp_file_manager import TempFileManager
+from kocrd.config.config import AppConfig, text_manager
+from kocrd.config.message_broker import (
+    display_alert, display_warning, display_error, ask_question, 
+    confirm_delete, publish_system_event, subscribe
+)
+from kocrd.config.system_constants import SystemConstants
 from kocrd.managers.database_manager import DatabaseManager
 from kocrd.managers.document.document_manager import DocumentManager
-from kocrd.Settings.settings_manager import SettingsManager
-from kocrd.utils.embedding_utils import EmbeddingUtils 
+from kocrd.managers.ocr.ocr_manager import OCRManager
+from kocrd.managers.temp_file_manager import TempFileManager
+from kocrd.setting.settings_manager import SettingsManager
+from kocrd.utils.embedding_utils import EmbeddingUtils
 
 try:
     import pytesseract
@@ -62,66 +66,89 @@ class SystemManager:
 
     def initialize_managers(self):
         """로드된 설정을 기반으로 매니저를 초기화합니다."""
-        # self.config 또는 AppConfig.MANAGERS 사용 (settings_manager가 메인 config를 로드하므로 self.config 사용)
-        manager_configs = self.config.get("managers", {})
+        manager_configs = self.config.get(SystemConstants.ConfigKeys.MANAGERS, {})
 
         # 의존성 주입을 고려하여 매니저 인스턴스 생성
         manager_instances: Dict[str, Any] = {}
+        failed_managers = []
+
         for manager_name, manager_config in manager_configs.items():
-             try:
-                 manager_class = self.get_class(manager_config["module"], manager_config["class"])
-                 kwargs = manager_config.get("kwargs", {})
+            try:
+                manager_class = self._get_manager_class(manager_config)
+                manager_instance = self._create_manager_instance(
+                    manager_class, manager_config, manager_name
+                )
+                manager_instances[manager_name] = manager_instance
+                logging.debug(
+                    text_manager.get_log_text("358", manager_name=manager_name)
+                )
+            except (KeyError, ImportError, AttributeError) as e:
+                error_msg = text_manager.get_error_text("529", manager_name=manager_name, e=e)
+                logging.error(error_msg)
+                failed_managers.append(manager_name)
+            except Exception as e:
+                error_msg = text_manager.get_error_text("530", manager_name=manager_name, e=e)
+                logging.error(error_msg)
+                failed_managers.append(manager_name)
 
-                 # settings_manager 주입
-                 if manager_config.get("inject_settings"):
-                     # 생성자 인자로 settings_manager를 받는다고 가정
-                     # kwargs에 추가하거나, 생성자 시그니처에 따라 직접 전달
-                     # 여기서는 생성자 첫 인자로 settings_manager를 받는다고 가정하고 처리
-                     # 실제 매니저 클래스의 __init__ 시그니처에 맞게 수정 필요
-                     # 예: class MyManager: def __init__(self, settings_manager, ..., **kwargs): ...
-                     manager_instances[manager_name] = manager_class(self.settings_manager, **kwargs)
-                 else:
-                     manager_instances[manager_name] = manager_class(**kwargs)
+        if failed_managers:
+            logging.warning(f"Failed to initialize managers: {', '.join(failed_managers)}")
 
-                 logging.debug(text_manager.get_log_text("358", manager_name=manager_name)) # "Created instance for manager '{manager_name}'."
-             except (KeyError, ImportError, AttributeError) as e:
-                  logging.error(text_manager.get_error_text("529", manager_name=manager_name, e=e)) # 매니저 초기화 실패 오류 메시지 추가 (예: 529)
-                  # 심각도에 따라 sys.exit(1) 호출 고려
-             except Exception as e:
-                  logging.error(text_manager.get_error_text("530", manager_name=manager_name, e=e)) # 예상치 못한 오류 메시지 추가 (예: 530)
-                  # sys.exit(1)
+        self._inject_dependencies(manager_instances, manager_configs)
 
-        # 생성된 인스턴스에 의존성 및 기타 객체 주입 (main_window, system_manager 등)
+    def _get_manager_class(self, manager_config: Dict[str, Any]):
+        """매니저 설정에서 클래스를 가져옵니다."""
+        module_name = manager_config[SystemConstants.ConfigKeys.MODULE]
+        class_name = manager_config[SystemConstants.ConfigKeys.CLASS]
+        return self.get_class(module_name, class_name)
+
+    def _create_manager_instance(self, manager_class, manager_config: Dict[str, Any], manager_name: str):
+        """매니저 인스턴스를 생성합니다."""
+        kwargs = manager_config.get(SystemConstants.ConfigKeys.KWARGS, {})
+        
+        if manager_config.get(SystemConstants.ConfigKeys.INJECT_SETTINGS):
+            return manager_class(self.settings_manager, **kwargs)
+        else:
+            return manager_class(**kwargs)
+
+    def _inject_dependencies(self, manager_instances: Dict[str, Any], manager_configs: Dict[str, Any]):
+        """매니저 인스턴스들에 의존성을 주입합니다."""
         for manager_name, manager_instance in manager_instances.items():
-             manager_config = manager_configs.get(manager_name, {})
-             # 의존성 주입
-             for dep_name in manager_config.get("dependencies", []):
-                 if dep_name in manager_instances:
-                     # 의존성 주입 방식에 따라 수정 (속성 설정, 메서드 호출 등)
-                     # 여기서는 속성 설정으로 가정
-                     setattr(manager_instance, dep_name, manager_instances[dep_name])
-                     logging.debug(text_manager.get_log_text("355", dep_name=dep_name, manager_name=manager_name)) # "Injected dependency '{dep_name}' into '{manager_name}'."
-                 else:
-                     logging.warning(text_manager.get_warning_text("409", dep_name=dep_name, manager_name=manager_name)) # 의존성 누락 경고 메시지 추가 (예: 409)
+            manager_config = manager_configs.get(manager_name, {})
+            
+            # 의존성 주입
+            self._inject_manager_dependencies(
+                manager_instance, manager_config, manager_instances, manager_name
+            )
+            
+            # main_window 주입
+            if manager_config.get(SystemConstants.ConfigKeys.INJECT_MAIN_WINDOW) and self.main_window:
+                setattr(manager_instance, "main_window", self.main_window)
+                logging.debug(text_manager.get_log_text("356", manager_name=manager_name))
 
-             # main_window 주입
-             if manager_config.get("inject_main_window") and self.main_window:
-                 setattr(manager_instance, "main_window", self.main_window)
-                 logging.debug(text_manager.get_log_text("356", manager_name=manager_name)) # "Injected main_window into '{manager_name}'."
+            # system_manager (self) 주입
+            if manager_config.get(SystemConstants.ConfigKeys.INJECT_SYSTEM_MANAGER):
+                setattr(manager_instance, "system_manager", self)
+                logging.debug(text_manager.get_log_text("357", manager_name=manager_name))
 
-             # system_manager (self) 주입
-             if manager_config.get("inject_system_manager"):
-                 setattr(manager_instance, "system_manager", self)
-                 logging.debug(text_manager.get_log_text("357", manager_name=manager_name)) # "Injected system_manager into '{manager_name}'."
+            self.managers[manager_name] = manager_instance
+            logging.info(text_manager.get_log_text("328", component_type="Manager", component_name=manager_name))
 
-             self.managers[manager_name] = manager_instance
-             logging.info(text_manager.get_log_text("328", component_type="Manager", component_name=manager_name)) # 초기화 완료 로그 (text_manager 사용)
+    def _inject_manager_dependencies(self, manager_instance, manager_config: Dict[str, Any], 
+                                   manager_instances: Dict[str, Any], manager_name: str):
+        """개별 매니저의 의존성을 주입합니다."""
+        for dep_name in manager_config.get(SystemConstants.ConfigKeys.DEPENDENCIES, []):
+            if dep_name in manager_instances:
+                setattr(manager_instance, dep_name, manager_instances[dep_name])
+                logging.debug(text_manager.get_log_text("355", dep_name=dep_name, manager_name=manager_name))
+            else:
+                logging.warning(text_manager.get_warning_text("409", dep_name=dep_name, manager_name=manager_name))
 
     def get_temp_file_manager(self):
-        return self.managers.get("temp_file")
+        return self.managers.get(SystemConstants.ManagerNames.TEMP_FILE)
 
     def get_database_manager(self):
-        return self.managers.get("database")
+        return self.managers.get(SystemConstants.ManagerNames.DATABASE)
 
     def _configure_tesseract(self):
         """Tesseract 경로를 설정합니다."""
@@ -145,7 +172,7 @@ class SystemManager:
         if not file_paths:
             logging.warning(text_manager.get_warning_text("403")) # text_manager 사용
             return
-        document_manager = self.get_manager("document")
+        document_manager = self.get_manager(SystemConstants.ManagerNames.DOCUMENT)
         if document_manager:
             for file_path in file_paths:
                 document_manager.load_document(file_path) # DocumentManager에 load_document 메서드가 있다고 가정
@@ -155,7 +182,7 @@ class SystemManager:
 
     def _process_database_packaging(self, message: Dict[str, Any]):
         """데이터베이스 패키징 메시지를 처리합니다."""
-        database_manager = self.get_manager("database")
+        database_manager = self.get_manager(SystemConstants.ManagerNames.DATABASE)
         if database_manager:
             database_manager.package_database() # DatabaseManager에 package_database 메서드가 있다고 가정
             logging.info(text_manager.get_log_text("330")) # text_manager 사용
@@ -164,7 +191,7 @@ class SystemManager:
 
     def _process_ai_training(self, message: Dict[str, Any]):
         """AI 학습 메시지를 처리합니다."""
-        ai_trainer = self.get_manager("ai_trainer") # config에서 매니저 이름이 'ai_trainer'라고 가정
+        ai_trainer = self.get_manager(SystemConstants.ManagerNames.AI_TRAINER) # config에서 매니저 이름이 'ai_trainer'라고 가정
         if ai_trainer:
             ai_trainer.train_ai(message) # AITrainer에 train_ai 메서드가 있다고 가정
             logging.info(text_manager.get_log_text("347")) # "AI training completed."
@@ -173,7 +200,7 @@ class SystemManager:
 
     def _process_temp_file_manager(self, message: Dict[str, Any]):
         """임시 파일 관리 메시지를 처리합니다."""
-        temp_file_manager = self.get_manager("temp_file")
+        temp_file_manager = self.get_manager(SystemConstants.ManagerNames.TEMP_FILE)
         if temp_file_manager:
             temp_file_manager.handle_message(message) # TempFileManager에 handle_message 메서드가 있다고 가정
             logging.info(text_manager.get_log_text("315")) # text_manager 사용 (기존 ID 유지)
@@ -182,7 +209,7 @@ class SystemManager:
 
     def _process_ai_prediction(self, message: Dict[str, Any]):
         """AI 예측 메시지를 처리합니다."""
-        ai_prediction_manager = self.get_manager("ai_prediction")
+        ai_prediction_manager = self.get_manager(SystemConstants.ManagerNames.AI_PREDICTION)
         if ai_prediction_manager:
             ai_prediction_manager.handle_message(message) # AIPredictionManager에 handle_message 메서드가 있다고 가정
             logging.info(text_manager.get_log_text("348")) # "AI prediction processed."
@@ -193,7 +220,7 @@ class SystemManager:
         """AI 이벤트 메시지를 처리합니다."""
         # AI 이벤트 매니저가 있거나 AI 예측/모델 매니저가 처리한다고 가정
         # 여기서는 AI 예측 매니저가 이벤트를 처리한다고 가정
-        ai_prediction_manager = self.get_manager("ai_prediction")
+        ai_prediction_manager = self.get_manager(SystemConstants.ManagerNames.AI_PREDICTION)
         if ai_prediction_manager:
             ai_prediction_manager.handle_ai_event(message) # handle_ai_event 메서드가 있다고 가정
             logging.info(text_manager.get_log_text("354", message="AI event processed")) # "System process completed: AI event processed" (일반적인 로그)
@@ -202,7 +229,7 @@ class SystemManager:
 
     def _process_ai_ocr_running(self, message: Dict[str, Any]):
         """AI OCR 실행 메시지 (OCR 결과 처리)를 처리합니다."""
-        ocr_manager = self.get_manager("ocr")
+        ocr_manager = self.get_manager(SystemConstants.ManagerNames.OCR)
         if ocr_manager:
             ocr_manager.handle_ocr_result(message) # OCRManager가 결과를 처리한다고 가정
             logging.info(text_manager.get_log_text("350")) # "AI OCR result handled."
@@ -295,7 +322,7 @@ class SystemManager:
 
     def database_packaging(self):
         """데이터베이스 매니저를 통해 데이터베이스 패키징을 트리거합니다."""
-        db_manager = self.get_manager("database")
+        db_manager = self.get_manager(SystemConstants.ManagerNames.DATABASE)
         if db_manager:
             db_manager.package_database() # DatabaseManager에 package_database 메서드가 있다고 가정
         else:
@@ -304,7 +331,7 @@ class SystemManager:
     def trigger_process(self, process_type: str, data: Optional[Dict[str, Any]] = None):
         """프로세스 유형에 따라 적절한 매니저로 요청을 라우팅합니다."""
         if process_type == "database_packaging":
-            db_manager = self.get_manager("database")
+            db_manager = self.get_manager(SystemConstants.ManagerNames.DATABASE)
             if db_manager:
                 db_manager.request_database_packaging(data)
                 publish_system_event("database_packaged", status="success", timestamp=datetime.now().isoformat())
@@ -313,7 +340,7 @@ class SystemManager:
                 self.display_message_box(SystemConstants.EventTypes.ERROR,"501","522",)
 
         elif process_type == "document_processing":
-            doc_manager = self.get_manager("document")
+            doc_manager = self.get_manager(SystemConstants.ManagerNames.DOCUMENT)
             if doc_manager:
                 doc_manager.request_document_processing(data)
                 publish_system_event("document_processed", doc_id=data.get("id"), status="completed")
@@ -322,7 +349,7 @@ class SystemManager:
                 self.display_message_box(SystemConstants.EventTypes.ERROR,"501","528",)
 
         elif process_type == "ai_training":
-            ai_trainer = self.get_manager("ai_trainer")
+            ai_trainer = self.get_manager(SystemConstants.ManagerNames.AI_TRAINER)
             if ai_trainer:
                 ai_trainer.request_ai_training(data)
                 publish_system_event("ai_training_completed", model_type=data.get("model_type"))
@@ -332,7 +359,7 @@ class SystemManager:
                     SystemConstants.EventTypes.ERROR,"501","529",)
 
         elif process_type == "generate_text":
-            ai_prediction_manager = self.get_manager("ai_prediction")
+            ai_prediction_manager = self.get_manager(SystemConstants.ManagerNames.AI_PREDICTION)
             if ai_prediction_manager:
                 result = ai_prediction_manager.generate_text(data.get("command", ""))
                 publish_system_event("text_generated", result_len=len(result))
@@ -365,13 +392,13 @@ class SystemManager:
 
     def get_ai_manager(self):
         """AI 예측 매니저 인스턴스를 가져옵니다."""
-        return self.managers.get("ai_prediction")
+        return self.managers.get(SystemConstants.ManagerNames.AI_PREDICTION)
 
     def get_manager(self, manager_name: str) -> Optional[Any]:
         """이름으로 매니저 인스턴스를 가져옵니다."""
         manager = self.managers.get(manager_name)
         if manager is None:
-             logging.warning(text_manager.get_warning_text("413", manager_name=manager_name)) # 요청된 매니저 누락 경고 메시지 추가 (예: 413)
+            logging.warning(text_manager.get_warning_text("413", manager_name=manager_name)) # 요청된 매니저 누락 경고 메시지 추가 (예: 413)
         return manager
 
     def get_ui(self, ui_name: str) -> Optional[Any]:
@@ -379,12 +406,12 @@ class SystemManager:
         # _init_components가 self.uis를 채운다고 가정
         ui_component = self.uis.get(ui_name)
         if ui_component is None:
-             logging.warning(text_manager.get_warning_text("414", ui_name=ui_name)) # 요청된 UI 컴포넌트 누락 경고 메시지 추가 (예: 414)
+            logging.warning(text_manager.get_warning_text("414", ui_name=ui_name)) # 요청된 UI 컴포넌트 누락 경고 메시지 추가 (예: 414)
         return ui_component
 
     def get_ai_model_manager(self):
         """AI 모델 매니저 인스턴스를 가져옵니다."""
-        return self.managers.get("ai_model")
+        return self.managers.get(SystemConstants.ManagerNames.AI_MODEL)
 
     def get_class(self, module_name: str, class_name: str):
         """모듈에서 클래스를 동적으로 임포트하고 반환합니다."""

@@ -59,3 +59,50 @@ class SystemConstants:
         RETRY = "retry" # 재시도
         IGNORE = "ignore" # 무시
         DO_NOT_SHOW_AGAIN = "do_not_show_again" # 다시 보지 않기 체크박스
+        DELETE = "delete" # 삭제
+        NOT_SHOW_AGAIN = "not_show_again" # 다시 보지 않기
+
+    class ButtonKeys:
+        # 버튼 키 상수
+        OK = "OK"
+        YES = "YES"
+        NO = "NO"
+        CANCEL = "CANCEL"
+        DELETE = "DELETE"
+        DO_NOT_SHOW_AGAIN = "DO_NOT_SHOW_AGAIN"
+
+    class UISettings:
+        # UI 관련 설정 상수
+        DEFAULT_MESSAGE_WINDOW_WIDTH = 400
+        DEFAULT_MESSAGE_WINDOW_HEIGHT = 200
+
+    class MessageHandlers:
+        # 메시지 핸들러 상수
+        DOCUMENT_PROCESSING = "_process_document"
+        DATABASE_PACKAGING = "_process_database_packaging"
+        AI_TRAINING = "_process_ai_training"
+        TEMP_FILE_MANAGER = "_process_temp_file_manager"
+        AI_PREDICTION = "_process_ai_prediction"
+        AI_OCR_RUNNING = "_process_ai_ocr_running"
+        AI_EVENT = "_process_ai_event"
+
+    class ManagerNames:
+        # 매니저 이름 상수
+        OCR = "ocr"
+        TEMP_FILE = "temp_file"
+        DATABASE = "database"
+        DOCUMENT = "document"
+        AI_MODEL = "ai_model"
+        AI_TRAINER = "ai_trainer"
+        AI_PREDICTION = "ai_prediction"
+
+    class ConfigKeys:
+        # 설정 키 상수
+        MANAGERS = "managers"
+        MODULE = "module"
+        CLASS = "class"
+        KWARGS = "kwargs"
+        DEPENDENCIES = "dependencies"
+        INJECT_SETTINGS = "inject_settings"
+        INJECT_MAIN_WINDOW = "inject_main_window"
+        INJECT_SYSTEM_MANAGER = "inject_system_manager"
