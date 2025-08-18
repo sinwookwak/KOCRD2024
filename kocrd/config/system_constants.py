@@ -43,6 +43,13 @@ class SystemConstants:
         QUESTION = "question"
         CONFIRM_DELETE = "confirm_delete"
 
+        # Manager lifecycle events
+        MANAGER_INITIALIZED = "manager_initialized"
+        MANAGER_INITIALIZATION_FAILED = "manager_initialization_failed"
+        MANAGER_STARTED = "manager_started"
+        MANAGER_STOPPED = "manager_stopped"
+        MANAGER_ERROR = "manager_error"
+        
         # 기타
         OCR_IMAGES_SAVED = "ocr_images_saved"
         FEEDBACK_SAVED = "feedback_saved"

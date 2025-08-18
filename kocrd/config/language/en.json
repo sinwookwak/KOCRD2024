@@ -5,5 +5,4 @@
   "MSG_003": "An error occurred while filtering the document.",
   "MSG_101": "OCR task completed.",
   "MSG_501": "An error occurred: {e}"
-  // ... (other messages)
 }

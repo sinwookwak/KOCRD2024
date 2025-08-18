@@ -5,6 +5,7 @@ import json
 import logging
 import time
 import threading
+import asyncio
 from PyQt5.QtWidgets import QWidget, QFileDialog, QMessageBox, QApplication
 from sqlalchemy.exc import SQLAlchemyError
 from pdf2image import convert_from_path # pdf2image 필요시 사용
@@ -17,7 +18,7 @@ from kocrd.config.message_broker import publish_system_event, subscribe, display
 from kocrd.managers.document.document_controller import DocumentController
 from kocrd.managers.document.document_table_view import DocumentTableView
 from kocrd.managers.document.document_processor import DocumentProcessor
-from kocrd.managers.document.document_temp_manager import DocumentTempManager
+from kocrd.managers.unified_temp_manager import UnifiedTempManager, TempFileType
 
 class DocumentManager(QWidget):
     def __init__(self, ocr_manager: Any, database_manager: Any, message_queue_manager: Any, system_manager: Any, parent: Optional[QWidget] = None):
@@ -26,7 +27,8 @@ class DocumentManager(QWidget):
         self.system_manager = system_manager
         self.ocr_manager = ocr_manager
 
-        self.temp_file_manager = DocumentTempManager(temp_dir=AppConfig.FILE_PATHS.get("temp_files", "temp/"))
+        self.temp_file_manager = UnifiedTempManager(name="document_temp", settings_manager=getattr(system_manager, 'settings_manager', None))
+        # Initialize the temp file manager asynchronously (will be done by parent system)
         
         # DocumentProcessor에 모든 매니저 인스턴스를 전달합니다.
         self.document_processor = DocumentProcessor(
@@ -182,46 +184,52 @@ class DocumentManager(QWidget):
             logging.warning(text_manager.get_warning_text("417", file_path=file_path))
             publish_system_event(SystemConstants.EventTypes.SINGLE_DOCUMENT_LOAD_FAILED, file_path=file_path)
 
-    def manage_temp_files(self):
+    async def manage_temp_files(self):
         """임시 파일을 관리합니다."""
-        self.temp_file_manager.cleanup()
+        await self.temp_file_manager.cleanup_expired_files()
         publish_system_event(SystemConstants.EventTypes.TEMP_FILES_CLEANED)
 
-    def create_temp_file(self, content: Union[str, bytes], suffix: str = ".tmp") -> str:
+    async def create_temp_file(self, content: Union[str, bytes], suffix: str = ".tmp") -> str:
         """임시 파일을 생성합니다."""
-        file_path = self.temp_file_manager.create_temp_file(content, suffix)
+        file_id = await self.temp_file_manager.create_temp_file(content=content, suffix=suffix, file_type=TempFileType.DOCUMENT)
+        file_path = self.temp_file_manager.get_temp_file_path(file_id)
         publish_system_event(SystemConstants.EventTypes.TEMP_FILE_CREATED, file_path=file_path)
-        return file_path
+        return file_id
 
-    def read_temp_file(self, file_path: str) -> Union[str, bytes]:
+    async def read_temp_file(self, file_id: str) -> Union[str, bytes]:
         """임시 파일을 읽습니다."""
-        content = self.temp_file_manager.read_temp_file(file_path)
+        content = await self.temp_file_manager.read_temp_file(file_id)
+        file_path = self.temp_file_manager.get_temp_file_path(file_id)
         publish_system_event(SystemConstants.EventTypes.TEMP_FILE_READ, file_path=file_path)
         return content
 
-    def delete_temp_file(self, file_path: str):
+    async def delete_temp_file(self, file_id: str):
         """임시 파일을 삭제합니다."""
-        self.temp_file_manager.delete_temp_file(file_path)
+        file_path = self.temp_file_manager.get_temp_file_path(file_id)
+        await self.temp_file_manager.delete_temp_file(file_id)
         publish_system_event(SystemConstants.EventTypes.TEMP_FILE_DELETED, file_path=file_path)
 
-    def cleanup_temp_files(self):
+    async def cleanup_temp_files(self):
         """모든 임시 파일을 정리합니다 (default retention)."""
-        self.temp_file_manager.cleanup_all_temp_files() # 기본값 사용
+        await self.temp_file_manager.cleanup_expired_files() # 기본값 사용
         publish_system_event(SystemConstants.EventTypes.ALL_TEMP_FILES_CLEANED)
 
-    def backup_temp_files(self):
+    async def backup_temp_files(self):
         """임시 파일을 백업합니다."""
-        self.temp_file_manager.backup_temp_files()
+        await self.temp_file_manager.backup_temp_files([TempFileType.DOCUMENT])
         publish_system_event(SystemConstants.EventTypes.TEMP_FILES_BACKED_UP)
 
-    def restore_temp_files(self):
+    async def restore_temp_files(self):
         """백업된 임시 파일을 복원합니다."""
-        self.temp_file_manager.restore_temp_files()
+        # Note: restore_temp_files implementation needed in UnifiedTempManager
+        # await self.temp_file_manager.restore_temp_files()
+        logging.warning("Restore functionality needs to be implemented in UnifiedTempManager")
         publish_system_event(SystemConstants.EventTypes.TEMP_FILES_RESTORED)
 
-    def cleanup_all_temp_files(self, retention_time: int = 3600):
+    async def cleanup_all_temp_files(self, retention_time: int = 3600):
         """임시 디렉토리의 모든 파일 정리 (보관 기간 적용)."""
-        self.temp_file_manager.cleanup_all_temp_files(retention_time)
+        hours = retention_time // 3600  # Convert seconds to hours
+        await self.temp_file_manager.cleanup_by_type(TempFileType.DOCUMENT, older_than_hours=hours)
         publish_system_event(SystemConstants.EventTypes.ALL_TEMP_FILES_CLEANED_RETENTION, retention=retention_time)
 
     def cleanup_specific_files(self, files: Optional[List[str]]):

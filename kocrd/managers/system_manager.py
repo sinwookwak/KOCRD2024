@@ -18,7 +18,7 @@ from kocrd.config.system_constants import SystemConstants
 from kocrd.managers.database_manager import DatabaseManager
 from kocrd.managers.document.document_manager import DocumentManager
 from kocrd.managers.ocr.ocr_manager import OCRManager
-from kocrd.managers.temp_file_manager import TempFileManager
+from kocrd.managers.unified_temp_manager import UnifiedTempManager
 from kocrd.setting.settings_manager import SettingsManager
 from kocrd.utils.embedding_utils import EmbeddingUtils
 
@@ -278,7 +278,7 @@ class SystemManager:
         elif message_type == SystemConstants.EventTypes.QUESTION:
             return ask_question(self.main_window, message_key, title_key, detail_info, buttons_type, show_do_not_show_again)
         elif message_type == SystemConstants.EventTypes.CONFIRM_DELETE:
-            return confirm_delete(self.main_window, delete_target if delete_target else text_manager.get_general_text("265") # 265: "selected item", message_key, detail_info, show_do_not_show_again)
+            return confirm_delete(self.main_window, delete_target if delete_target else text_manager.get_general_text("265"), message_key, detail_info, show_do_not_show_again)  # 265: "selected item"
         else:
             logging.warning(text_manager.get_warning_text("415", message_type=message_type))
             return display_alert(self.main_window, message_key, title_key, detail_info, show_do_not_show_again) # 알 수 없는 유형은 기본 알림으로

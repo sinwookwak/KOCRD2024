@@ -9,9 +9,11 @@
       }
     },
     "temp_file": {
-      "class": "TempFileManager",
-      "module": "kocrd.managers.temp_file_manager",
-      "inject_settings": true
+      "class": "UnifiedTempManager",
+      "module": "kocrd.managers.unified_temp_manager",
+      "inject_settings": true,
+      "async_init": true,
+      "initialization_priority": 50
     },
     "ocr": {
       "class": "OCRManager",

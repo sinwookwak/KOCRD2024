@@ -144,9 +144,7 @@ class UnifiedTempManager(ResourceManager):
         # Load existing temp file registry if it exists
         await self._load_registry()
         
-        # Start auto-cleanup if enabled
-        if self.auto_cleanup_enabled:
-            await self._start_auto_cleanup()
+        # Auto-cleanup will be started in _start_internal method
         
         # Register message handlers
         await self._register_message_handlers()
