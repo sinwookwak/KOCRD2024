@@ -6,7 +6,7 @@ import json
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QWidget, QVBoxLayout
 import pandas as pd
 from fpdf import FPDF
-from managers.document.document_table_view import DocumentTableView
+from kocrd.managers.document.document_table_view import DocumentTableView
 
 config_path = os.path.join(os.path.dirname(__file__), '..', 'managers_config.json')
 with open(config_path, 'r', encoding='utf-8') as f:

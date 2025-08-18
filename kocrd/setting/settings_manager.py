@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 
 from PyQt5.QtWidgets import QDialog, QMessageBox, QFileDialog
 from typing import Union, List, Tuple, Callable, Dict, Optional
-from kocrd.config.config import ConfigLoader, text_manager # TextManager 및 ConfigLoader 사용
+from kocrd.config.config import text_manager # TextManager 사용
 
 class SettingsManager:
     """설정 관리 클래스."""
@@ -109,7 +109,7 @@ class SettingsManager:
     def open_settings_dialog(self, parent=None):
         """설정 다이얼로그를 엽니다."""
         logging.info(self.text_manager.get_log_text("338")) # 338: "Settings open action executed"
-        # from Settings.SettingsDialogUI.SettingsDialogUI import SettingsDialogUI # 필요시 주석 해제
+        # from kocrd.setting.settingsdialogui.SettingsDialogUI import SettingsDialogUI # 필요시 주석 해제
         # dialog = SettingsDialogUI(settings_manager=self, parent=parent) # 필요시 주석 해제
         # dialog.exec_() # 필요시 주석 해제
         QMessageBox.information(parent,

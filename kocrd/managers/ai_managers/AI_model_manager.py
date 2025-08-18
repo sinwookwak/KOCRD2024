@@ -7,9 +7,10 @@ from typing import Optional, Tuple
 from regex import F
 import tensorflow as tf
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
-from system import DatabaseManager, SettingsManager
+from kocrd.managers.database_manager import DatabaseManager
+from kocrd.setting.settings_manager import SettingsManager
 from typing import Dict, Any, Optional
-from config.config import get_message, handle_error, send_message_to_queue
+from kocrd.config.config import text_manager
 
 class AIModelManager:
     _instance = None

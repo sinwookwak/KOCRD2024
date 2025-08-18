@@ -10,7 +10,7 @@ import logging
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 
 from kocrd.managers.ocr.ocr_utils import OCRHelper # kocrd 패키지 내부 경로 사용
-from kocrd.Settings.settings_manager import SettingsManager # kocrd 패키지 내부 경로 사용
+from kocrd.setting.settings_manager import SettingsManager # kocrd 패키지 내부 경로 사용
 from kocrd.config.config import text_manager # text_manager 임포트
 
 

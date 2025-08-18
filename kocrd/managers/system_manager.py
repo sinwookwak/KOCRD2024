@@ -448,4 +448,4 @@ class SystemManager:
             raise
 
 # main_window 모듈을 나중에 임포트
-from kocrd.window.main_window import MainWindow
+# Removed MainWindow import to avoid circular import - will import when needed

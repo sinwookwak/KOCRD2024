@@ -6,8 +6,8 @@ import pika
 import time
 from typing import Callable, Dict, Any
 import pika.exceptions
-from ai_model_manager import AIModelManager
-from config.config import get_message, handle_error, send_message_to_queue, handle_message
+from kocrd.managers.ai_managers.AI_model_manager import AIModelManager
+from kocrd.config.config import text_manager
 
 class OCRResultHandler:
     """OCR 결과 메시지 처리 담당."""

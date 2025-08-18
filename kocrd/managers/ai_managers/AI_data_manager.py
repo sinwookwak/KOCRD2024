@@ -7,9 +7,9 @@ from datetime import datetime
 from PyQt5.QtWidgets import QInputDialog
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-from ai_model_manager import AIModelManager
-from config.config import get_message, handle_error, send_message_to_queue
-from utils.embedding_utils import generate_document_type_embeddings
+from kocrd.managers.ai_managers.AI_model_manager import AIModelManager
+from kocrd.config.config import text_manager # Updated import path
+from kocrd.utils.embedding_utils import generate_document_type_embeddings
 
 class AIDataManager:
     def __init__(self, database_manager, model_manager, settings_manager, system_manager):

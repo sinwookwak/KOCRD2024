@@ -82,7 +82,7 @@ class MenubarManager:
         logging.info(self.text_manager.get_text("log", "338")) # "Settings open action executed."
         if hasattr(self.system_manager, 'settings_manager'):
             # 실제 설정 다이얼로그 호출 로직 (주석 처리)
-            # from kocrd.Settings.settings_manager import SettingsDialogUI
+            # from kocrd.setting.settingsdialogui.SettingsDialogUI import SettingsDialogUI
             # dialog = SettingsDialogUI(self.system_manager.settings_manager, self.main_window)
             # dialog.exec_()
             QMessageBox.information(self.main_window,
