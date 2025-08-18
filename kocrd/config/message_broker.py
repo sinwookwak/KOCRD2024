@@ -6,7 +6,7 @@ import functools
 
 # config 모듈에서 필요한 AppConfig, text_manager, SystemConstants 임포트 (경로에 따라 수정될 수 있음)
 from kocrd.config.config import text_manager
-from kocrd.config.system_constants import SystemConstants
+from kocrd.config.unified_constants import SystemConstants
 from kocrd.window.event_window import (
     AlertDialog,
     WarningDialog,

@@ -26,7 +26,7 @@ from contextlib import contextmanager, asynccontextmanager
 from kocrd.patterns.base_manager import ConfigurableManager, ResourceManager, manager_method
 from kocrd.patterns.messaging_system import global_message_bus, Message, MessageType
 from kocrd.config.config import text_manager, AppConfig
-from kocrd.config.system_constants import SystemConstants
+from kocrd.config.unified_constants import SystemConstants
 
 
 class TempFileType(Enum):

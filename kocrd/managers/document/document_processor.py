@@ -38,7 +38,7 @@ except FileNotFoundError:
         }
     }
 from kocrd.config.config import AppConfig, text_manager
-from kocrd.config.system_constants import SystemConstants
+from kocrd.config.unified_constants import SystemConstants
 
 class DocumentProcessor:
     """

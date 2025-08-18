@@ -12,7 +12,7 @@ from pdf2image import convert_from_path # pdf2image 필요시 사용
 from typing import List, Optional, Any, Dict, Union
 
 from kocrd.config.config import AppConfig, text_manager
-from kocrd.config.system_constants import SystemConstants # 필요한 상수도 AppConfig 또는 별도 Constants 파일에서
+from kocrd.config.unified_constants import SystemConstants # 필요한 상수도 AppConfig 또는 별도 Constants 파일에서
 from kocrd.config.message_broker import publish_system_event, subscribe, display_alert, display_warning, display_error, ask_question, confirm_delete
 
 from kocrd.managers.document.document_controller import DocumentController

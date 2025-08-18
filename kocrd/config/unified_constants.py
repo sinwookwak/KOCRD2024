@@ -55,7 +55,6 @@ class SystemConstants:
         FEEDBACK_SAVED = "feedback_saved"
         AI_TRAINING_COMPLETED = "ai_training_completed"
         TEXT_GENERATED = "text_generated"
-
     class EventResults:
         # 메시지 박스 결과
         OK = "ok"
@@ -68,7 +67,6 @@ class SystemConstants:
         DO_NOT_SHOW_AGAIN = "do_not_show_again" # 다시 보지 않기 체크박스
         DELETE = "delete" # 삭제
         NOT_SHOW_AGAIN = "not_show_again" # 다시 보지 않기
-
     class ButtonKeys:
         # 버튼 키 상수
         OK = "OK"
@@ -77,12 +75,10 @@ class SystemConstants:
         CANCEL = "CANCEL"
         DELETE = "DELETE"
         DO_NOT_SHOW_AGAIN = "DO_NOT_SHOW_AGAIN"
-
     class UISettings:
         # UI 관련 설정 상수
         DEFAULT_MESSAGE_WINDOW_WIDTH = 400
         DEFAULT_MESSAGE_WINDOW_HEIGHT = 200
-
     class MessageHandlers:
         # 메시지 핸들러 상수
         DOCUMENT_PROCESSING = "_process_document"
@@ -92,7 +88,6 @@ class SystemConstants:
         AI_PREDICTION = "_process_ai_prediction"
         AI_OCR_RUNNING = "_process_ai_ocr_running"
         AI_EVENT = "_process_ai_event"
-
     class ManagerNames:
         # 매니저 이름 상수
         OCR = "ocr"
@@ -102,7 +97,6 @@ class SystemConstants:
         AI_MODEL = "ai_model"
         AI_TRAINER = "ai_trainer"
         AI_PREDICTION = "ai_prediction"
-
     class ConfigKeys:
         # 설정 키 상수
         MANAGERS = "managers"
@@ -113,3 +107,10 @@ class SystemConstants:
         INJECT_SETTINGS = "inject_settings"
         INJECT_MAIN_WINDOW = "inject_main_window"
         INJECT_SYSTEM_MANAGER = "inject_system_manager"
+
+    class FileHandling:
+        # 파일 처리 관련 상수
+        DEFAULT_REPORT_FILENAME = "report.txt"
+        DEFAULT_EXCEL_FILENAME = "documents.xlsx"
+        VALID_FILE_EXTENSIONS = {".pdf", ".docx", ".xlsx", ".txt", ".csv", ".png", ".jpg", ".jpeg"}
+        MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB

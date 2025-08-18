@@ -32,7 +32,7 @@ from kocrd.patterns.messaging_system import (
 from kocrd.managers.unified_temp_manager import UnifiedTempManager
 from kocrd.managers.enhanced_ocr_manager import EnhancedOCRManager
 from kocrd.config.config import text_manager, AppConfig
-from kocrd.config.system_constants import SystemConstants
+from kocrd.config.unified_constants import SystemConstants
 
 
 class PatternBasedSystemManager(ServiceManager):

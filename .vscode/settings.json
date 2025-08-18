@@ -2,5 +2,6 @@
     "cmake.sourceDirectory": "C:/Users/rhkrt/Documents/GitHub/tool/Tesseract-OCR",
     "cSpell.enabledSchemes": {
         "file": false
-    }
+    },
+    "cmake.ignoreCMakeListsMissing": true
 }
