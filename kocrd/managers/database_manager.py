@@ -57,10 +57,10 @@ class DatabaseManager:
             with self.engine.connect() as conn:
                 for query in queries:
                     conn.execute(query)
-                logging.info(text_manager.get_log_text("312")) # "Database initialized and required tables created."
+                logging.info(text_manager.get_log_text("312")) # 312: "Document search completed..."
         except (SQLAlchemyError, IOError, KeyError) as e:
             logging.error(text_manager.get_error_text("526", error=e)) # "Error initializing database: {e}"
-            raise RuntimeError(text_manager.get_error_text("527")) from e # "Database initialization failed."
+            raise RuntimeError(text_manager.get_error_text("527")) # 527: "RabbitMQ connection settings..."
 
     def execute_query(self, query: str, params: Optional[Dict[str, Any]] = None, fetch: bool = False) -> Optional[List[Dict[str, Any]]]:
         """데이터베이스 쿼리를 실행하는 공통 메서드."""
@@ -82,7 +82,7 @@ class DatabaseManager:
         SET type = :type, date = :date, supplier = :supplier
         WHERE file_name = :file_name
         '''
-        self._execute_and_log(query, document_info, text_manager.get_log_text("313")) # "Document info updated"
+        self._execute_and_log(query, document_info, text_manager.get_log_text("313")) # 313: "OCR result for {file_path}..."
 
     def update_document_type(self, file_name: str, new_type: str):
         """문서의 유형을 업데이트합니다."""
@@ -96,7 +96,7 @@ class DatabaseManager:
     def package_database(self):
         """데이터베이스를 패키징하여 백업."""
         if not self.backup_path:
-            logging.warning(text_manager.get_warning_text("406")) # "Backup path not set, cannot package database."
+            logging.warning(text_manager.get_warning_text("406")) # 406: "Backup path not set..."
             return # 백업 경로 없으면 리턴
 
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")

@@ -89,7 +89,7 @@ class SettingsManager:
         try:
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.settings, f, ensure_ascii=False, indent=4)
-            logging.info(self.text_manager.get_log_text("326")) # text_manager 사용
+            logging.info(self.text_manager.get_log_text("326")) # 326: "Settings saved successfully"
         except Exception as e:
             logging.error(self.text_manager.get_error_text("503", file=self.config_file, e=e)) # text_manager 사용
 
@@ -108,7 +108,7 @@ class SettingsManager:
 
     def open_settings_dialog(self, parent=None):
         """설정 다이얼로그를 엽니다."""
-        logging.info(self.text_manager.get_log_text("338")) # text_manager 사용
+        logging.info(self.text_manager.get_log_text("338")) # 338: "Settings open action executed"
         # from Settings.SettingsDialogUI.SettingsDialogUI import SettingsDialogUI # 필요시 주석 해제
         # dialog = SettingsDialogUI(settings_manager=self, parent=parent) # 필요시 주석 해제
         # dialog.exec_() # 필요시 주석 해제

@@ -81,7 +81,7 @@ def _display_internal_message_box(
         result = dialog_class.show_dialog(
             parent=parent_window,
             message_key=message_key,
-            delete_target=delete_target if delete_target else text_manager.get_general_text("selected_item_default"),
+            delete_target=delete_target if delete_target else text_manager.get_general_text("265") # 265: "selected item",
             detail_info=detail_info,
             show_do_not_show_again=show_do_not_show_again
         )

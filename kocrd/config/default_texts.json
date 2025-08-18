@@ -22,7 +22,17 @@
       "253": "About", 
       "254": "Model Parameters (*.traineddata);;All Files (*)",
       "16": "Do you want to exit the application?",
-      "501": "Error"
+      "255": "Error",
+      "256": "Configuration Error", 
+      "257": "Success",
+      "258": "KOCRD2024",
+      "259": "Information",
+      "260": "Unknown",
+      "261": "File not found",
+      "262": "Processing error",
+      "263": "Key error",
+      "264": "Application Error",
+      "265": "selected item"
     },
     "log": {
       "311": "Document filtering successful",
@@ -40,7 +50,7 @@
       "323": "Performing document OCR",
       "324": "Document processing completed for {file_path}",
       "325": "Document saved for {file_path}",
-      "326": "OCR settings saved",
+      "326": "Settings saved successfully",
       "327": "OCR settings saved to database",
       "328": "Window configuration loaded successfully",
       "329": "Failed to load window configuration: {e}",
@@ -81,8 +91,8 @@
       "402": "No file path provided for scanning.",
       "403": "No file path provided.",
       "404": "Unknown message type: {message_type}",
-      "405": "Extracted text is invalid (empty).",
-      "406": "Text extraction failed",
+      "405": "Command input field is empty.",
+      "406": "Backup path not set, cannot package database.",
       "407": "OCR result extraction failed",
       "408": "monitoring_window is None.",
       "409": "Dependency '{dep_name}' for manager '{manager_name}' not found.",
@@ -90,7 +100,11 @@
       "411": "Skipping queue with missing name in config.",
       "412": "Skipping queue '{queue_name}' with missing handler method name.",
       "413": "Requested manager '{manager_name}' not found.",
-      "414": "Requested UI component '{ui_name}' not found."
+      "414": "Requested UI component '{ui_name}' not found.",
+      "415": "Unknown message type: {message_type}",
+      "416": "AI Model Manager not found or not properly configured.",
+      "417": "Text extraction failed",
+      "418": "No specific files provided for cleanup."
     },
     "error": {
       "501": "Error: {e}",
@@ -133,7 +147,10 @@
       "538": "RabbitMQ channel is not configured.",
       "539": "Failed to import module '{module_name}'",
       "540": "Class '{class_name}' not found in module '{module_name}'",
-      "541": "Unexpected error getting class '{class_name}' from module '{module_name}': {e}"
+      "541": "Unexpected error getting class '{class_name}' from module '{module_name}': {e}",
+      "542": "Main window instance not available to display message box",
+      "543": "Configuration error occurred",
+      "544": "Application error occurred"
   },
   "id_mapping": {
     "1000": "documentFilterError",

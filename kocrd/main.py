@@ -14,6 +14,7 @@ from kocrd.managers.system_manager import SystemManager # 새로운 SystemManage
 from kocrd.setting.settings_manager import SettingsManager # SettingsManager 임포트
 from kocrd.window.main_window import MainWindow # MainWindow 임포트
 from kocrd.config.config import text_manager # text_manager 임포트
+from kocrd.config.system_constants import SystemConstants # 시스템 상수 임포트
 
 def run_worker(config_path):
     """Worker 프로세스를 실행하는 함수 (메시지 소비 담당)."""
@@ -52,7 +53,7 @@ def main():
         # AppConfig는 SettingsManager에 의해 로드된다고 가정
     except Exception as e:
         logging.critical(text_manager.get_error_text("502", file=config_path, e=e)) # text_manager 사용
-        QMessageBox.critical(None, text_manager.get_general_text("configuration_error"), # text_manager 사용
+        QMessageBox.critical(None, text_manager.get_general_text("256"), # 256: "Configuration Error"
                              text_manager.get_error_text("502", file=config_path, e=e)) # text_manager 사용
         sys.exit(1) # 설정 로드 실패 시 종료
 
@@ -67,7 +68,7 @@ def main():
     # 예: event_manager = system_manager.get_manager("event") # EventManager가 있다면
     # MainWindow 생성자 시그니처에 맞게 수정 필요
     # 현재 MainWindow 생성자: __init__(self, system_manager: SystemManager, ocr_manager, event_manager)
-    ocr_manager = system_manager.get_manager("ocr")
+    ocr_manager = system_manager.get_manager(SystemConstants.ManagerNames.OCR)
     # event_manager는 config에 정의되어 있지 않거나 다른 방식으로 관리될 수 있음.
     # 임시로 None 또는 적절한 매니저를 가져오도록 수정
     event_manager = system_manager.get_manager("event") # config에 'event' 매니저가 정의되어 있다면
@@ -93,7 +94,7 @@ def main():
     # AI 모델 매니저의 __init__ 또는 별도의 메서드에서 모델 로딩 및 적용을 수행해야 합니다.
     # main에서는 AI 모델 매니저를 가져와 필요한 초기화 메서드를 호출하는 방식으로 변경합니다.
     try:
-        ai_model_manager = system_manager.get_manager("ai_model")
+        ai_model_manager = system_manager.get_manager(SystemConstants.ManagerNames.AI_MODEL)
         if ai_model_manager:
             # AI 모델 매니저에 모델 로딩/적용 메서드가 있다고 가정
             # 모델 경로는 AppConfig 또는 settings_manager에서 가져와야 합니다.
@@ -128,11 +129,11 @@ if __name__ == "__main__":
         main()
     except KeyError as e:
         logging.critical(text_manager.get_error_text("509", key=e)) # text_manager 사용
-        QMessageBox.critical(None, text_manager.get_general_text("configuration_error"), # text_manager 사용
+        QMessageBox.critical(None, text_manager.get_general_text("256"), # 256: "Configuration Error"
                              text_manager.get_error_text("509", key=e)) # text_manager 사용
         sys.exit(1)
     except Exception as e:
         logging.critical(text_manager.get_error_text("510", e=e), exc_info=True) # text_manager 사용
-        QMessageBox.critical(None, text_manager.get_general_text("application_error"), # text_manager 사용
+        QMessageBox.critical(None, text_manager.get_general_text("264"), # 264: "Application Error"
                              text_manager.get_error_text("510", e=e)) # text_manager 사용
         sys.exit(1)

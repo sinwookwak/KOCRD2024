@@ -45,7 +45,7 @@ class SystemManager:
 
         self.initialize_managers()
         self._configure_tesseract()
-        logging.info(text_manager.get_log_text("345")) # "SystemManager initialization completed."
+        logging.info(text_manager.get_log_text("345")) # 345: "SystemManager initialization completed"
 
     def load_development_settings(self):
         # 이 메서드는 AppConfig와 별개로 설정을 로드합니다. 코드 구조 검토가 필요합니다.
@@ -144,6 +144,25 @@ class SystemManager:
             else:
                 logging.warning(text_manager.get_warning_text("409", dep_name=dep_name, manager_name=manager_name))
 
+    def _execute_manager_operation(self, manager_name: str, operation_name: str, 
+                                 *args, error_code: str = "500", **kwargs) -> bool:
+        """매니저에서 지정된 작업을 실행하는 공통 헬퍼 메서드."""
+        manager = self.get_manager(manager_name)
+        if manager:
+            try:
+                operation = getattr(manager, operation_name)
+                operation(*args, **kwargs)
+                return True
+            except AttributeError:
+                logging.error(f"Manager '{manager_name}' does not have operation '{operation_name}'")
+                return False
+            except Exception as e:
+                logging.error(f"Error executing {operation_name} on {manager_name}: {e}")
+                return False
+        else:
+            logging.error(text_manager.get_error_text(error_code))
+            return False
+
     def get_temp_file_manager(self):
         return self.managers.get(SystemConstants.ManagerNames.TEMP_FILE)
 
@@ -160,7 +179,7 @@ class SystemManager:
              pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
              logging.info(text_manager.get_log_text("342", tesseract_cmd=tesseract_cmd)) # "Tesseract configuration completed: {tesseract_cmd}"
         else:
-             logging.warning(text_manager.get_warning_text("410")) # tesseract_cmd 누락 경고 메시지 추가 (예: 410)
+             logging.warning(text_manager.get_warning_text("410")) # 410: "Tesseract command path..."
 
         if tessdata_dir:
             pytesseract.pytesseract.tessdata_dir = tessdata_dir
@@ -170,7 +189,7 @@ class SystemManager:
         """문서 처리 메시지를 처리합니다."""
         file_paths = message.get("file_paths", [])
         if not file_paths:
-            logging.warning(text_manager.get_warning_text("403")) # text_manager 사용
+            logging.warning(text_manager.get_warning_text("403")) # 403: "No file path provided"
             return
         document_manager = self.get_manager(SystemConstants.ManagerNames.DOCUMENT)
         if document_manager:
@@ -178,43 +197,43 @@ class SystemManager:
                 document_manager.load_document(file_path) # DocumentManager에 load_document 메서드가 있다고 가정
             logging.info(text_manager.get_log_text("344", file_paths=file_paths)) # "Document processing completed for {file_paths}"
         else:
-            logging.error(text_manager.get_error_text("528")) # DocumentManager 누락 오류 메시지 추가 (예: 528)
+            logging.error(text_manager.get_error_text("528")) # 528: "DocumentManager not found"
 
     def _process_database_packaging(self, message: Dict[str, Any]):
         """데이터베이스 패키징 메시지를 처리합니다."""
-        database_manager = self.get_manager(SystemConstants.ManagerNames.DATABASE)
-        if database_manager:
-            database_manager.package_database() # DatabaseManager에 package_database 메서드가 있다고 가정
-            logging.info(text_manager.get_log_text("330")) # text_manager 사용
-        else:
-            logging.error(text_manager.get_error_text("522")) # text_manager 사용
+        if self._execute_manager_operation(
+            SystemConstants.ManagerNames.DATABASE, 
+            "package_database",  # DatabaseManager에 package_database 메서드가 있다고 가정
+            error_code="522"
+        ):
+            logging.info(text_manager.get_log_text("330")) # 330: "Database packaging..."
 
     def _process_ai_training(self, message: Dict[str, Any]):
         """AI 학습 메시지를 처리합니다."""
         ai_trainer = self.get_manager(SystemConstants.ManagerNames.AI_TRAINER) # config에서 매니저 이름이 'ai_trainer'라고 가정
         if ai_trainer:
             ai_trainer.train_ai(message) # AITrainer에 train_ai 메서드가 있다고 가정
-            logging.info(text_manager.get_log_text("347")) # "AI training completed."
+            logging.info(text_manager.get_log_text("347")) # 347: "AI training completed"
         else:
-            logging.error(text_manager.get_error_text("529")) # AITrainer 누락 오류 메시지 추가 (예: 529)
+            logging.error(text_manager.get_error_text("529")) # 529: "Failed to create instance..."
 
     def _process_temp_file_manager(self, message: Dict[str, Any]):
         """임시 파일 관리 메시지를 처리합니다."""
         temp_file_manager = self.get_manager(SystemConstants.ManagerNames.TEMP_FILE)
         if temp_file_manager:
             temp_file_manager.handle_message(message) # TempFileManager에 handle_message 메서드가 있다고 가정
-            logging.info(text_manager.get_log_text("315")) # text_manager 사용 (기존 ID 유지)
+            logging.info(text_manager.get_log_text("315")) # 315: "Temporary files cleaned up"
         else:
-            logging.error(text_manager.get_error_text("534")) # TempFileManager 누락 오류 메시지 추가 (예: 534)
+            logging.error(text_manager.get_error_text("534")) # 534: "TempFileManager not found"
 
     def _process_ai_prediction(self, message: Dict[str, Any]):
         """AI 예측 메시지를 처리합니다."""
         ai_prediction_manager = self.get_manager(SystemConstants.ManagerNames.AI_PREDICTION)
         if ai_prediction_manager:
             ai_prediction_manager.handle_message(message) # AIPredictionManager에 handle_message 메서드가 있다고 가정
-            logging.info(text_manager.get_log_text("348")) # "AI prediction processed."
+            logging.info(text_manager.get_log_text("348")) # 348: "AI prediction processed"
         else:
-            logging.error(text_manager.get_error_text("535")) # AIPredictionManager 누락 오류 메시지 추가 (예: 535)
+            logging.error(text_manager.get_error_text("535")) # 535: "AIPredictionManager..."
 
     def _process_ai_event(self, message: Dict[str, Any]):
         """AI 이벤트 메시지를 처리합니다."""
@@ -259,7 +278,7 @@ class SystemManager:
         elif message_type == SystemConstants.EventTypes.QUESTION:
             return ask_question(self.main_window, message_key, title_key, detail_info, buttons_type, show_do_not_show_again)
         elif message_type == SystemConstants.EventTypes.CONFIRM_DELETE:
-            return confirm_delete(self.main_window, delete_target if delete_target else text_manager.get_general_text("selected_item_default"), message_key, detail_info, show_do_not_show_again)
+            return confirm_delete(self.main_window, delete_target if delete_target else text_manager.get_general_text("265") # 265: "selected item", message_key, detail_info, show_do_not_show_again)
         else:
             logging.warning(text_manager.get_warning_text("415", message_type=message_type))
             return display_alert(self.main_window, message_key, title_key, detail_info, show_do_not_show_again) # 알 수 없는 유형은 기본 알림으로
@@ -322,11 +341,11 @@ class SystemManager:
 
     def database_packaging(self):
         """데이터베이스 매니저를 통해 데이터베이스 패키징을 트리거합니다."""
-        db_manager = self.get_manager(SystemConstants.ManagerNames.DATABASE)
-        if db_manager:
-            db_manager.package_database() # DatabaseManager에 package_database 메서드가 있다고 가정
-        else:
-            logging.error(text_manager.get_error_text("522")) # text_manager 사용
+        self._execute_manager_operation(
+            SystemConstants.ManagerNames.DATABASE, 
+            "package_database",  # DatabaseManager에 package_database 메서드가 있다고 가정
+            error_code="522"
+        )
 
     def trigger_process(self, process_type: str, data: Optional[Dict[str, Any]] = None):
         """프로세스 유형에 따라 적절한 매니저로 요청을 라우팅합니다."""
