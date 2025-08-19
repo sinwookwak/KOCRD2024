@@ -107,10 +107,3 @@ class SystemConstants:
         INJECT_SETTINGS = "inject_settings"
         INJECT_MAIN_WINDOW = "inject_main_window"
         INJECT_SYSTEM_MANAGER = "inject_system_manager"
-
-    class FileHandling:
-        # 파일 처리 관련 상수
-        DEFAULT_REPORT_FILENAME = "report.txt"
-        DEFAULT_EXCEL_FILENAME = "documents.xlsx"
-        VALID_FILE_EXTENSIONS = {".pdf", ".docx", ".xlsx", ".txt", ".csv", ".png", ".jpg", ".jpeg"}
-        MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
