@@ -1,0 +1,12 @@
+PyQt5==5.15.9  # 원하시는 버전으로 변경 가능
+opencv-python>=4.8.0.74  # 최신 버전 사용 권장
+pytesseract
+pdf2image
+fpdf2  # fpdf는 fpdf2로 변경됨
+tensorflow>=2.10.0  # tf-keras는 tensorflow에 포함됨
+flask
+python-dotenv
+chardet
+pika
+pymupdf
+transformers
